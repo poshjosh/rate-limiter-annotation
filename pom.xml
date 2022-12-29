@@ -18,7 +18,7 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <rate-limiter.version>0.0.722-SNAPSHOT</rate-limiter.version>
+        <rate-limiter.version>0.0.8</rate-limiter.version>
         <it.skip>true</it.skip>
         <tests.skip>false</tests.skip>
         <bucket4j.version>6.4.1</bucket4j.version>
