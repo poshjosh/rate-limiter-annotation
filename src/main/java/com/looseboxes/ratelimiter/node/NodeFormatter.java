@@ -72,7 +72,6 @@ public abstract class NodeFormatter {
             this.doAppendTo(node, appendTo);
             if(levelsRemaining > 0) {
                 final List<Node<V>> children = node.getChildren();
-                // System.out.println("Levels left: " + levelsRemaining + ", " + node);
                 for(Node<V> child : children) {
                     this.appendTo(child, appendTo, levelsRemaining - 1);
                 }

@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.0.9](https://github.com/poshjosh/rate-limiter-annotation/tree/0.0.9) ] - 2022-12-30
+
+### Added
+
+- Add more Bandwidth tests
+
 ## [ [0.0.8](https://github.com/poshjosh/rate-limiter-annotation/tree/0.0.8) ] - 2022-12-29
 
 ### Added

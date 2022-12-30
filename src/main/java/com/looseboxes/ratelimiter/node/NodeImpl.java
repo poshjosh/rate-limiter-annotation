@@ -83,15 +83,12 @@ public class NodeImpl<V> implements Node<V>, Serializable {
     @Override
     public Optional<Node<V>> findFirst(Node<V> offset, V... path) {
         for (V valueToFind : path) {
-//System.out.println("\t\tTo find: " + valueToFind + ", level: " + offset.getLevel() + ", start node: " + offset);            
             final Predicate<Node<V>> nodeTest = (node) -> Objects.equals(node.getValueOrDefault(null), valueToFind);
             final Optional<Node<V>> foundNode = this.findFirst(offset, nodeTest);
             if(foundNode.isPresent()) {
                 offset = foundNode.get();
-//System.out.println("\t\tFound: " + valueToFind + ", in node: " + offset);            
             }else{
                 offset = null;
-//System.out.println("\t\tNOT Found: " + valueToFind);            
                 break;
             }
         }
@@ -121,9 +118,7 @@ public class NodeImpl<V> implements Node<V>, Serializable {
                 }
             }
         }
-        
-//        System.out.println("\t\tFound: " + (found != null) + ", in node: " + offset);
-        
+
         return Optional.ofNullable(found);
     }
 

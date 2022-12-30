@@ -38,7 +38,6 @@ final class AnnotationToRatesConverter implements AnnotationProcessor.Converter<
 
     private Rate createRate(RateLimit rateLimit) {
         Duration duration = Duration.of(rateLimit.duration(), toChronoUnit(rateLimit.timeUnit()));
-        //System.out.printf("%s AnnotationToRatesConverter factory: %s\n", java.time.LocalTime.now(), rateLimit.factoryClass());
         return Rate.of(rateLimit.limit(), duration, rateLimit.factoryClass());
     }
 
