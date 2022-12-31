@@ -17,7 +17,7 @@ class PatternMatchingResourceLimiterTest {
 
     final Object key = "one";
 
-    @RateLimit(limit = 1, duration = 1, timeUnit = SECONDS)
+    @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass0{ }
 
     @Test
@@ -28,7 +28,7 @@ class PatternMatchingResourceLimiterTest {
     }
 
     static class RateLimitedClass1{
-        @RateLimit(limit = 1, duration = 1, timeUnit = SECONDS)
+        @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
         void rateLimitedClass1_method_0() { }
     }
 
@@ -39,9 +39,9 @@ class PatternMatchingResourceLimiterTest {
         assertFalse(resourceLimiter.tryConsume(key));
     }
 
-    @RateLimit(limit = 1, duration = 1, timeUnit = SECONDS)
+    @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass2{
-        @RateLimit(limit = 1, duration = 1, timeUnit = SECONDS)
+        @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
         void rateLimitedClass2_method_0() { }
     }
 
@@ -53,8 +53,8 @@ class PatternMatchingResourceLimiterTest {
     }
 
     @RateLimitGroup(operator = Operator.OR)
-    @RateLimit(limit = 1, duration = 1, timeUnit = SECONDS)
-    @RateLimit(limit = 3, duration = 1, timeUnit = SECONDS)
+    @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
+    @RateLimit(permits = 3, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass3{ }
 
     @Test
@@ -65,8 +65,8 @@ class PatternMatchingResourceLimiterTest {
     }
 
     @RateLimitGroup(operator = Operator.AND)
-    @RateLimit(limit = 1, duration = 1, timeUnit = SECONDS)
-    @RateLimit(limit = 3, duration = 1, timeUnit = SECONDS)
+    @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
+    @RateLimit(permits = 3, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass4{ }
 
     @Test

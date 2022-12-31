@@ -68,10 +68,10 @@ public interface BandwidthFactory {
         private Bandwidth createNew(double permitsPerSecond, long nowMicros) {
             return Bandwidth.warmingUp(permitsPerSecond, nowMicros, warmupPeriod, timeUnit, coldFactor);
         }
-        private static double toPermitsPerSecond(final long amount, final long duration, final TimeUnit timeUnit) {
+        private static double toPermitsPerSecond(final long permits, final long duration, final TimeUnit timeUnit) {
             // We use the highest precision
             final long nanosDuration = timeUnit.toNanos(duration);
-            final double perNanos = (double)amount / nanosDuration;
+            final double perNanos = (double)permits / nanosDuration;
             // Won't work because it will return zero if the result is a fraction
             //SECONDS.convert((long)perNanos, NANOSECONDS);
             return perNanos * TimeUnit.SECONDS.toNanos(1L);

@@ -49,9 +49,9 @@ public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, 
         if(rateLimits.length > 0 ) {
 
             RateLimitGroup rateLimitGroup = element.getAnnotation(RateLimitGroup.class);
-            Node<NodeValue<T>> created = getOrCreateParent(root, element, rateLimitGroup, rateLimits);
+            Node<NodeValue<T>> createdParent = getOrCreateParent(root, element, rateLimitGroup, rateLimits);
 
-            Node<NodeValue<T>> parentNode = created == null ? root : created;
+            Node<NodeValue<T>> parentNode = createdParent == null ? root : createdParent;
             String name = idProvider.getId(element);
             node = createNodeForElementOrNull(parentNode, name, element, rateLimitGroup, rateLimits);
 

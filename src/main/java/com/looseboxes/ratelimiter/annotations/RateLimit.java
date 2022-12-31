@@ -11,11 +11,11 @@ import java.util.concurrent.TimeUnit;
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface RateLimit {
 
-    long limit() default Long.MAX_VALUE;
+    long permits() default Long.MAX_VALUE;
 
     long duration() default 0;
 
-    TimeUnit timeUnit() default TimeUnit.MILLISECONDS;
+    TimeUnit timeUnit() default TimeUnit.SECONDS;
 
     /**
      * A {@link BandwidthFactory} that will be dynamically instantiated and used to create

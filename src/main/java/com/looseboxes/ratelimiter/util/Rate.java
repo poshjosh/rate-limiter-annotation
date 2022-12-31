@@ -8,19 +8,43 @@ import java.util.Objects;
 
 public final class Rate {
 
-    public static Rate of(long limit, Duration duration) {
-        return of(limit, duration, BandwidthFactory.Default.class);
+    public static Rate ofNanos(long permits) {
+        return of(permits, Duration.ofNanos(1));
     }
 
-    public static Rate of(long limit, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
-        return new Rate(limit, duration, factoryClass);
+    public static Rate ofMillis(long permits) {
+        return of(permits, Duration.ofMillis(1));
+    }
+
+    public static Rate ofSeconds(long permits) {
+        return of(permits, Duration.ofSeconds(1));
+    }
+
+    public static Rate ofMinutes(long permits) {
+        return of(permits, Duration.ofMinutes(1));
+    }
+
+    public static Rate ofHours(long permits) {
+        return of(permits, Duration.ofHours(1));
+    }
+
+    public static Rate ofDays(long permits) {
+        return of(permits, Duration.ofDays(1));
+    }
+
+    public static Rate of(long permits, Duration duration) {
+        return of(permits, duration, BandwidthFactory.Default.class);
+    }
+
+    public static Rate of(long permits, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
+        return new Rate(permits, duration, factoryClass);
     }
 
     public static Rate of(Rate rate) {
         return new Rate(rate);
     }
 
-    private long limit;
+    private long permits;
     private Duration duration;
 
     /**
@@ -33,28 +57,28 @@ public final class Rate {
     public Rate() { }
 
     Rate(Rate rate) {
-        this(rate.limit, rate.duration, rate.factoryClass);
+        this(rate.permits, rate.duration, rate.factoryClass);
     }
 
-    Rate(long limit, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
-        Checks.requireNotNegative(limit, "limit");
+    Rate(long permits, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
+        Checks.requireNotNegative(permits, "permits");
         Checks.requireFalse(duration.isNegative(), "Duration must be positive, duration: " + duration);
-        this.limit = limit;
+        this.permits = permits;
         this.duration = Objects.requireNonNull(duration);
         this.factoryClass = Objects.requireNonNull(factoryClass);
     }
 
     public Rate limit(long limit) {
-        this.setLimit(limit);
+        this.setPermits(limit);
         return this;
     }
 
-    public long getLimit() {
-        return limit;
+    public long getPermits() {
+        return permits;
     }
 
-    public void setLimit(long limit) {
-        this.limit = limit;
+    public void setPermits(long permits) {
+        this.permits = permits;
     }
 
     public Rate duration(Duration duration) {
@@ -88,18 +112,18 @@ public final class Rate {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Rate that = (Rate) o;
-        return limit == that.limit && duration.equals(that.duration) && factoryClass.equals(that.factoryClass);
+        return permits == that.permits && duration.equals(that.duration) && factoryClass.equals(that.factoryClass);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(limit, duration, factoryClass);
+        return Objects.hash(permits, duration, factoryClass);
     }
 
     @Override
     public String toString() {
         return "Rate{" +
-                "limit=" + limit +
+                "permits=" + permits +
                 ", duration=" + duration +
                 ", factoryClass=" + (factoryClass == null ? null : factoryClass.getSimpleName()) +
                 '}';

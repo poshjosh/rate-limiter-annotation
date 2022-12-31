@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>parent</artifactId>
-        <groupId>com.looseboxes</groupId>
+        <groupId>com.github.poshjosh</groupId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
@@ -18,17 +18,16 @@
     <properties>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
-        <rate-limiter.version>0.0.9</rate-limiter.version>
+        <rate-limiter.version>0.1.0-SNAPSHOT</rate-limiter.version>
         <it.skip>true</it.skip>
         <tests.skip>false</tests.skip>
-        <bucket4j.version>6.4.1</bucket4j.version>
         <maven.failsafle.plugin.version>2.22.2</maven.failsafle.plugin.version>
         <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>com.looseboxes</groupId>
+            <groupId>com.github.poshjosh</groupId>
             <artifactId>rate-limiter</artifactId>
             <version>${rate-limiter.version}</version>
         </dependency>
@@ -49,60 +48,6 @@
             <artifactId>cache-api</artifactId>
             <version>1.1.1</version>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
-            <artifactId>bucket4j-core</artifactId>
-            <version>${bucket4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
-            <artifactId>bucket4j-jcache</artifactId>
-            <version>${bucket4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.hazelcast</groupId>
-            <artifactId>hazelcast</artifactId>
-            <version>4.0.2</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
-            <artifactId>bucket4j-hazelcast</artifactId>
-            <version>${bucket4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.ignite</groupId>
-            <artifactId>ignite-core</artifactId>
-            <version>2.11.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.ignite</groupId>
-            <artifactId>ignite-indexing</artifactId>
-            <version>2.11.1</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
-            <artifactId>bucket4j-ignite</artifactId>
-            <version>${bucket4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
-            <artifactId>bucket4j-infinispan</artifactId>
-            <version>${bucket4j.version}</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.github.vladimir-bukhtoyarov</groupId>
-            <artifactId>bucket4j-coherence</artifactId>
-            <version>${bucket4j.version}</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>

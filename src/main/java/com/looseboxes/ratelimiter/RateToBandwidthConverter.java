@@ -12,7 +12,7 @@ public interface RateToBandwidthConverter{
     static RateToBandwidthConverter of() {
         return (rate, nowMicros) -> {
             BandwidthFactory factory = BandwidthFactories.getOrCreateBandwidthFactory(rate.getFactoryClass());
-            return factory.createNew(rate.getLimit(), rate.getDuration(), nowMicros);
+            return factory.createNew(rate.getPermits(), rate.getDuration(), nowMicros);
         };
     }
 

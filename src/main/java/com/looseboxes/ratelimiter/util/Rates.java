@@ -1,9 +1,6 @@
 package com.looseboxes.ratelimiter.util;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public final class Rates {
@@ -38,7 +35,22 @@ public final class Rates {
 
     private Operator operator = Operator.OR;
 
-    // The naming of this variable is a contract, it should not be arbitrarily changed
+    /**
+     * A single limit. Added for convenience. Either set this or {@link #limits} but not both.
+     * @see #limits
+     */
+    // The naming of this variable is part of this class'  contract. Do not arbitrarily rename
+    //
+    private Rate limit;
+
+    /**
+     * Multiple limits. Either set this or {@link #limit} but not both.
+     * @see #limit
+     */
+    // The naming of this variable is part of this class'  contract. Do not arbitrarily rename
+    // Always access this throw it's getter. A small inconvenience to pay for adding
+    // an additional single limit field.
+    //
     private List<Rate> limits = Collections.emptyList();
 
     // A public no-argument constructor is required
@@ -59,7 +71,7 @@ public final class Rates {
     }
 
     public int size() {
-        return limits == null ? 0 : limits.size();
+        return getLimits() == null ? 0 : getLimits().size();
     }
 
     public Rates operator(Operator operator) {
@@ -75,6 +87,19 @@ public final class Rates {
         this.operator = operator;
     }
 
+    public Rates limit(Rate limit) {
+        setLimit(limit);
+        return this;
+    }
+
+    public Rate getLimit() {
+        return limit;
+    }
+
+    public void setLimit(Rate limit) {
+        this.limit = limit;
+    }
+
     public Rates limits(Rate... limits) {
         setLimits(Arrays.asList(limits));
         return this;
@@ -86,6 +111,11 @@ public final class Rates {
     }
 
     public List<Rate> getLimits() {
+        if (limit != null) {
+            // We wrap any possibly unmodifiable instance in our own modifiable wrapper
+            limits = limits == null ? new ArrayList<>() : new ArrayList<>(limits);
+            limits.add(limit);
+        }
         return limits;
     }
 
@@ -100,16 +130,16 @@ public final class Rates {
         if (o == null || getClass() != o.getClass())
             return false;
         Rates that = (Rates) o;
-        return operator == that.operator && Objects.equals(limits, that.limits);
+        return operator == that.operator && Objects.equals(getLimits(), that.getLimits());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(operator, limits);
+        return Objects.hash(operator, getLimits());
     }
 
     @Override
     public String toString() {
-        return "Rates{" + "operator=" + operator + ", limits=" + limits + '}';
+        return "Rates{" + "operator=" + operator + ", limits=" + getLimits() + '}';
     }
 }
