@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 class AnnotationProcessingPerformanceIT {
 
@@ -32,9 +32,11 @@ class AnnotationProcessingPerformanceIT {
         Node<NodeValue<Rates>> rootNode = Node.of("root");
         AnnotationProcessor.ofRates().processAll(rootNode, classList);
 
-        BiFunction<String, NodeValue<Rates>, NodeValue<ResourceLimiter<Object>>> transformer = (nodeName, nodeValue) -> {
-            Bandwidths bandwidths = RateToBandwidthConverter.ofDefaults().convert(nodeValue.getValue());
-            return nodeValue.withValue(ResourceLimiter.of(bandwidths));
+        Function<Node<NodeValue<Rates>>, NodeValue<ResourceLimiter<Object>>> transformer = node -> {
+            return node.getValueOptional().map(nodeValue -> {
+                Bandwidths bandwidths = RateToBandwidthConverter.ofDefaults().convert(nodeValue.getValue());
+                return nodeValue.withValue(ResourceLimiter.of(bandwidths));
+            }).orElse(null);
         };
 
         return rootNode.transform(transformer);

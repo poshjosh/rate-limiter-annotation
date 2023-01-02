@@ -75,9 +75,9 @@ final class NodeImpl<V> implements Node<V> {
     }
 
     @Override
-    public <T> Node<T> transform(Node<T> newParent, BiFunction<String, V, String> nameConverter, BiFunction<String, V, T> valueConverter) {
-        final String newName = name == null ? null : nameConverter.apply(name, value);
-        final T newValue = value == null ? null : valueConverter.apply(name, value);
+    public <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
+        final String newName = name == null ? null : nameConverter.apply(this);
+        final T newValue = value == null ? null : valueConverter.apply(this);
         final Node<T> newNode = Node.of(newName, newValue, newParent);
         children.forEach(child -> child.transform(newNode, nameConverter, valueConverter));
         return newNode;

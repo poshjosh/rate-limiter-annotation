@@ -18,8 +18,8 @@ package com.looseboxes.ratelimiter.node;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -27,13 +27,6 @@ import java.util.function.Predicate;
  * @param <V> The type of the value returned by this node
  */
 public interface Node<V> {
-
-    Node<Object> EMPTY = new EmptyNode<>();
-
-    @SuppressWarnings("unchecked")
-    static <T> Node<T> empty() {
-        return (Node<T>)EMPTY;
-    }
 
     static <T> Node<T> of(String name) {
         return of(name, null);
@@ -52,14 +45,14 @@ public interface Node<V> {
     /**
      * Copy a transformed version of this node and it's children onto the specified parent.
      *
+     * @param <T> The type of the value of the transformed copy
      * @param newParent The parent to copy a transformed version of this node and it's children to
      * @param nameConverter The converter which will be applied to produce a new name for each node in this tree
      * @param valueConverter The converter which will be applied to produce a new value for each node in this tree
-     * @param <T> The type of the value of the transformed copy
      * @return The transformed copy of this node
-     * @see #transform(Node, BiFunction)
+     * @see #transform(Node, Function)
      */
-    <T> Node<T> transform(Node<T> newParent, BiFunction<String, V, String> nameConverter, BiFunction<String, V, T> valueConverter);
+    <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter);
 
     /**
      * Copy this node and it's children onto the specified parent.
@@ -69,13 +62,13 @@ public interface Node<V> {
      *
      * @param parent The parent to copy this node and it's children to
      * @return The copy version of this node
-     * @see #transform(Node, BiFunction)
+     * @see #transform(Node, Function)
      */
     default Node<V> copyTo(Node<V> parent) {
-        return transform(parent, (name, value) -> value);
+        return transform(parent, node -> node.getValueOrDefault(null));
     }
 
-    default <T> Node<T> transform(BiFunction<String, V, T> valueConverter) {
+    default <T> Node<T> transform(Function<Node<V>, T> valueConverter) {
         return transform(Node.of(getName()), valueConverter);
     }
 
@@ -86,13 +79,13 @@ public interface Node<V> {
      * @param valueConverter The converter which will be applied to produce a new value for each node in this tree
      * @param <T> The type of the value of the transformed copy
      * @return The transformed copy of this node
-     * @see #transform(Node, BiFunction, BiFunction)
+     * @see #transform(Node, Function, Function)
      */
-    default <T> Node<T> transform(Node<T> newParent, BiFunction<String, V, T> valueConverter) {
-        return transform(newParent, (name, value) -> name, valueConverter);
+    default <T> Node<T> transform(Node<T> newParent, Function<Node<V>, T> valueConverter) {
+        return transform(newParent, node -> node.getName(), valueConverter);
     }
 
-    default <T> Node<T> transform(BiFunction<String, V, String> nameConverter, BiFunction<String, V, T> valueConverter) {
+    default <T> Node<T> transform(Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
         return transform(Node.of(getName()), nameConverter, valueConverter);
     }
 

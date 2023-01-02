@@ -130,6 +130,16 @@ abstract class AbstractResourceLimiterTest {
         assertThat(resourceLimiter.tryConsume(key)).isFalse();
     }
 
+    @Test
+    void testAndThen() {
+        ResourceLimiter<String> a = getRateLimiter(Bandwidth.allOrNothing(10));
+        ResourceLimiter<String> b = getRateLimiter(Bandwidth.allOrNothing(1));
+        ResourceLimiter<String> c = a.andThen(b);
+        final String key = "one";
+        assertTrue(c.tryConsume(key), "Unable to acquire initial permit");
+        assertFalse(c.tryConsume(key), "Capable of acquiring additional permit");
+    }
+
     static void assertTrue(boolean expression, String message) {
         assertThat(expression).withFailMessage(message).isTrue();
     }

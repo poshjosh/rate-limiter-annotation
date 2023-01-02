@@ -4,6 +4,7 @@ import com.looseboxes.ratelimiter.annotation.NodeValue;
 import com.looseboxes.ratelimiter.annotation.ResourceLimiterFromAnnotationFactory;
 import com.looseboxes.ratelimiter.annotations.RateLimit;
 import com.looseboxes.ratelimiter.annotations.RateLimitGroup;
+import com.looseboxes.ratelimiter.bandwidths.Bandwidth;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.util.Operator;
 import org.junit.jupiter.api.Test;
@@ -76,6 +77,22 @@ class PatternMatchingResourceLimiterTest {
         assertTrue(resourceLimiter.tryConsume(key));
         assertTrue(resourceLimiter.tryConsume(key));
         assertFalse(resourceLimiter.tryConsume(key));
+    }
+
+    @RateLimit(permits = 10, duration = 1, timeUnit = SECONDS)
+    static class RateLimitedClass5{
+        @RateLimit(permits = 10, duration = 1, timeUnit = SECONDS)
+        void rateLimitedClass2_method_0() { }
+    }
+
+    @Test
+    void testAndThen() {
+        ResourceLimiter<Object> a = buildRateLimiter(2, RateLimitedClass5.class);
+        ResourceLimiter<Object> b = ResourceLimiter.of(Bandwidth.bursty(1));
+        ResourceLimiter<Object> c = a.andThen(b);
+        final Object key = "one";
+        assertTrue(c.tryConsume(key));
+        assertFalse(c.tryConsume(key));
     }
 
     private ResourceLimiter<Object> buildRateLimiter(int expectedNodes, Class<?>... classes) {

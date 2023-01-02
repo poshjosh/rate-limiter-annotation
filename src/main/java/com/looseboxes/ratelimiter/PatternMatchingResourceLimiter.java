@@ -1,6 +1,8 @@
 package com.looseboxes.ratelimiter;
 
 import com.looseboxes.ratelimiter.annotation.NodeValue;
+import com.looseboxes.ratelimiter.bandwidths.Bandwidths;
+import com.looseboxes.ratelimiter.cache.RateCache;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.util.Matcher;
 import org.slf4j.Logger;
@@ -12,7 +14,7 @@ import java.util.function.Function;
 
 public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimiter<R> {
 
-    private enum RateLimitResult{SUCCESS, FAILURE, NOMATCH}
+    private enum VisitResult {SUCCESS, FAILURE, NOMATCH}
 
     private static final Logger log = LoggerFactory.getLogger(PatternMatchingResourceLimiter.class);
     
@@ -48,13 +50,43 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
     }
 
     @Override
-    public boolean tryConsume(Object context, R request, int permits, long timeout, TimeUnit unit) {
-        Function<Node<NodeValue<V>>, RateLimitResult> consumePermits =
-                node -> tryConsume(request, permits, timeout, unit, node);
-        return visitNodes(consumePermits);
+    public <K> ResourceLimiter<R> keyProvider(KeyProvider<R, K> keyProvider) {
+        Map<Node<NodeValue<V>>, ResourceLimiter<?>> map = new HashMap<>();
+        visitNodes(false, node -> {
+            map.put(node, limiterProvider.getLimiter(node).keyProvider((KeyProvider) keyProvider));
+            return VisitResult.SUCCESS;
+        });
+        return new PatternMatchingResourceLimiter<>(matcherProvider, map::get, rootNode, firstMatchOnly);
     }
 
-    public boolean visitNodes(Function<Node<NodeValue<V>>, RateLimitResult> visitor) {
+    @Override
+    public <K> ResourceLimiter<R> cache(RateCache<K, Bandwidths> cache) {
+        Map<Node<NodeValue<V>>, ResourceLimiter<?>> map = new HashMap<>();
+        visitNodes(false, node -> {
+            map.put(node, limiterProvider.getLimiter(node).cache(cache));
+            return VisitResult.SUCCESS;
+        });
+        return new PatternMatchingResourceLimiter<>(matcherProvider, map::get, rootNode, firstMatchOnly);
+    }
+
+    @Override
+    public ResourceLimiter<R> listener(ResourceUsageListener usageListener) {
+        Map<Node<NodeValue<V>>, ResourceLimiter<?>> map = new HashMap<>();
+        visitNodes(false, node -> {
+            map.put(node, limiterProvider.getLimiter(node).listener(usageListener));
+            return VisitResult.SUCCESS;
+        });
+        return new PatternMatchingResourceLimiter<>(matcherProvider, map::get, rootNode, firstMatchOnly);
+    }
+
+    @Override
+    public boolean tryConsume(R request, int permits, long timeout, TimeUnit unit) {
+        Function<Node<NodeValue<V>>, VisitResult> consumePermits =
+                node -> tryConsume(request, permits, timeout, unit, node);
+        return visitNodes(firstMatchOnly, consumePermits);
+    }
+
+    public boolean visitNodes(boolean firstMatchOnly, Function<Node<NodeValue<V>>, VisitResult> visitor) {
 
         int globalFailureCount = 0;
 
@@ -64,7 +96,7 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
 
             while(node != rootNode && node != null && node.hasNodeValue()) {
 
-                final RateLimitResult result = visitor.apply(node);
+                final VisitResult result = visitor.apply(node);
 
                 switch(result) {
                     case SUCCESS: ++nodeSuccessCount; break;
@@ -74,7 +106,7 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
                     default: throw new IllegalArgumentException();
                 }
 
-                if(!RateLimitResult.SUCCESS.equals(result)) {
+                if(!VisitResult.SUCCESS.equals(result)) {
                     break;
                 }
 
@@ -89,13 +121,13 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
         return globalFailureCount == 0;
     }
 
-    private RateLimitResult tryConsume(
+    private VisitResult tryConsume(
             R request, int permits, long timeout, TimeUnit unit, Node<NodeValue<V>> node) {
 
         final ResourceLimiter<?> resourceLimiter = limiterProvider.getLimiter(node);
 
         if(resourceLimiter == ResourceLimiter.NO_OP) {
-            return RateLimitResult.NOMATCH;
+            return VisitResult.NOMATCH;
         }
 
         final Matcher<R, ?> matcher = matcherProvider.getMatcher(node);
@@ -108,11 +140,11 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
         }
 
         if(match == null) {
-            return RateLimitResult.NOMATCH;
+            return VisitResult.NOMATCH;
         }
 
-        return ((ResourceLimiter<Object>) resourceLimiter)
-                .tryConsume(request, match, permits, timeout, unit)
-                ? RateLimitResult.SUCCESS : RateLimitResult.FAILURE;
+        return ((ResourceLimiter)resourceLimiter)
+                .tryConsume(match, permits, timeout, unit)
+                ? VisitResult.SUCCESS : VisitResult.FAILURE;
     }
 }
