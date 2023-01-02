@@ -31,6 +31,7 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
     private final Node<NodeValue<V>> rootNode;
     private final Set<Node<NodeValue<V>>> leafNodes;
     private final boolean firstMatchOnly;
+    private UsageListener usageListener;
 
     public PatternMatchingResourceLimiter(MatcherProvider<V, R> matcherProvider,
                                           LimiterProvider<V> limiterProvider,
@@ -47,20 +48,12 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
         });
         this.leafNodes = Collections.unmodifiableSet(set);
         this.firstMatchOnly = firstMatchOnly;
+        this.usageListener = UsageListener.NO_OP;
     }
 
     @Override
-    public <K> ResourceLimiter<R> keyProvider(KeyProvider<R, K> keyProvider) {
-        Map<Node<NodeValue<V>>, ResourceLimiter<?>> map = new HashMap<>();
-        visitNodes(false, node -> {
-            map.put(node, limiterProvider.getLimiter(node).keyProvider((KeyProvider) keyProvider));
-            return VisitResult.SUCCESS;
-        });
-        return new PatternMatchingResourceLimiter<>(matcherProvider, map::get, rootNode, firstMatchOnly);
-    }
-
-    @Override
-    public <K> ResourceLimiter<R> cache(RateCache<K, Bandwidths> cache) {
+    public ResourceLimiter<R> cache(RateCache<?, Bandwidths> cache) {
+        Objects.requireNonNull(cache);
         Map<Node<NodeValue<V>>, ResourceLimiter<?>> map = new HashMap<>();
         visitNodes(false, node -> {
             map.put(node, limiterProvider.getLimiter(node).cache(cache));
@@ -70,7 +63,8 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
     }
 
     @Override
-    public ResourceLimiter<R> listener(ResourceUsageListener usageListener) {
+    public ResourceLimiter<R> listener(UsageListener usageListener) {
+        this.usageListener = Objects.requireNonNull(usageListener);
         Map<Node<NodeValue<V>>, ResourceLimiter<?>> map = new HashMap<>();
         visitNodes(false, node -> {
             map.put(node, limiterProvider.getLimiter(node).listener(usageListener));
@@ -132,19 +126,27 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
 
         final Matcher<R, ?> matcher = matcherProvider.getMatcher(node);
 
-        final Object match = matcher.matchOrNull(request);
+        final Object resourceId = matcher.matchOrNull(request);
 
         if(log.isTraceEnabled()) {
             log.trace("Matched: {}, match: {}, name: {}, matcher: {}",
-                    match != null, match, node.getName(), matcher);
+                    resourceId != null, resourceId, node.getName(), matcher);
         }
 
-        if(match == null) {
+        if(resourceId == null) {
             return VisitResult.NOMATCH;
         }
 
-        return ((ResourceLimiter)resourceLimiter)
-                .tryConsume(match, permits, timeout, unit)
-                ? VisitResult.SUCCESS : VisitResult.FAILURE;
+        boolean success = ((ResourceLimiter)resourceLimiter).tryConsume(resourceId, permits, timeout, unit);
+
+        NodeValue<V> nodeValue = node.getValueOrDefault(null);
+        Object limit = nodeValue == null ? null : nodeValue.getValue();
+        usageListener.onConsumed(request, permits, limit);
+
+        if (!success) {
+            usageListener.onRejected(request, permits, limit);
+        }
+
+        return success  ? VisitResult.SUCCESS : VisitResult.FAILURE;
     }
 }

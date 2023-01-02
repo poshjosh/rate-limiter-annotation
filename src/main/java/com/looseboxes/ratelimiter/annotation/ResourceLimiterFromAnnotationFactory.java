@@ -55,11 +55,7 @@ public final class ResourceLimiterFromAnnotationFactory<K, V> {
     private ResourceLimiter<K> createResourceLimiter(Node<NodeValue<Rates>> node) {
         Bandwidths bandwidths = RateToBandwidthConverter.ofDefaults()
                 .convert(node.getValueOptional().orElseThrow(NullPointerException::new).getValue());
-
-        KeyProvider<K, Object> keyProvider = resource ->
-                matcherProvider.getMatcher(node).matchOrNull(resource);
-
-        return ResourceLimiter.<K>of(bandwidths).keyProvider(keyProvider);
+        return ResourceLimiter.<K>of(bandwidths);
     }
 
     private Node<NodeValue<Rates>> processAll(Class<?>... sources) {
