@@ -26,14 +26,14 @@ class AnnotationProcessingPerformanceIT {
     }
 
     Node<NodeValue<ResourceLimiter<Object>>> buildRateLimiters() {
-        List<Class<?>> classList = ClassesInPackageFinder.of().findClasses(
+        List<Class<?>> classList = ClassesInPackageFinder.ofDefaults().findClasses(
                 Collections.singletonList(getClass().getPackage().getName()),
                 clazz -> true);
         Node<NodeValue<Rates>> rootNode = Node.of("root");
         AnnotationProcessor.ofRates().processAll(rootNode, classList);
 
         BiFunction<String, NodeValue<Rates>, NodeValue<ResourceLimiter<Object>>> transformer = (nodeName, nodeValue) -> {
-            Bandwidths bandwidths = RateToBandwidthConverter.of().convert(nodeValue.getValue());
+            Bandwidths bandwidths = RateToBandwidthConverter.ofDefaults().convert(nodeValue.getValue());
             return nodeValue.withValue(ResourceLimiter.of(bandwidths));
         };
 

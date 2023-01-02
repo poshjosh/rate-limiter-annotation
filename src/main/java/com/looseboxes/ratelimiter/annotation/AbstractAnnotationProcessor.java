@@ -9,27 +9,25 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.GenericDeclaration;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, T>
         implements AnnotationProcessor<S, T>{
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractAnnotationProcessor.class);
 
-    private static final Object sourceForGroupNodes = new Object();
-
-    private final IdProvider<S, String> idProvider;
-
     private final Converter<T> converter;
 
-    protected AbstractAnnotationProcessor(IdProvider<S, String> idProvider, Converter<T> converter) {
-        this.idProvider = Objects.requireNonNull(idProvider);
+    protected AbstractAnnotationProcessor(Converter<T> converter) {
         this.converter = Objects.requireNonNull(converter);
     }
 
     protected abstract Node<NodeValue<T>> getOrCreateParent(
             Node<NodeValue<T>> root, S element,
             RateLimitGroup rateLimitGroup, RateLimit[] rateLimits);
+
+    protected abstract Element toElement(String id, S element);
 
     @Override
     public Node<NodeValue<T>> process(Node<NodeValue<T>> root, NodeConsumer<T> consumer, S element){
@@ -40,24 +38,27 @@ public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, 
     /**
      * @return The processed node
      */
-    protected Node<NodeValue<T>> doProcess(Node<NodeValue<T>> root, NodeConsumer<T> consumer, S element){
+    protected Node<NodeValue<T>> doProcess(Node<NodeValue<T>> root, NodeConsumer<T> consumer, S source){
 
-        final RateLimit [] rateLimits = element.getAnnotationsByType(RateLimit.class);
+        final RateLimit [] rateLimits = source.getAnnotationsByType(RateLimit.class);
 
         final Node<NodeValue<T>> node;
 
+        final Element element = toElement(getName(rateLimits, source), source);
+
         if(rateLimits.length > 0 ) {
 
-            RateLimitGroup rateLimitGroup = element.getAnnotation(RateLimitGroup.class);
-            Node<NodeValue<T>> createdParent = getOrCreateParent(root, element, rateLimitGroup, rateLimits);
+            RateLimitGroup rateLimitGroup = source.getAnnotation(RateLimitGroup.class);
+            Node<NodeValue<T>> createdParent = getOrCreateParent(root, source, rateLimitGroup, rateLimits);
 
             Node<NodeValue<T>> parentNode = createdParent == null ? root : createdParent;
-            String name = idProvider.getId(element);
+            String name = element.getId();
             node = createNodeForElementOrNull(parentNode, name, element, rateLimitGroup, rateLimits);
 
         }else{
             node = null;
         }
+
         if(LOG.isTraceEnabled()) {
             LOG.trace("\nProcessed: {}\nInto Node: {}", element, NodeFormatter.indented().format(node));
         }
@@ -65,6 +66,29 @@ public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, 
         consumer.accept(element, node);
 
         return node;
+    }
+
+    private String getName(RateLimit[] rateLimits, S source) {
+        if (rateLimits == null || rateLimits.length == 0) {
+            return "";
+        }
+        if (rateLimits.length == 1) {
+            return rateLimits[0].name();
+        }
+        return requireSameName(rateLimits, source);
+    }
+
+    private String requireSameName(RateLimit[] rateLimits, S source) {
+        Set<String> uniqueNames = Arrays.stream(rateLimits)
+                .map(RateLimit::name).collect(Collectors.toSet());
+        if (uniqueNames.size() > 1) {
+            throw new AnnotationProcessingException(
+                    "Multiple " + RateLimit.class.getSimpleName() +
+                    " annotations on a single node must resolve to only one unique name, found: " +
+                    uniqueNames + " at " + source);
+
+        }
+        return uniqueNames.iterator().next();
     }
 
     protected Node<NodeValue<T>> findOrCreateNodeForRateLimitGroupOrNull(
@@ -107,11 +131,11 @@ public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, 
     }
 
     private Node<NodeValue<T>> createGroupNode(Node<NodeValue<T>> parent, String name, T value) {
-        return Node.of(name, NodeValue.of(sourceForGroupNodes, value), parent);
+        return Node.of(name, NodeValue.of(Element.of(name), value), parent);
     }
 
     protected Node<NodeValue<T>> createNodeForElementOrNull(
-            Node<NodeValue<T>> parentNode, String name, Object element,
+            Node<NodeValue<T>> parentNode, String name, Element element,
             RateLimitGroup rateLimitGroup, RateLimit [] rateLimits) {
         if(rateLimits.length == 0) {
             return null;

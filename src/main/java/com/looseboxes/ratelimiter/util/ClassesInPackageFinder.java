@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 @FunctionalInterface
 public interface ClassesInPackageFinder {
 
-    static ClassesInPackageFinder of() {
+    static ClassesInPackageFinder ofDefaults() {
         return of(Thread.currentThread().getContextClassLoader());
     }
 

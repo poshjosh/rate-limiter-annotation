@@ -5,7 +5,9 @@ import com.looseboxes.ratelimiter.node.NodeFormatter;
 import com.looseboxes.ratelimiter.util.Rates;
 import org.junit.jupiter.api.Test;
 
+import java.lang.annotation.Annotation;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
@@ -40,7 +42,22 @@ class ClassAnnotationProcessorTest extends AbstractAnnotationProcessorTest<Class
     }
 
     AnnotationProcessor<Class<?>, Rates> getInstance() {
-        return AnnotationProcessor.of(this::getId, IdProvider.ofMethod(), new AnnotationToRatesConverter());
+        return new ClassAnnotationProcessor<Rates>(new AnnotationToRatesConverter()) {
+            @Override protected Element toElement(String id, Class<?> element) {
+                return new Element() {
+                    @Override public Element getDeclarer() {
+                        return this;
+                    }
+                    @Override public String getId() {
+                        return ClassAnnotationProcessorTest.this.getId(element);
+                    }
+                    @Override public <T extends Annotation> Optional<T> getAnnotation(
+                            Class<T> annotationClass) {
+                        return Optional.ofNullable(element.getAnnotation(annotationClass));
+                    }
+                };
+            }
+        };
     }
 
     String getId(Class<?> element) {

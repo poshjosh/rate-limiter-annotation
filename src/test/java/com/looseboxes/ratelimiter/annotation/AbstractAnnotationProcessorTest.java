@@ -13,7 +13,7 @@ public abstract class AbstractAnnotationProcessorTest<S extends GenericDeclarati
 
     List<Class<?>> findClasses() {
         String packageName = this.getClass().getPackage().getName();
-        return ClassesInPackageFinder.of().findClasses(packageName, clazz -> true);
+        return ClassesInPackageFinder.ofDefaults().findClasses(packageName, clazz -> true);
     }
 
     void assertHasChildrenHavingNames(Node<NodeValue<Rates>> parent, S... classes) {

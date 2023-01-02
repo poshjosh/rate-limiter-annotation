@@ -1,11 +1,8 @@
 package com.looseboxes.ratelimiter.annotation;
 
-import java.io.Serializable;
 import java.util.Objects;
 
-public final class NodeValue<V> implements Serializable {
-
-    private static final long serialVersionUID = 40L;
+public final class NodeValue<V> {
 
     public static <T> NodeValue<T> of(Object source, T value) {
         return new NodeValue<>(source, value);
@@ -35,7 +32,7 @@ public final class NodeValue<V> implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        NodeValue nodeValue = (NodeValue) o;
+        NodeValue<V> nodeValue = (NodeValue<V>) o;
         return source.equals(nodeValue.source) && value.equals(nodeValue.value);
     }
 

@@ -68,8 +68,12 @@ public final class Rate {
         this.factoryClass = Objects.requireNonNull(factoryClass);
     }
 
-    public Rate limit(long limit) {
-        this.setPermits(limit);
+    public boolean isSet() {
+        return permits > 0 && duration != null;
+    }
+
+    public Rate permits(long permits) {
+        this.setPermits(permits);
         return this;
     }
 

@@ -7,10 +7,14 @@ import com.looseboxes.ratelimiter.node.Node;
 import java.lang.reflect.Method;
 import java.util.function.Predicate;
 
-final class MethodAnnotationProcessor<T> extends AbstractAnnotationProcessor<Method, T> {
+class MethodAnnotationProcessor<T> extends AbstractAnnotationProcessor<Method, T> {
 
-    MethodAnnotationProcessor(IdProvider<Method, String> idProvider, Converter<T> converter) {
-        super(idProvider, converter);
+    MethodAnnotationProcessor(Converter<T> converter) {
+        super(converter);
+    }
+
+    @Override protected Element toElement(String id, Method element) {
+        return Element.of(id == null || id.isEmpty() ? ElementId.of(element) : id, element);
     }
 
     @Override

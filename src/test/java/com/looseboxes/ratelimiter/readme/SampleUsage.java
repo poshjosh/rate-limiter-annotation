@@ -30,7 +30,7 @@ public class SampleUsage {
 
     public static void main(String... args) {
 
-        ResourceLimiter resourceLimiter = ResourceLimiterFromAnnotationFactory.of().create(RateLimitedResource.class);
+        ResourceLimiter resourceLimiter = ResourceLimiterFromAnnotationFactory.ofDefaults().create(RateLimitedResource.class);
 
         RateLimitedResource rateLimitedResource = new RateLimitedResource(resourceLimiter);
 

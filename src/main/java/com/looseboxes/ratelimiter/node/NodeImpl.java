@@ -16,26 +16,23 @@
 
 package com.looseboxes.ratelimiter.node;
 
-import java.io.Serializable;
 import java.util.*;
 import java.util.function.*;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 13, 2017 3:36:07 PM
  */
-public class NodeImpl<V> implements Node<V>, Serializable {
-
-    private static final long serialVersionUID = 30L;
+final class NodeImpl<V> implements Node<V> {
 
     private final String name;
     
     private final V value;
     
-    private Node<V> parent;
+    private final Node<V> parent;
     
     private final List<Node<V>> children;
 
-    public NodeImpl(String name, V value, Node<V> parent) {
+    NodeImpl(String name, V value, Node<V> parent) {
         this.name = Objects.requireNonNull(name);
         this.value = value;
         this.parent = parent;
@@ -65,6 +62,12 @@ public class NodeImpl<V> implements Node<V>, Serializable {
         }
     }
 
+    @Override
+    public void visitAll(Consumer<Node<V>> consumer) {
+        new BreadthFirstNodeVisitor<>(consumer).accept(this);
+    }
+
+    @Override
     public Node<V> copyTo(Node<V> parent) {
         final Node<V> newNode = Node.of(name, value, parent);
         children.forEach(child -> child.copyTo(newNode));

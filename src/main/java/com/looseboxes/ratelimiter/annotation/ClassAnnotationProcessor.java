@@ -7,25 +7,33 @@ import com.looseboxes.ratelimiter.node.Node;
 import java.lang.reflect.Method;
 import java.util.*;
 
-final class ClassAnnotationProcessor<T> extends AbstractAnnotationProcessor<Class<?>, T> {
+class ClassAnnotationProcessor<T> extends AbstractAnnotationProcessor<Class<?>, T> {
 
     private final AnnotationProcessor<Method, T> methodAnnotationProcessor;
 
+    ClassAnnotationProcessor(AnnotationProcessor.Converter<T> converter) {
+        this(converter, new MethodAnnotationProcessor<>(converter));
+    }
+
     ClassAnnotationProcessor(
-            IdProvider<Class<?>, String> idProvider,
             AnnotationProcessor.Converter<T> converter,
             AnnotationProcessor<Method, T> methodAnnotationProcessor) {
-        super(idProvider, converter);
+        super(converter);
         this.methodAnnotationProcessor = Objects.requireNonNull(methodAnnotationProcessor);
+    }
+
+    @Override
+    protected Element toElement(String id, Class<?> element) {
+        return Element.of(id == null || id.isEmpty() ? ElementId.of(element) : id, element);
     }
 
     // We override this here so we can process the class and its super classes
     @Override
-    public Node<NodeValue<T>> process(Node<NodeValue<T>> root, NodeConsumer<T> consumer, Class<?> element){
-        final List<Class<?>> superClasses = new ArrayList<>();
+    public Node<NodeValue<T>> process(Node<NodeValue<T>> root, NodeConsumer<T> consumer, Class<?> source){
+        final List<Element> superClasses = new ArrayList<>();
         final List<Node<NodeValue<T>>> superClassNodes = new ArrayList<>();
-        NodeConsumer<T> collectSuperClassNodes = (source, superClassNode) -> {
-            if(superClasses.contains((Class<?>)source)) {
+        NodeConsumer<T> collectSuperClassNodes = (element, superClassNode) -> {
+            if(superClasses.contains((Element)element)) {
                 superClassNodes.add(superClassNode);
             }
         };
@@ -33,24 +41,28 @@ final class ClassAnnotationProcessor<T> extends AbstractAnnotationProcessor<Clas
         Node<NodeValue<T>> classNode = null;
         do{
 
-            Node<NodeValue<T>> node = super.doProcess(root, collectSuperClassNodes.andThen(consumer), element);
+            Node<NodeValue<T>> node = super.doProcess(root, collectSuperClassNodes.andThen(consumer), source);
 
             final boolean mainNode = classNode == null;
 
             // If not main node, then it is a super class node, in which case we do not attach
             // the super class node to the root by passing in null as its parent
             // We will transfer all method nodes from each super class node to the main node
-            processMethods(mainNode ? root : null, element, consumer);
+            processMethods(mainNode ? root : null, source, consumer);
 
             if(mainNode) { // The first successfully processed node is the base class
                 classNode = node;
             }else{
-                superClasses.add(element);
+                if (node != null) {
+                    node.getValueOptional().ifPresent(nodeValue -> {
+                        superClasses.add((Element)nodeValue.getSource());
+                    });
+                }
             }
 
-            element = element.getSuperclass();
+            source = source.getSuperclass();
 
-        }while(element != null && !element.equals(Object.class));
+        }while(source != null && !source.equals(Object.class));
 
         transferMethodNodesFromSuperClassNodes(classNode, superClassNodes);
 

@@ -1,15 +1,18 @@
 package com.looseboxes.ratelimiter.util;
 
+import com.looseboxes.ratelimiter.BandwidthFactory;
+
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public final class Rates {
 
     public static Rates of(Rate... limits) {
-        return of().limits(limits);
+        return ofDefaults().limits(limits);
     }
 
-    public static Rates of() {
+    public static Rates ofDefaults() {
         return new Rates();
     }
 
@@ -36,14 +39,6 @@ public final class Rates {
     private Operator operator = Operator.OR;
 
     /**
-     * A single limit. Added for convenience. Either set this or {@link #limits} but not both.
-     * @see #limits
-     */
-    // The naming of this variable is part of this class'  contract. Do not arbitrarily rename
-    //
-    private Rate limit;
-
-    /**
      * Multiple limits. Either set this or {@link #limit} but not both.
      * @see #limit
      */
@@ -52,6 +47,14 @@ public final class Rates {
     // an additional single limit field.
     //
     private List<Rate> limits = Collections.emptyList();
+
+    /**
+     * A single limit. Added for convenience. Either set this or {@link #limits} but not both.
+     * @see #limits
+     */
+    // The naming of this variable is part of this class'  contract. Do not arbitrarily rename
+    //
+    private Rate limit;
 
     // A public no-argument constructor is required
     public Rates() { }
@@ -87,19 +90,6 @@ public final class Rates {
         this.operator = operator;
     }
 
-    public Rates limit(Rate limit) {
-        setLimit(limit);
-        return this;
-    }
-
-    public Rate getLimit() {
-        return limit;
-    }
-
-    public void setLimit(Rate limit) {
-        this.limit = limit;
-    }
-
     public Rates limits(Rate... limits) {
         setLimits(Arrays.asList(limits));
         return this;
@@ -112,15 +102,60 @@ public final class Rates {
 
     public List<Rate> getLimits() {
         if (limit != null) {
+
             // We wrap any possibly unmodifiable instance in our own modifiable wrapper
             limits = limits == null ? new ArrayList<>() : new ArrayList<>(limits);
-            limits.add(limit);
+
+            // In springframework, the single limit was added twice to the limits array.
+            // To prevent this, we check if the limits array already contains the single limit.
+            if (!limits.contains(limit)) {
+                limits.add(limit);
+            }
         }
         return limits;
     }
 
     public void setLimits(List<Rate> limits) {
         this.limits = limits;
+    }
+
+
+    // Rate related properties
+    //
+    public long getPermits() {
+        return limit == null ? 0 : limit.getPermits();
+    }
+
+    public void setPermits(long permits) {
+        if (limit == null) {
+            limit = Rate.of(permits, Duration.ZERO);
+            return;
+        }
+        limit.setPermits(permits);
+    }
+
+    public Duration getDuration() {
+        return limit == null ? null : limit.getDuration();
+    }
+
+    public void setDuration(Duration duration) {
+        if(limit == null) {
+            limit = Rate.of(0, duration);
+            return;
+        }
+        limit.setDuration(duration);
+    }
+
+    public Class<? extends BandwidthFactory> getFactoryClass() {
+        return limit == null ? null : limit.getFactoryClass();
+    }
+
+    public void setFactoryClass(Class<? extends BandwidthFactory> factoryClass) {
+        if(limit == null) {
+            limit = Rate.of(0, Duration.ZERO, factoryClass);
+            return;
+        }
+        limit.setFactoryClass(factoryClass);
     }
 
     @Override

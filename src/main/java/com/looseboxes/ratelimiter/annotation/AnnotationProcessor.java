@@ -7,7 +7,6 @@ import com.looseboxes.ratelimiter.util.Operator;
 import com.looseboxes.ratelimiter.util.Rates;
 
 import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -34,25 +33,11 @@ public interface AnnotationProcessor<S extends GenericDeclaration, T> {
     }
 
     static AnnotationProcessor<Class<?>, Rates> ofRates() {
-        return ofRates(IdProvider.ofClass(), IdProvider.ofMethod());
-    }
-
-    static AnnotationProcessor<Class<?>, Rates> ofRates(
-            IdProvider<Class<?>, String> idProviderForClass, IdProvider<Method, String> idProviderForMethod) {
-        return of(idProviderForClass, idProviderForMethod, new AnnotationToRatesConverter());
+        return of(new AnnotationToRatesConverter());
     }
 
     static <T> AnnotationProcessor<Class<?>, T> of(Converter<T> converter) {
-        return new ClassAnnotationProcessor<>(IdProvider.ofClass(), converter,
-                new MethodAnnotationProcessor<>(IdProvider.ofMethod(), converter));
-    }
-
-    static <T> AnnotationProcessor<Class<?>, T> of(
-            IdProvider<Class<?>, String> idProviderForClass,
-            IdProvider<Method, String> idProviderForMethod,
-            Converter<T> converter) {
-        return new ClassAnnotationProcessor<>(idProviderForClass, converter,
-                new MethodAnnotationProcessor<>(idProviderForMethod, converter));
+        return new ClassAnnotationProcessor<>(converter);
     }
 
     default void processAll(Node<NodeValue<T>> root, S... elements) {

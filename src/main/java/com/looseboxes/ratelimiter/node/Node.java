@@ -19,6 +19,7 @@ package com.looseboxes.ratelimiter.node;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -45,6 +46,20 @@ public interface Node<V> {
     static <T> Node<T> of(String name, T value, Node<T> parent) {
         return new NodeImpl(name, value, parent);
     }
+
+    void visitAll(Consumer<Node<V>> consumer);
+
+    /**
+     * Copy a transformed version of this node and it's children onto the specified parent.
+     *
+     * @param newParent The parent to copy a transformed version of this node and it's children to
+     * @param nameConverter The converter which will be applied to produce a new name for each node in this tree
+     * @param valueConverter The converter which will be applied to produce a new value for each node in this tree
+     * @param <T> The type of the value of the transformed copy
+     * @return The transformed copy of this node
+     * @see #transform(Node, BiFunction)
+     */
+    <T> Node<T> transform(Node<T> newParent, BiFunction<String, V, String> nameConverter, BiFunction<String, V, T> valueConverter);
 
     /**
      * Copy this node and it's children onto the specified parent.
@@ -80,18 +95,6 @@ public interface Node<V> {
     default <T> Node<T> transform(BiFunction<String, V, String> nameConverter, BiFunction<String, V, T> valueConverter) {
         return transform(Node.of(getName()), nameConverter, valueConverter);
     }
-
-    /**
-     * Copy a transformed version of this node and it's children onto the specified parent.
-     *
-     * @param newParent The parent to copy a transformed version of this node and it's children to
-     * @param nameConverter The converter which will be applied to produce a new name for each node in this tree
-     * @param valueConverter The converter which will be applied to produce a new value for each node in this tree
-     * @param <T> The type of the value of the transformed copy
-     * @return The transformed copy of this node
-     * @see #transform(Node, BiFunction)
-     */
-    <T> Node<T> transform(Node<T> newParent, BiFunction<String, V, String> nameConverter, BiFunction<String, V, T> valueConverter);
 
     default boolean isRoot() {
         return getParentOrDefault(null) == null;

@@ -11,6 +11,8 @@ import java.util.concurrent.TimeUnit;
 @Target({ElementType.TYPE, ElementType.METHOD})
 public @interface RateLimit {
 
+    String name() default "";
+
     long permits() default Long.MAX_VALUE;
 
     long duration() default 0;

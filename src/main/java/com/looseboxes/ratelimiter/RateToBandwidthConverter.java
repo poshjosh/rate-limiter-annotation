@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface RateToBandwidthConverter{
 
-    static RateToBandwidthConverter of() {
+    static RateToBandwidthConverter ofDefaults() {
         return (rate, nowMicros) -> {
             BandwidthFactory factory = BandwidthFactories.getOrCreateBandwidthFactory(rate.getFactoryClass());
             return factory.createNew(rate.getPermits(), rate.getDuration(), nowMicros);

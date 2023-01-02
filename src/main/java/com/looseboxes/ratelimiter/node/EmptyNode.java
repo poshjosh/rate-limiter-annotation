@@ -4,11 +4,15 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
-public final class EmptyNode<V> implements Node<V>{
+final class EmptyNode<V> implements Node<V>{
 
     EmptyNode() {}
+
+    @Override
+    public void visitAll(Consumer<Node<V>> consumer) {}
 
     @Override
     public <T> Node<T> transform(Node<T> newParent, BiFunction<String, V, String> nameConverter, BiFunction<String, V, T> valueConverter) {

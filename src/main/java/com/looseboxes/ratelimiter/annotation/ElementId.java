@@ -2,10 +2,11 @@ package com.looseboxes.ratelimiter.annotation;
 
 import java.lang.reflect.Method;
 
-/**
- * Provide a name to identify a method
- */
-final class MethodNameProvider implements IdProvider<Method, String>{
+public final class ElementId {
+    private ElementId() { }
+    public static String of(Class<?> clazz) {
+        return clazz.getName();
+    }
 
     /**
      * Identify a method.
@@ -29,8 +30,7 @@ final class MethodNameProvider implements IdProvider<Method, String>{
      * @param method The method whose ID is to be returned
      * @return An identifier for the specified method
      */
-    @Override
-    public String getId(Method method) {
+    public static String of(Method method) {
         final String methodString = method.toString();
         final int indexOfClassName = methodString.indexOf(method.getDeclaringClass().getName());
         if(indexOfClassName == -1) {
