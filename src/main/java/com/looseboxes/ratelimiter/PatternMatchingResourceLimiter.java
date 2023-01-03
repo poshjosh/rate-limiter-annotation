@@ -1,7 +1,6 @@
 package com.looseboxes.ratelimiter;
 
 import com.looseboxes.ratelimiter.annotation.NodeValue;
-import com.looseboxes.ratelimiter.bandwidths.Bandwidths;
 import com.looseboxes.ratelimiter.cache.RateCache;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.util.Matcher;
@@ -52,7 +51,7 @@ public final class PatternMatchingResourceLimiter<V, R> implements ResourceLimit
     }
 
     @Override
-    public ResourceLimiter<R> cache(RateCache<?, Bandwidths> cache) {
+    public ResourceLimiter<R> cache(RateCache<?> cache) {
         Objects.requireNonNull(cache);
         Map<Node<NodeValue<V>>, ResourceLimiter<?>> map = new HashMap<>();
         visitNodes(false, node -> {
