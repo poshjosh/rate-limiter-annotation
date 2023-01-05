@@ -1,6 +1,6 @@
 package com.looseboxes.ratelimiter.annotation;
 
-import com.looseboxes.ratelimiter.annotations.RateLimit;
+import com.looseboxes.ratelimiter.annotations.Rate;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -14,7 +14,7 @@ import java.util.Set;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class RateLimitProcessor extends AbstractProcessor {
 
-    public static final String ANNOTATION_CLASS_NAME = "com.looseboxes.ratelimiter.annotations.RateLimit";
+    public static final String ANNOTATION_CLASS_NAME = "com.looseboxes.ratelimiter.annotations.Rate";
 
     private Messager messager;
 
@@ -34,12 +34,12 @@ public class RateLimitProcessor extends AbstractProcessor {
 
             annotatedElements.forEach(annotatedElement ->{
 
-                RateLimit rateLimit = annotatedElement.getAnnotation(RateLimit.class);
-                final long limit = rateLimit.permits();
+                Rate rate = annotatedElement.getAnnotation(Rate.class);
+                final long limit = rate.permits();
                 if (limit < 0) {
                     messager.printMessage(Diagnostic.Kind.ERROR, "Must not be negative, permits: " + limit);
                 }
-                final long duration = rateLimit.duration();
+                final long duration = rate.duration();
                 if (duration < 0) {
                     messager.printMessage(Diagnostic.Kind.ERROR, "Must not be negative, duration: " + duration);
                 }

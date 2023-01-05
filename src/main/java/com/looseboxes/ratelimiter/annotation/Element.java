@@ -5,15 +5,14 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.Optional;
 
+/**
+ * An element that may be annotated. e.g a class or a method.
+ */
 public abstract class Element {
 
     static Element of(Class<?> element) {
-        return of(ElementId.of(element), element);
-    }
-
-    static Element of(String id, Class<?> element) {
-        Objects.requireNonNull(id);
         Objects.requireNonNull(element);
+        final String id = ElementId.of(element);
         return new Element() {
             @Override public Element getDeclarer() {
                 return this;
@@ -28,21 +27,13 @@ public abstract class Element {
     }
 
     static Element of(Method element) {
-        return of(ElementId.of(element), element);
-    }
-
-    static Element of(String id, Method element) {
-        return of(id, element, Element.of(element.getDeclaringClass()));
+        return of(element, Element.of(element.getDeclaringClass()));
     }
 
     static Element of(Method element, Element declaringElement) {
-        return of(ElementId.of(element), element, declaringElement);
-    }
-
-    static Element of(String id, Method element, Element declaringElement) {
-        Objects.requireNonNull(id);
         Objects.requireNonNull(element);
         Objects.requireNonNull(declaringElement);
+        final String id = ElementId.of(element);
         return new Element() {
             @Override public Element getDeclarer() {
                 return declaringElement;
@@ -71,13 +62,13 @@ public abstract class Element {
         };
     }
 
-    public boolean isOwnDeclarer() {
-        return getDeclarer() == this;
-    }
-
     public abstract Element getDeclarer();
     public abstract String getId();
     public abstract <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass);
+
+    public boolean isOwnDeclarer() {
+        return getDeclarer() == this;
+    }
 
     @Override public int hashCode() { return Objects.hashCode(getId()); }
     @Override public boolean equals(Object o) {

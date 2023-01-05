@@ -1,47 +1,44 @@
 package com.looseboxes.ratelimiter.annotation;
 
-import com.looseboxes.ratelimiter.annotations.RateLimit;
-import com.looseboxes.ratelimiter.annotations.RateLimitGroup;
+import com.looseboxes.ratelimiter.annotations.Rate;
+import com.looseboxes.ratelimiter.annotations.RateGroup;
 import com.looseboxes.ratelimiter.node.Node;
 
 import java.lang.reflect.Method;
 import java.util.*;
 
-class ClassAnnotationProcessor<T> extends AbstractAnnotationProcessor<Class<?>, T> {
+class ClassAnnotationProcessor extends AbstractAnnotationProcessor<Class<?>> {
 
-    private final AnnotationProcessor<Method, T> methodAnnotationProcessor;
+    private final AnnotationProcessor<Method> methodAnnotationProcessor;
 
-    ClassAnnotationProcessor(AnnotationProcessor.Converter<T> converter) {
-        this(converter, new MethodAnnotationProcessor<>(converter));
+    ClassAnnotationProcessor() {
+        this(new MethodAnnotationProcessor());
     }
 
-    ClassAnnotationProcessor(
-            AnnotationProcessor.Converter<T> converter,
-            AnnotationProcessor<Method, T> methodAnnotationProcessor) {
-        super(converter);
+    ClassAnnotationProcessor(AnnotationProcessor<Method> methodAnnotationProcessor) {
         this.methodAnnotationProcessor = Objects.requireNonNull(methodAnnotationProcessor);
     }
 
     @Override
-    protected Element toElement(String id, Class<?> element) {
-        return Element.of(id == null || id.isEmpty() ? ElementId.of(element) : id, element);
+    protected Element toElement(Class<?> element) {
+        return Element.of(element);
     }
 
     // We override this here so we can process the class and its super classes
     @Override
-    public Node<NodeValue<T>> process(Node<NodeValue<T>> root, NodeConsumer<T> consumer, Class<?> source){
+    public Node<RateConfig> process(Node<RateConfig> root, NodeConsumer consumer, Class<?> source){
         final List<Element> superClasses = new ArrayList<>();
-        final List<Node<NodeValue<T>>> superClassNodes = new ArrayList<>();
-        NodeConsumer<T> collectSuperClassNodes = (element, superClassNode) -> {
-            if(superClasses.contains((Element)element)) {
+        final List<Node<RateConfig>> superClassNodes = new ArrayList<>();
+        NodeConsumer collectSuperClassNodes = (element, superClassNode) -> {
+            if(!superClassNode.isEmpty() && superClasses.contains((Element)element)) {
                 superClassNodes.add(superClassNode);
             }
         };
 
-        Node<NodeValue<T>> classNode = null;
+        Node<RateConfig> classNode = null;
         do{
 
-            Node<NodeValue<T>> node = super.doProcess(root, collectSuperClassNodes.andThen(consumer), source);
+            Node<RateConfig> node = super.doProcess(root, collectSuperClassNodes.andThen(consumer), source);
 
             final boolean mainNode = classNode == null;
 
@@ -69,7 +66,7 @@ class ClassAnnotationProcessor<T> extends AbstractAnnotationProcessor<Class<?>, 
         return root;
     }
 
-    private void processMethods(Node<NodeValue<T>> root, Class<?> element, NodeConsumer<T> consumer) {
+    private void processMethods(Node<RateConfig> root, Class<?> element, NodeConsumer consumer) {
         Method[] methods = element.getDeclaredMethods();
         methodAnnotationProcessor.processAll(root, consumer, methods);
     }
@@ -80,12 +77,12 @@ class ClassAnnotationProcessor<T> extends AbstractAnnotationProcessor<Class<?>, 
      * @param classNode The receiving class
      * @param superClassNodes The giving class
      */
-    private void transferMethodNodesFromSuperClassNodes(Node<NodeValue<T>> classNode, List<Node<NodeValue<T>>> superClassNodes) {
+    private void transferMethodNodesFromSuperClassNodes(Node<RateConfig> classNode, List<Node<RateConfig>> superClassNodes) {
         if(classNode != null && !superClassNodes.isEmpty()) {
 
-            for(Node<NodeValue<T>> superClassNode : superClassNodes) {
+            for(Node<RateConfig> superClassNode : superClassNodes) {
 
-                List<Node<NodeValue<T>>> superClassMethodNodes = superClassNode.getChildren();
+                List<Node<RateConfig>> superClassMethodNodes = superClassNode.getChildren();
 
                 // Transfer method nodes from the super class
                 superClassMethodNodes.forEach(node -> node.copyTo(classNode));
@@ -94,9 +91,11 @@ class ClassAnnotationProcessor<T> extends AbstractAnnotationProcessor<Class<?>, 
     }
 
     @Override
-    protected Node<NodeValue<T>> getOrCreateParent(Node<NodeValue<T>> root, Class<?> element,
-                                                   RateLimitGroup rateLimitGroup, RateLimit[] rateLimits) {
-        Node<NodeValue<T>> node = findOrCreateNodeForRateLimitGroupOrNull(root, root, element, rateLimitGroup, rateLimits);
+    protected Node<RateConfig> getOrCreateParent(Node<RateConfig> root, Class<?> element,
+                                                   RateGroup rateGroup, Rate[] rates) {
+        Node<RateConfig> node = findOrCreateNodeForRateLimitGroupOrNull(root, root, element,
+                rateGroup,
+                rates);
         return node == null ? root : node;
     }
 }

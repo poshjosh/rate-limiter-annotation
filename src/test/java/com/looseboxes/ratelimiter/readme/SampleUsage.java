@@ -1,10 +1,8 @@
 package com.looseboxes.ratelimiter.readme;
 
 import com.looseboxes.ratelimiter.ResourceLimiter;
-import com.looseboxes.ratelimiter.annotation.ResourceLimiterFromAnnotationFactory;
-import com.looseboxes.ratelimiter.annotations.RateLimit;
-
-import java.util.concurrent.TimeUnit;
+import com.looseboxes.ratelimiter.annotation.ResourceLimiterFactory;
+import com.looseboxes.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
 
@@ -19,7 +17,7 @@ public class SampleUsage {
         }
 
         // Limited to 3 invocations every second
-        @RateLimit(permits = LIMIT, duration = 1)
+        @Rate(permits = LIMIT, duration = 1)
         void rateLimitedMethod() {
 
             if (!resourceLimiter.tryConsume("rateLimitedMethodId")) {
@@ -30,7 +28,7 @@ public class SampleUsage {
 
     public static void main(String... args) {
 
-        ResourceLimiter resourceLimiter = ResourceLimiterFromAnnotationFactory.ofDefaults().create(RateLimitedResource.class);
+        ResourceLimiter resourceLimiter = ResourceLimiterFactory.ofDefaults().create(RateLimitedResource.class);
 
         RateLimitedResource rateLimitedResource = new RateLimitedResource(resourceLimiter);
 

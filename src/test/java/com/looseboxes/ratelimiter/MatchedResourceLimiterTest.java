@@ -1,24 +1,26 @@
 package com.looseboxes.ratelimiter;
 
-import com.looseboxes.ratelimiter.annotation.NodeValue;
-import com.looseboxes.ratelimiter.annotation.ResourceLimiterFromAnnotationFactory;
-import com.looseboxes.ratelimiter.annotations.RateLimit;
-import com.looseboxes.ratelimiter.annotations.RateLimitGroup;
+import com.looseboxes.ratelimiter.annotation.AnnotationProcessor;
+import com.looseboxes.ratelimiter.annotation.RateConfig;
+import com.looseboxes.ratelimiter.annotations.Rate;
+import com.looseboxes.ratelimiter.annotations.RateGroup;
 import com.looseboxes.ratelimiter.bandwidths.Bandwidth;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.util.Operator;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
-class PatternMatchingResourceLimiterTest {
+class MatchedResourceLimiterTest {
 
     final Object key = "one";
 
-    @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass0{ }
 
     @Test
@@ -29,7 +31,7 @@ class PatternMatchingResourceLimiterTest {
     }
 
     static class RateLimitedClass1{
-        @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
+        @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
         void rateLimitedClass1_method_0() { }
     }
 
@@ -40,9 +42,9 @@ class PatternMatchingResourceLimiterTest {
         assertFalse(resourceLimiter.tryConsume(key));
     }
 
-    @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass2{
-        @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
+        @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
         void rateLimitedClass2_method_0() { }
     }
 
@@ -53,9 +55,9 @@ class PatternMatchingResourceLimiterTest {
         assertFalse(resourceLimiter.tryConsume(key));
     }
 
-    @RateLimitGroup(operator = Operator.OR)
-    @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
-    @RateLimit(permits = 3, duration = 1, timeUnit = SECONDS)
+    @RateGroup(operator = Operator.OR)
+    @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 3, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass3{ }
 
     @Test
@@ -65,9 +67,9 @@ class PatternMatchingResourceLimiterTest {
         assertFalse(resourceLimiter.tryConsume(key));
     }
 
-    @RateLimitGroup(operator = Operator.AND)
-    @RateLimit(permits = 1, duration = 1, timeUnit = SECONDS)
-    @RateLimit(permits = 3, duration = 1, timeUnit = SECONDS)
+    @RateGroup(operator = Operator.AND)
+    @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 3, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass4{ }
 
     @Test
@@ -79,9 +81,9 @@ class PatternMatchingResourceLimiterTest {
         assertFalse(resourceLimiter.tryConsume(key));
     }
 
-    @RateLimit(permits = 10, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 10, duration = 1, timeUnit = SECONDS)
     static class RateLimitedClass5{
-        @RateLimit(permits = 10, duration = 1, timeUnit = SECONDS)
+        @Rate(permits = 10, duration = 1, timeUnit = SECONDS)
         void rateLimitedClass2_method_0() { }
     }
 
@@ -97,26 +99,37 @@ class PatternMatchingResourceLimiterTest {
 
     private ResourceLimiter<Object> buildRateLimiter(int expectedNodes, Class<?>... classes) {
 
-        Node<NodeValue<ResourceLimiter<Object>>> rateLimiterRootNode =
-                ResourceLimiterFromAnnotationFactory.ofDefaults().createNode(classes);
-        //System.out.println(NodeFormatters.indentedHeirarchy().format(rateLimiterRootNode));
+        Node<RateConfig> rootNode = Node.of("root");
 
-        assertEquals(expectedNodes, numberOfNodes(rateLimiterRootNode));
+        AnnotationProcessor.ofDefaults().processAll(rootNode, classes);
+        //System.out.println(NodeFormatter.indentedHeirarchy().format(rootNode));
 
-        PatternMatchingResourceLimiter.MatcherProvider<ResourceLimiter<Object>, Object> matcherProvider =
-                node -> key -> node.getName();
+        assertEquals(expectedNodes, numberOfNodes(rootNode));
 
-        PatternMatchingResourceLimiter.LimiterProvider<ResourceLimiter<Object>> limiterProvider =
-                node -> node.getValueOptional().map(NodeValue::getValue).orElse(ResourceLimiter.NO_OP);
+        MatchedResourceLimiter.MatcherProvider<Object> matcherProvider =
+                node -> key -> key + "--" + node.getName();
 
-        boolean firstMatchOnly = false; // false for annotations, true for properties
-        return new PatternMatchingResourceLimiter<>(
-                matcherProvider, limiterProvider, rateLimiterRootNode, firstMatchOnly);
+        MatchedResourceLimiter.LimiterProvider limiterProvider = this::getOrCreateLimiter;
+
+        return MatchedResourceLimiter.ofAnnotations(matcherProvider, limiterProvider, rootNode);
     }
 
     private int numberOfNodes(Node node) {
         final AtomicInteger count = new AtomicInteger();
         node.visitAll(currentNode -> count.incrementAndGet());
         return count.decrementAndGet(); // We subtract the root node
+    }
+
+    private Map<String, ResourceLimiter<Object>> nameToLimiter = new HashMap<>();
+    private ResourceLimiter<Object> getOrCreateLimiter(Node<RateConfig> node) {
+        return nameToLimiter.computeIfAbsent(node.getName(), k -> createLimiter(node));
+    }
+
+    private ResourceLimiter<Object> createLimiter(Node<RateConfig> node) {
+        return node.getValueOptional()
+                .map(RateConfig::getValue)
+                .map(rates -> RateToBandwidthConverter.ofDefaults().convert(rates))
+                .map(ResourceLimiter::of)
+                .orElse(ResourceLimiter.NO_OP);
     }
 }

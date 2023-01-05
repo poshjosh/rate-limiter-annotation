@@ -1,36 +1,33 @@
 package com.looseboxes.ratelimiter.annotation;
 
-import com.looseboxes.ratelimiter.annotations.RateLimit;
-import com.looseboxes.ratelimiter.annotations.RateLimitGroup;
+import com.looseboxes.ratelimiter.annotations.Rate;
+import com.looseboxes.ratelimiter.annotations.RateGroup;
 import com.looseboxes.ratelimiter.node.Node;
 import com.looseboxes.ratelimiter.node.NodeFormatter;
 import com.looseboxes.ratelimiter.util.Operator;
+import com.looseboxes.ratelimiter.util.Rates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.GenericDeclaration;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.TimeUnit;
 
-public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, T>
-        implements AnnotationProcessor<S, T>{
+public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration>
+        implements AnnotationProcessor<S>{
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractAnnotationProcessor.class);
 
-    private final Converter<T> converter;
+    protected abstract Node<RateConfig> getOrCreateParent(
+            Node<RateConfig> root, S element,
+            RateGroup rateGroup, Rate[] rates);
 
-    protected AbstractAnnotationProcessor(Converter<T> converter) {
-        this.converter = Objects.requireNonNull(converter);
-    }
-
-    protected abstract Node<NodeValue<T>> getOrCreateParent(
-            Node<NodeValue<T>> root, S element,
-            RateLimitGroup rateLimitGroup, RateLimit[] rateLimits);
-
-    protected abstract Element toElement(String id, S element);
+    protected abstract Element toElement(S element);
 
     @Override
-    public Node<NodeValue<T>> process(Node<NodeValue<T>> root, NodeConsumer<T> consumer, S element){
+    public Node<RateConfig> process(Node<RateConfig> root, NodeConsumer consumer, S element){
         doProcess(root, consumer, element);
         return root;
     }
@@ -38,25 +35,25 @@ public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, 
     /**
      * @return The processed node
      */
-    protected Node<NodeValue<T>> doProcess(Node<NodeValue<T>> root, NodeConsumer<T> consumer, S source){
+    protected Node<RateConfig> doProcess(Node<RateConfig> root, NodeConsumer consumer, S source){
 
-        final RateLimit [] rateLimits = source.getAnnotationsByType(RateLimit.class);
+        final Rate[] rates = source.getAnnotationsByType(Rate.class);
 
-        final Node<NodeValue<T>> node;
+        final Node<RateConfig> node;
 
-        final Element element = toElement(getName(rateLimits, source), source);
+        final Element element = toElement(source);
 
-        if(rateLimits.length > 0 ) {
+        if(rates.length > 0 ) {
 
-            RateLimitGroup rateLimitGroup = source.getAnnotation(RateLimitGroup.class);
-            Node<NodeValue<T>> createdParent = getOrCreateParent(root, source, rateLimitGroup, rateLimits);
+            RateGroup rateGroup = source.getAnnotation(RateGroup.class);
+            Node<RateConfig> createdParent = getOrCreateParent(root, source, rateGroup, rates);
 
-            Node<NodeValue<T>> parentNode = createdParent == null ? root : createdParent;
+            Node<RateConfig> parentNode = createdParent == null ? root : createdParent;
             String name = element.getId();
-            node = createNodeForElementOrNull(parentNode, name, element, rateLimitGroup, rateLimits);
+            node = createNodeForElementOrNull(parentNode, name, element, rateGroup, rates);
 
         }else{
-            node = null;
+            node = Node.empty();
         }
 
         if(LOG.isTraceEnabled()) {
@@ -68,47 +65,25 @@ public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, 
         return node;
     }
 
-    private String getName(RateLimit[] rateLimits, S source) {
-        if (rateLimits == null || rateLimits.length == 0) {
-            return "";
-        }
-        if (rateLimits.length == 1) {
-            return rateLimits[0].name();
-        }
-        return requireSameName(rateLimits, source);
-    }
-
-    private String requireSameName(RateLimit[] rateLimits, S source) {
-        Set<String> uniqueNames = Arrays.stream(rateLimits)
-                .map(RateLimit::name).collect(Collectors.toSet());
-        if (uniqueNames.size() > 1) {
-            throw new AnnotationProcessingException(
-                    "Multiple " + RateLimit.class.getSimpleName() +
-                    " annotations on a single node must resolve to only one unique name, found: " +
-                    uniqueNames + " at " + source);
-
-        }
-        return uniqueNames.iterator().next();
-    }
-
-    protected Node<NodeValue<T>> findOrCreateNodeForRateLimitGroupOrNull(
-            Node<NodeValue<T>> root, Node<NodeValue<T>> parent,
-            GenericDeclaration annotatedElement, RateLimitGroup rateLimitGroup, RateLimit [] rateLimits) {
-        String name = getName(rateLimitGroup);
-        final Node<NodeValue<T>> node;
-        if(root == null || rateLimitGroup == null || name.isEmpty()) {
+    protected Node<RateConfig> findOrCreateNodeForRateLimitGroupOrNull(
+            Node<RateConfig> root, Node<RateConfig> parent,
+            GenericDeclaration annotatedElement, RateGroup rateGroup, Rate[] rates) {
+        String name = getName(rateGroup);
+        final Node<RateConfig> node;
+        if(root == null || rateGroup == null || name.isEmpty()) {
             node = null;
         }else{
-            node = root.findFirstChild(n -> name.equals(n.getName()))
-                    .map(foundNode -> requireConsistentData(foundNode, annotatedElement, rateLimitGroup, rateLimits))
-                    .orElseGet(() -> createNodeForGroupOrNull(parent, name, rateLimitGroup, rateLimits));
+            node = root.findFirstChild(childNode -> name.equals(childNode.getName()))
+                    .map(foundNode -> requireConsistentData(foundNode, annotatedElement, rateGroup,
+                            rates))
+                    .orElseGet(() -> createNodeForGroupOrNull(parent, name, rateGroup, rates));
         }
 
         return node;
     }
 
-    private String getName(RateLimitGroup rateLimitGroup) {
-        return rateLimitGroup == null ? "" : selectFirstValidOrEmptyText(rateLimitGroup.name(), rateLimitGroup.value());
+    private String getName(RateGroup rateGroup) {
+        return rateGroup == null ? "" : selectFirstValidOrEmptyText(rateGroup.name(), rateGroup.value());
     }
 
     private String selectFirstValidOrEmptyText(String ...candidates) {
@@ -120,58 +95,102 @@ public abstract class AbstractAnnotationProcessor<S extends GenericDeclaration, 
         return "";
     }
 
-    private Node<NodeValue<T>> createNodeForGroupOrNull(
-            Node<NodeValue<T>> parentNode, String name,
-            RateLimitGroup rateLimitGroup, RateLimit [] rateLimits) {
-        if(rateLimits.length == 0) {
+    private Node<RateConfig> createNodeForGroupOrNull(
+            Node<RateConfig> parentNode, String name,
+            RateGroup rateGroup, Rate[] rates) {
+        if(rates.length == 0) {
             return null;
         }else{
-            return createGroupNode(parentNode, name, process(rateLimitGroup));
+            return createGroupNode(parentNode, name, process(rateGroup));
         }
     }
 
-    private Node<NodeValue<T>> createGroupNode(Node<NodeValue<T>> parent, String name, T value) {
-        return Node.of(name, NodeValue.of(Element.of(name), value), parent);
+    private Node<RateConfig> createGroupNode(Node<RateConfig> parent, String name, Rates value) {
+        return Node.of(name, RateConfig.of(Element.of(name), value), parent);
     }
 
-    protected Node<NodeValue<T>> createNodeForElementOrNull(
-            Node<NodeValue<T>> parentNode, String name, Element element,
-            RateLimitGroup rateLimitGroup, RateLimit [] rateLimits) {
+    protected Node<RateConfig> createNodeForElementOrNull(
+            Node<RateConfig> parentNode, String name, Element element,
+            RateGroup rateGroup, Rate[] rateLimits) {
         if(rateLimits.length == 0) {
-            return null;
+            return Node.empty();
         }else{
-            T limit = converter.convert(rateLimitGroup, rateLimits);
-            return Node.of(name, NodeValue.of(element, limit), parentNode);
+            final Rates rates = convert(rateGroup, rateLimits);
+            return Node.of(name, RateConfig.of(element, rates), parentNode);
         }
     }
 
-    private Node<NodeValue<T>> requireConsistentData(
-            Node<NodeValue<T>> rateLimitGroupNode, GenericDeclaration annotatedElement,
-            RateLimitGroup rateLimitGroup, RateLimit [] rateLimits) {
-        if(rateLimitGroup != null && rateLimits.length != 0) {
-            final Operator operator = operator(rateLimitGroup);
+    private Node<RateConfig> requireConsistentData(
+            Node<RateConfig> rateLimitGroupNode, GenericDeclaration annotatedElement,
+            RateGroup rateGroup, Rate[] rates) {
+        if(rateGroup != null && rates.length != 0) {
+            final Operator operator = operator(rateGroup);
             rateLimitGroupNode.getChildren().stream()
                     .map(childNode -> childNode.getValueOptional()
                             .orElseThrow(() -> new AnnotationProcessingException("Only the root node may have no value")))
-                    .map(NodeValue::getValue)
-                    .forEach(existing -> requireEqual(annotatedElement, rateLimitGroup, operator, existing));
+                    .map(RateConfig::getValue)
+                    .forEach(existing -> requireEqual(annotatedElement, rateGroup, operator, existing));
         }
 
         return rateLimitGroupNode;
     }
 
-    private Operator operator(RateLimitGroup rateLimitGroup) {
-        return rateLimitGroup == null ? AnnotationProcessor.DEFAULT_OPERATOR : rateLimitGroup.operator();
-    }
-
-    private void requireEqual(GenericDeclaration annotatedElement, RateLimitGroup rateLimitGroup, Operator lhs, T existing) {
-        if(!converter.isOperatorEqual(existing, lhs)) {
-            throw new AnnotationProcessingException("Found inconsistent operator, for " +
-                    rateLimitGroup + " declared at " + annotatedElement);
+    private void requireEqual(GenericDeclaration annotatedElement,
+            RateGroup rateGroup, Operator lhs, Rates existing) {
+        if(!existing.getOperator().equals(lhs)) {
+            throw new AnnotationProcessingException("Found inconsistent operator, for " + rateGroup
+                    + " declared at " + annotatedElement);
         }
     }
 
-    private T process(RateLimitGroup rateLimitGroup) {
-        return converter.convert(rateLimitGroup, new RateLimit[0]);
+    private Rates process(RateGroup rateGroup) {
+        return convert(rateGroup, new Rate[0]);
+    }
+
+    private Rates convert(RateGroup rateGroup, Rate[] rates) {
+        final Operator operator = operator(rateGroup);
+        if (rates.length == 0) {
+            return Rates.of(operator);
+        }
+        final com.looseboxes.ratelimiter.util.Rate[] configs = new com.looseboxes.ratelimiter.util.Rate[rates.length];
+        for (int i = 0; i < rates.length; i++) {
+            configs[i] = createRate(rates[i]);
+        }
+        return Rates.of(operator, configs);
+    }
+
+    private Operator operator(RateGroup rateGroup) {
+        return rateGroup == null ? AnnotationProcessor.DEFAULT_OPERATOR : rateGroup.operator();
+    }
+
+    private com.looseboxes.ratelimiter.util.Rate createRate(Rate rate) {
+        Duration duration = Duration.of(rate.duration(), toChronoUnit(rate.timeUnit()));
+        return com.looseboxes.ratelimiter.util.Rate.of(rate.permits(), duration, rate.factoryClass());
+    }
+
+    private ChronoUnit toChronoUnit(TimeUnit timeUnit) {
+        Objects.requireNonNull(timeUnit);
+        if(TimeUnit.NANOSECONDS.equals(timeUnit)) {
+            return ChronoUnit.NANOS;
+        }
+        if(TimeUnit.MICROSECONDS.equals(timeUnit)) {
+            return ChronoUnit.MICROS;
+        }
+        if(TimeUnit.MILLISECONDS.equals(timeUnit)) {
+            return ChronoUnit.MILLIS;
+        }
+        if(TimeUnit.SECONDS.equals(timeUnit)) {
+            return ChronoUnit.SECONDS;
+        }
+        if(TimeUnit.MINUTES.equals(timeUnit)) {
+            return ChronoUnit.MINUTES;
+        }
+        if(TimeUnit.HOURS.equals(timeUnit)) {
+            return ChronoUnit.HOURS;
+        }
+        if(TimeUnit.DAYS.equals(timeUnit)) {
+            return ChronoUnit.DAYS;
+        }
+        throw new IllegalArgumentException("Unexpected TimeUnit: " + timeUnit);
     }
 }

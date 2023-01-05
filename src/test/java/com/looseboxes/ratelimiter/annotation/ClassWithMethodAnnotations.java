@@ -1,20 +1,20 @@
 package com.looseboxes.ratelimiter.annotation;
 
-import com.looseboxes.ratelimiter.annotations.RateLimit;
-import com.looseboxes.ratelimiter.annotations.RateLimitGroup;
+import com.looseboxes.ratelimiter.annotations.Rate;
+import com.looseboxes.ratelimiter.annotations.RateGroup;
 import com.looseboxes.ratelimiter.util.Operator;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 public class ClassWithMethodAnnotations {
     public class MethodGroupOnlyAnon {
-        @RateLimit(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-        @RateLimit(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+        @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+        @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
         void anon() { }
     }
 
-    @RateLimitGroup(name = "Fire", operator = Operator.AND)
-    @RateLimit(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-    @RateLimit(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+    @RateGroup(name = "Fire", operator = Operator.AND)
+    @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+    @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
     void fire() { }
 }

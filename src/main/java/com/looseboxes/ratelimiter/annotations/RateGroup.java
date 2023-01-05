@@ -7,7 +7,7 @@ import java.lang.annotation.*;
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-public @interface RateLimitGroup {
+public @interface RateGroup {
 
     /** Alias for value() */
     String name() default "";

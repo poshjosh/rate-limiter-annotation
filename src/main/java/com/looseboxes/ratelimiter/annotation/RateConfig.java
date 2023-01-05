@@ -1,30 +1,28 @@
 package com.looseboxes.ratelimiter.annotation;
 
+import com.looseboxes.ratelimiter.util.Rates;
+
 import java.util.Objects;
 
-public final class NodeValue<V> {
+public final class RateConfig {
 
-    public static <T> NodeValue<T> of(Object source, T value) {
-        return new NodeValue<>(source, value);
+    public static  RateConfig of(Object source, Rates value) {
+        return new RateConfig(source, value);
     }
 
     private final Object source;
-    private final V value;
+    private final Rates value;
 
-    private NodeValue(Object source, V value) {
+    private RateConfig(Object source, Rates value) {
         this.source = Objects.requireNonNull(source);
         this.value = Objects.requireNonNull(value);
-    }
-
-    public <T> NodeValue<T> withValue(T value) {
-        return new NodeValue<>(this.source, value);
     }
 
     public Object getSource() {
         return source;
     }
 
-    public V getValue() {
+    public Rates getValue() {
         return value;
     }
 
@@ -32,8 +30,8 @@ public final class NodeValue<V> {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        NodeValue<V> nodeValue = (NodeValue<V>) o;
-        return source.equals(nodeValue.source) && value.equals(nodeValue.value);
+        RateConfig rateConfig = (RateConfig) o;
+        return source.equals(rateConfig.source) && value.equals(rateConfig.value);
     }
 
     @Override
@@ -42,6 +40,6 @@ public final class NodeValue<V> {
     }
 
     @Override public String toString() {
-        return "NodeValue{" + "source=" + source.getClass().getSimpleName() + ", value=" + value + '}';
+        return "RateConfig{" + "source=" + source.getClass().getSimpleName() + ", value=" + value + '}';
     }
 }

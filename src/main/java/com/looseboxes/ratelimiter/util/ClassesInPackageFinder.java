@@ -20,6 +20,10 @@ public interface ClassesInPackageFinder {
         return new DefaultClassesInPackageFinder(classLoader);
     }
 
+    default List<Class<?>> findClasses(List<String> packageNames) {
+        return findClasses(packageNames, clazz -> true);
+    }
+
     default List<Class<?>> findClasses(List<String> packageNames, ClassFilter classFilter) {
         Objects.requireNonNull(classFilter);
         return packageNames.isEmpty() ? Collections.emptyList() : packageNames.stream()

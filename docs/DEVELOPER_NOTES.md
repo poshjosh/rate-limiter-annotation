@@ -14,10 +14,10 @@ We can thus:
 - Create rate limit groups that do not adhere to single-class-contains-one-or-more-methods paradigm.
   For example a rate limit group could span the methods of multiple classes.
 
-__Why not simply add a `group` field to the `@RateLimit` annotation, instead of having a
-separate `@RateLimitGroup` annotation?__
+__Why not simply add a `group` field to the `@Rate` annotation, instead of having a
+separate `@RateGroup` annotation?__
 
-A `@RateLimitGroup` has an `operator` field. Adding this to the `@RateLimit` annotation means 
-that 2 `@RateLimit` annotations on a single class could have different operators.
+A `@RateGroup` has an `operator` field. Adding this to the `@Rate` annotation means 
+that 2 `@Rate` annotations on a single class could have different operators.
 
 

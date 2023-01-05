@@ -10,18 +10,18 @@ For flexibility, this library offers a robust support for annotations.
 
 ```java
 // All methods collectively limited to 120 invocations every 1 minute
-@RateLimit(limit = 120, duration = 1, timeUnit = TimeUnit.MINUTES)
+@Rate(limit = 120, duration = 1, timeUnit = TimeUnit.MINUTES)
 class RateLimitedResource {
 
     // Method limited to 3 invocations every 2 seconds OR 100 invocations every 1 minute
-    @RateLimit(limit = 3, duration = 2000)
-    @RateLimit(limit = 100, duration = 1, timeUnit = TimeUnit.MINUTES)
+    @Rate(limit = 3, duration = 2000)
+    @Rate(limit = 100, duration = 1, timeUnit = TimeUnit.MINUTES)
     void rateLimitedMethod_1() {
         return "Hello World 1!";
     }
 
     // Method limited to 3 invocations every 1 second
-    @RateLimit(limit = 3, duration = 1000)
+    @Rate(limit = 3, duration = 1000)
     void rateLimitedMethod_2() {
         return "Hello World 2!";
     }
@@ -32,46 +32,47 @@ class RateLimitedResource {
 
 ```java
 
-import com.looseboxes.ratelimiter.annotation.ResourceLimiterFromAnnotationFactory;
+import com.looseboxes.ratelimiter.annotation.ResourceLimiterFactory;
 
 public class SampleUsage {
 
-  static final int LIMIT = 3;
+    static final int LIMIT = 3;
 
-  static class RateLimitedResource {
+    static class RateLimitedResource {
 
-    final ResourceLimiter resourceLimiter;
+        final ResourceLimiter resourceLimiter;
 
-    RateLimitedResource(ResourceLimiter resourceLimiter) {
-      this.resourceLimiter = resourceLimiter;
+        RateLimitedResource(ResourceLimiter resourceLimiter) {
+            this.resourceLimiter = resourceLimiter;
+        }
+
+        // Limited to 3 invocations every second
+        void rateLimitedMethod() {
+
+            if (!resourceLimiter.tryConsume("rateLimitedMethodId")) {
+                throw new RuntimeException("Limit exceeded");
+            }
+        }
     }
 
-    // Limited to 3 invocations every second
-    void rateLimitedMethod() {
+    public static void main(String... args) {
 
-      if (!resourceLimiter.tryConsume("rateLimitedMethodId")) {
-        throw new RuntimeException("Limit exceeded");
-      }
+        ResourceLimiter resourceLimiter = ResourceLimiterFactory.ofDefaults()
+                .create(RateLimitedResource.class);
+
+        RateLimitedResource rateLimitedResource = new RateLimitedResource(resourceLimiter);
+
+        int i = 0;
+        for (; i < LIMIT; i++) {
+
+            System.out.println("Invocation " + i + " of " + LIMIT);
+            rateLimitedResource.rateLimitedMethod();
+        }
+
+        System.out.println("Invocation " + i + " of " + LIMIT + " should fail");
+        // Should fail
+        rateLimitedResource.rateLimitedMethod();
     }
-  }
-
-  public static void main(String... args) {
-
-    ResourceLimiter resourceLimiter = ResourceLimiterFromAnnotationFactory.ofDefaults().create(RateLimitedResource.class);
-
-    RateLimitedResource rateLimitedResource = new RateLimitedResource(resourceLimiter);
-
-    int i = 0;
-    for (; i < LIMIT; i++) {
-
-      System.out.println("Invocation " + i + " of " + LIMIT);
-      rateLimitedResource.rateLimitedMethod();
-    }
-
-    System.out.println("Invocation " + i + " of " + LIMIT + " should fail");
-    // Should fail
-    rateLimitedResource.rateLimitedMethod();
-  }
 }
 ```
 

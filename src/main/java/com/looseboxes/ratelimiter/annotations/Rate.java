@@ -5,11 +5,11 @@ import com.looseboxes.ratelimiter.BandwidthFactory;
 import java.lang.annotation.*;
 import java.util.concurrent.TimeUnit;
 
-@Repeatable(RateLimit.List.class)
+@Repeatable(Rate.List.class)
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.METHOD})
-public @interface RateLimit {
+public @interface Rate {
 
     String name() default "";
 
@@ -32,6 +32,6 @@ public @interface RateLimit {
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ElementType.TYPE, ElementType.METHOD})
     @interface List {
-        RateLimit[] value();
+        Rate[] value();
     }
 }

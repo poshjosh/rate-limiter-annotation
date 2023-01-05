@@ -26,9 +26,7 @@ final class DefaultClassesInPackageFinder implements ClassesInPackageFinder{
     @Override
     public List<Class<?>> findClasses(String packageName, ClassFilter classFilter) {
         try{
-            List<Class<?>> classes = Collections.unmodifiableList(getClasses(packageName, classFilter));
-            LOG.debug("Package: {}, classes: {}", packageName, classes);
-            return classes;
+            return Collections.unmodifiableList(doFindClasses(packageName, classFilter));
         }catch(IOException | ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -46,14 +44,10 @@ final class DefaultClassesInPackageFinder implements ClassesInPackageFinder{
      * @throws ClassNotFoundException if something went wrong
      * @throws IOException
      */
-    private List<Class<?>> getClasses(String packageName, ClassFilter classFilter) 
+    private List<Class<?>> doFindClasses(String packageName, ClassFilter classFilter)
             throws ClassNotFoundException, IOException {
         
         final ArrayList<Class<?>> classes = new ArrayList<>();
-
-        if (classLoader == null) {
-            throw new ClassNotFoundException("Can't get class loader.");
-        }
 
         final Enumeration<URL> resources = classLoader.getResources(packageName.replace('.', '/'));
 

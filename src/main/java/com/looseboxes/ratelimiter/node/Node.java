@@ -28,6 +28,13 @@ import java.util.function.Predicate;
  */
 public interface Node<V> {
 
+    Node<Object> EMPTY = new EmptyNode<>();
+
+    @SuppressWarnings("unchecked")
+    static <T> Node<T> empty() {
+        return (Node<T>)EMPTY;
+    }
+
     static <T> Node<T> of(String name) {
         return of(name, null);
     }
@@ -53,6 +60,10 @@ public interface Node<V> {
      * @see #transform(Node, Function)
      */
     <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter);
+
+    default boolean isEmpty() {
+        return this == EMPTY;
+    }
 
     /**
      * Copy this node and it's children onto the specified parent.
