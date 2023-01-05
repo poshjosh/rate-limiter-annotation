@@ -3,7 +3,7 @@ package com.looseboxes.ratelimiter.util;
 import java.util.Objects;
 
 @FunctionalInterface
-public interface Matcher<T, R> {
+public interface Matcher<I, O> {
 
     Matcher<Object, Object> MATCH_NONE = target -> null;
     Matcher<Object, Object> IDENTITY = target -> target;
@@ -18,11 +18,11 @@ public interface Matcher<T, R> {
         return (Matcher<T, K>)IDENTITY;
     }
 
-    default boolean matches(T target) {
+    default boolean matches(I target) {
         return matchOrNull(target) != null;
     }
 
-    R matchOrNull(T target);
+    O matchOrNull(I target);
 
     /**
      * Returns a composed {@code Matcher} that performs, in sequence, this
@@ -36,15 +36,15 @@ public interface Matcher<T, R> {
      * operation followed by the {@code after} operation
      * @throws NullPointerException if {@code after} is null
      */
-    default Matcher<T, R> andThen(Matcher<? super T, ? super R> after) {
+    default Matcher<I, O> andThen(Matcher<? super I, ? super O> after) {
         Objects.requireNonNull(after);
-        return (T t) -> {
-            R result = matchOrNull(t);
+        return (I t) -> {
+            O result = matchOrNull(t);
             // If there was no match, do not continue
             if(result == null) {
                 return result;
             }
-            return (R)after.matchOrNull(t);
+            return (O)after.matchOrNull(t);
         };
     }
 }
