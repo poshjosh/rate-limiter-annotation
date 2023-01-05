@@ -9,18 +9,18 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class ClassWithClassAnnotations {
 
     @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-    @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+    @Rate(permits = 10, timeUnit = MILLISECONDS)
     public class ClassGroupOnlyAnon { }
 
     //    @RateGroup("Fire")
     @RateGroup(name = "Fire", operator = Operator.AND)
     @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-    @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+    @Rate(permits = 10, timeUnit = MILLISECONDS)
     public class ClassGroupOnlyNamedFire { }
 
     public class ClassWithInternalClass {
         @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-        @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+        @Rate(permits = 10, timeUnit = MILLISECONDS)
         public class InternalClass{ }
     }
 
@@ -29,10 +29,10 @@ public class ClassWithClassAnnotations {
 
     @RateGroup(name = "Fire", operator = Operator.AND)
     @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-    @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+    @Rate(permits = 10, timeUnit = MILLISECONDS)
     public class SecondClassGroupOnlyNamedFire { }
 
     @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-    @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+    @Rate(permits = 10, timeUnit = MILLISECONDS)
     class PrivateClass{ }
 }

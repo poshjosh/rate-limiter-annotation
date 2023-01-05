@@ -10,18 +10,18 @@ For flexibility, this library offers a robust support for annotations.
 
 ```java
 // All methods collectively limited to 120 invocations every 1 minute
-@Rate(limit = 120, duration = 1, timeUnit = TimeUnit.MINUTES)
+@Rate(permits = 120, timeUnit = TimeUnit.MINUTES)
 class RateLimitedResource {
 
     // Method limited to 3 invocations every 2 seconds OR 100 invocations every 1 minute
-    @Rate(limit = 3, duration = 2000)
-    @Rate(limit = 100, duration = 1, timeUnit = TimeUnit.MINUTES)
+    @Rate(permits = 3, duration = 2)
+    @Rate(permits = 100, timeUnit = TimeUnit.MINUTES)
     void rateLimitedMethod_1() {
         return "Hello World 1!";
     }
 
     // Method limited to 3 invocations every 1 second
-    @Rate(limit = 3, duration = 1000)
+    @Rate(permits = 3)
     void rateLimitedMethod_2() {
         return "Hello World 2!";
     }
@@ -36,7 +36,7 @@ import com.looseboxes.ratelimiter.annotation.ResourceLimiterFactory;
 
 public class SampleUsage {
 
-    static final int LIMIT = 3;
+    static final int permits = 3;
 
     static class RateLimitedResource {
 

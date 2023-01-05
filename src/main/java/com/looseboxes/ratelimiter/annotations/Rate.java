@@ -15,7 +15,7 @@ public @interface Rate {
 
     long permits() default Long.MAX_VALUE;
 
-    long duration() default 0;
+    long duration() default 1;
 
     TimeUnit timeUnit() default TimeUnit.SECONDS;
 

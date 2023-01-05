@@ -9,12 +9,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 public class ClassWithMethodAnnotations {
     public class MethodGroupOnlyAnon {
         @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-        @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+        @Rate(permits = 10, timeUnit = MILLISECONDS)
         void anon() { }
     }
 
     @RateGroup(name = "Fire", operator = Operator.AND)
     @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
-    @Rate(permits = 1, duration = 10, timeUnit = MILLISECONDS)
+    @Rate(permits = 10, timeUnit = MILLISECONDS)
     void fire() { }
 }

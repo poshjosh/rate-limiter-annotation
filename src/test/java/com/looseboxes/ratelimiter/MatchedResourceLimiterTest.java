@@ -20,7 +20,7 @@ class MatchedResourceLimiterTest {
 
     final Object key = "one";
 
-    @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 1, timeUnit = SECONDS)
     static class RateLimitedClass0{ }
 
     @Test
@@ -31,7 +31,7 @@ class MatchedResourceLimiterTest {
     }
 
     static class RateLimitedClass1{
-        @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
+        @Rate(permits = 1, timeUnit = SECONDS)
         void rateLimitedClass1_method_0() { }
     }
 
@@ -42,9 +42,9 @@ class MatchedResourceLimiterTest {
         assertFalse(resourceLimiter.tryConsume(key));
     }
 
-    @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 1, timeUnit = SECONDS)
     static class RateLimitedClass2{
-        @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
+        @Rate(permits = 1, timeUnit = SECONDS)
         void rateLimitedClass2_method_0() { }
     }
 
@@ -56,8 +56,8 @@ class MatchedResourceLimiterTest {
     }
 
     @RateGroup(operator = Operator.OR)
-    @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
-    @Rate(permits = 3, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 1, timeUnit = SECONDS)
+    @Rate(permits = 3, timeUnit = SECONDS)
     static class RateLimitedClass3{ }
 
     @Test
@@ -68,8 +68,8 @@ class MatchedResourceLimiterTest {
     }
 
     @RateGroup(operator = Operator.AND)
-    @Rate(permits = 1, duration = 1, timeUnit = SECONDS)
-    @Rate(permits = 3, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 1, timeUnit = SECONDS)
+    @Rate(permits = 3, timeUnit = SECONDS)
     static class RateLimitedClass4{ }
 
     @Test
@@ -81,9 +81,9 @@ class MatchedResourceLimiterTest {
         assertFalse(resourceLimiter.tryConsume(key));
     }
 
-    @Rate(permits = 10, duration = 1, timeUnit = SECONDS)
+    @Rate(permits = 10, timeUnit = SECONDS)
     static class RateLimitedClass5{
-        @Rate(permits = 10, duration = 1, timeUnit = SECONDS)
+        @Rate(permits = 10, timeUnit = SECONDS)
         void rateLimitedClass2_method_0() { }
     }
 

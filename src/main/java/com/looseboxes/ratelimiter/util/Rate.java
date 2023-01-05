@@ -45,7 +45,7 @@ public final class Rate {
     }
 
     private long permits;
-    private Duration duration;
+    private Duration duration = Duration.ofSeconds(1);
 
     /**
      * A {@link BandwidthFactory} that will be dynamically instantiated and used to create

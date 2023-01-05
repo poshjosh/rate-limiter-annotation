@@ -17,7 +17,7 @@ public class SampleUsage {
         }
 
         // Limited to 3 invocations every second
-        @Rate(permits = LIMIT, duration = 1)
+        @Rate(permits = LIMIT)
         void rateLimitedMethod() {
 
             if (!resourceLimiter.tryConsume("rateLimitedMethodId")) {

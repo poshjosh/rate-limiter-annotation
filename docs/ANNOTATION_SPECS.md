@@ -25,13 +25,13 @@ Lets say we have 3 classes `Resource1`, `Resource2` and `Resource3`; rate limite
 ```java
 class Resource1{
     
-    @Rate(limit = 1, duration = 999)
+    @Rate(permits = 1)
     void methodA() {}
 
-    @Rate(limit = 1, duration = 999)
+    @Rate(permits = 1)
     void methodB() {}
 
-    @Rate(limit = 1, duration = 999)
+    @Rate(permits = 1)
     @RateGroup("method-group")
     void methodC() {}
 }
@@ -41,14 +41,14 @@ class Resource1{
 @RateGroup("class-group")
 class Resource2{
     
-    @Rate(limit = 1, duration = 999)
+    @Rate(permits = 1)
     void methodA() {}
 
-    @Rate(limit = 1, duration = 999)
+    @Rate(permits = 1)
     @RateGroup("method-group")
     void methodB() {}
 
-    @Rate(limit = 1, duration = 999)
+    @Rate(permits = 1)
     void methodC() {}
 }
 ```
@@ -57,7 +57,7 @@ class Resource2{
 @RateGroup("class-group")
 class Resource3{
     
-    @Rate(limit = 1, duration = 999)
+    @Rate(permits = 1)
     void methodA() {}
 }
 ```
