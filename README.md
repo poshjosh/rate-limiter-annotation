@@ -32,7 +32,7 @@ class RateLimitedResource {
 
 ```java
 
-import com.looseboxes.ratelimiter.annotation.ResourceLimiterFactory;
+import ResourceLimiterFactory;
 
 public class SampleUsage {
 
