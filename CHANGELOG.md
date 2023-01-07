@@ -9,13 +9,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
-## [ [0.0.9](https://github.com/poshjosh/rate-limiter-annotation/tree/0.0.9) ] - 2022-12-30
+## [ [0.1.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.1.0) ] - 2023-01-07
+
+### Added
+
+- Add `name` field to `@RateLimit` annotation
+- Add builder like methods to `ResourceLimiter` for setting `RateCache` and `UsageListener`
+- Support single `Rate` per config in properties. Was previously a list of `Rate`s
+
+### Changed
+
+- Update README.md
+- Rename all `of()` to `ofDefaults()`
+- Change `@RateLimit.limit` to `@RateLimit.permits`
+- Change default `timeUnit` in `@RateLimit` to `TimeUnit.SECONDS`
+- Rename method `AnnotationProcessor.ofRates` to `AnnotationProcessor.ofDefaults`
+- Rename `PatternMatchingResourceLimiter` to `MatchedResourceLimiter`
+- Rename `RateLimit` annotation to `Rate`
+- Rename `RateLimitGroup` to `RateGroup`
+- Change default `@Rate.duration` to 1
+
+### Removed
+
+- Remove annotation `@Nullable`
+- Remove the value-related generic from `RateCache`. The value now has a fixed type of `Bandwidths`
+
+## [ [0.0.9](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.0.9) ] - 2022-12-30
 
 ### Added
 
 - Add more Bandwidth tests
 
-## [ [0.0.8](https://github.com/poshjosh/rate-limiter-annotation/tree/0.0.8) ] - 2022-12-29
+## [ [0.0.8](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.0.8) ] - 2022-12-29
 
 ### Added
 
