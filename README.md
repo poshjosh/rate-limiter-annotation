@@ -1,4 +1,4 @@
-# rate limiter - annotations
+# rate limiter - annotation
 
 __Rate limiting simplified using annotations__
 
@@ -6,7 +6,25 @@ Based on [rate-limiter](https://github.com/poshjosh/rate-limiter).
 
 Please first read the [rate-limiter documentation](https://github.com/poshjosh/rate-limiter).
 
-For flexibility, this library offers a robust support for annotations.
+__For flexibility, this library offers a robust support for annotations.__
+
+If the target is web applications, consider using any of:
+
+- [rate-limiter-web-core](https://github.com/poshjosh/rate-limiter-web-core).
+
+- [rate-limiter-spring](https://github.com/poshjosh/rate-limiter-spring).
+
+- [rate-limiter-javaee](https://github.com/poshjosh/rate-limiter-javaee).
+
+To add a dependency on `rate-limiter-annotation` using Maven, use the following:
+
+```xml
+        <dependency>
+            <groupId>io.github.poshjosh</groupId>
+            <artifactId>rate-limiter-annotation</artifactId>
+            <version>0.2.0</version> 
+        </dependency>
+```
 
 ```java
 // All methods collectively limited to 120 invocations every 1 minute
@@ -21,7 +39,7 @@ class RateLimitedResource {
     }
 
     // Method limited to 3 invocations every 1 second
-    @Rate(permits = 3)
+    @Rate(3)
     void rateLimitedMethod_2() {
         return "Hello World 2!";
     }
