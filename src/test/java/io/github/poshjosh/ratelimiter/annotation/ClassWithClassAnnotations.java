@@ -1,7 +1,5 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
-import io.github.poshjosh.ratelimiter.annotations.Rate;
-import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.Operator;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

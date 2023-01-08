@@ -1,4 +1,4 @@
-package io.github.poshjosh.ratelimiter.annotations;
+package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.util.Operator;
 

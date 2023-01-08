@@ -41,7 +41,7 @@ class ClassAnnotationProcessorTest extends AbstractAnnotationProcessorTest<Class
     }
 
     AnnotationProcessor<Class<?>> getInstance() {
-        return new ClassAnnotationProcessor() {
+        return new ClassAnnotationProcessor(AnnotationConverter.ofRate()) {
             @Override protected Element toElement(Class<?> element) {
                 return new Element() {
                     @Override public Element getDeclarer() {

@@ -2,8 +2,8 @@ package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
 import io.github.poshjosh.ratelimiter.annotation.RateConfig;
-import io.github.poshjosh.ratelimiter.annotations.Rate;
-import io.github.poshjosh.ratelimiter.annotations.RateGroup;
+import io.github.poshjosh.ratelimiter.annotation.Rate;
+import io.github.poshjosh.ratelimiter.annotation.RateGroup;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Operator;

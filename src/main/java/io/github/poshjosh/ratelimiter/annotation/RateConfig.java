@@ -6,7 +6,7 @@ import java.util.Objects;
 
 public final class RateConfig {
 
-    public static  RateConfig of(Object source, Rates value) {
+    public static RateConfig of(Object source, Rates value) {
         return new RateConfig(source, value);
     }
 

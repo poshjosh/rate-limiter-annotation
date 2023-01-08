@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.util.Rates;
 
 import java.lang.reflect.GenericDeclaration;
 import java.util.Arrays;
@@ -24,7 +25,11 @@ public interface AnnotationProcessor<S extends GenericDeclaration> {
     }
 
     static AnnotationProcessor<Class<?>> ofDefaults() {
-        return new ClassAnnotationProcessor();
+        return new ClassAnnotationProcessor(AnnotationConverter.ofRate());
+    }
+
+    static AnnotationProcessor<Class<?>> of(AnnotationConverter<Rate, Rates> annotationConverter) {
+        return new ClassAnnotationProcessor(annotationConverter);
     }
 
     default void processAll(Node<RateConfig> root, S... elements) {

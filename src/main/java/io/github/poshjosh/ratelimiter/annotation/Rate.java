@@ -1,4 +1,4 @@
-package io.github.poshjosh.ratelimiter.annotations;
+package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.BandwidthFactory;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
@@ -14,7 +14,11 @@ public @interface Rate {
 
     String name() default "";
 
+    /** Alias for value */
     long permits() default Long.MAX_VALUE;
+
+    /** Alias for permits */
+    long value() default Long.MAX_VALUE;
 
     long duration() default 1;
 

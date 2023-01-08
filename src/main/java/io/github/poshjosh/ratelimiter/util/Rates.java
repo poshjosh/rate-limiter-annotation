@@ -6,7 +6,7 @@ import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public final class Rates {
+public class Rates {
 
     public static Rates of(Rate... limits) {
         return ofDefaults().limits(limits);
@@ -56,14 +56,19 @@ public final class Rates {
     //
     private Rate limit;
 
+    /**
+     * Configuration for creating matchers
+     */
+    private Map<String, String> match = Collections.emptyMap();
+
     // A public no-argument constructor is required
     public Rates() { }
 
-    Rates(Rates rates) {
+    protected Rates(Rates rates) {
         this(rates.operator, rates.limits);
     }
 
-    Rates(Operator operator, List<Rate> limits) {
+    protected Rates(Operator operator, List<Rate> limits) {
         this.operator = operator;
         this.limits = limits == null ? Collections.emptyList() : limits.stream()
                 .map(Rate::new).collect(Collectors.toList());
@@ -119,6 +124,18 @@ public final class Rates {
         this.limits = limits;
     }
 
+    public Rates match(Map<String, String> match) {
+        this.match = match;
+        return this;
+    }
+
+    public Map<String, String> getMatch() {
+        return match;
+    }
+
+    public void setMatch(Map<String, String> match) {
+        this.match = match;
+    }
 
     // Rate related properties
     //
