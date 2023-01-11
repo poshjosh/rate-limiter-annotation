@@ -16,9 +16,33 @@
 
     * At the method level, the group is named after the fully qualified class name and method signature.
 
-- The `@RateGroup` annotation may span multiple classes or methods but not both.
+- The `@RateGroup` annotation may span either multiple classes/interfaces/annotations/methods but 
+  not a mixing.
 
-**Example**
+**Simple Example**
+
+All the members of the rate limit group below will have the same rate applied.
+All the members are bound by the group name.
+
+```java
+@Rate(1)
+@RateGroup(MY_RATE_GROUP_NAME)
+public @interface MyRateGroup { }
+
+@RateGroup(MY_RATE_GROUP_NAME)
+static class MyRateGroupMember0{
+    
+    void method0() {}
+}
+
+static class MyRateGroupMember1{
+    
+    @RateGroup(MY_RATE_GROUP_NAME)
+    void method0() {}
+}
+```
+
+**Complex Example**
 
 Lets say we have 3 classes `Resource1`, `Resource2` and `Resource3`; rate limited as shown below:
 

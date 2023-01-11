@@ -27,11 +27,7 @@ public abstract class NodeFormatter {
 
         private final String indent;
 
-        public Indented() {
-            this("  ");
-        }
-
-        public Indented(String indent) {
+        private Indented(String indent) {
             this.indent = Objects.requireNonNull(indent);
         }
 
@@ -54,11 +50,7 @@ public abstract class NodeFormatter {
 
         private final int maxLevelsToPrint;
 
-        public IndentedHeirarchy() {
-            this("  ", Integer.MAX_VALUE);
-        }
-
-        public IndentedHeirarchy(String indent, int maxLevelsToPrint) {
+        private IndentedHeirarchy(String indent, int maxLevelsToPrint) {
             this.indent = Objects.requireNonNull(indent);
             this.maxLevelsToPrint = maxLevelsToPrint;
         }
@@ -93,20 +85,22 @@ public abstract class NodeFormatter {
         }
     }
 
-    /** Beta */
     public static NodeFormatter indented() {
-        return new NodeFormatter.Indented();
+        return indented("  ");
     }
 
-    /** Beta */
     public static NodeFormatter indented(String indent) {
         return new NodeFormatter.Indented(indent);
     }
 
-    /** Beta */
-    public static NodeFormatter indentedHeirarchy() { return new NodeFormatter.IndentedHeirarchy(); }
+    public static NodeFormatter indentedHeirarchy() {
+        return indentedHeirarchy("  ");
+    }
 
-    /** Beta */
+    public static NodeFormatter indentedHeirarchy(String indent) {
+        return indentedHeirarchy(indent, Integer.MAX_VALUE);
+    }
+
     public static NodeFormatter indentedHeirarchy(String indent, int maxLevelsToPrint) {
         return new NodeFormatter.IndentedHeirarchy(indent, maxLevelsToPrint);
     }

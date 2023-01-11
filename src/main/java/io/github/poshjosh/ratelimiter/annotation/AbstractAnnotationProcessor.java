@@ -141,8 +141,8 @@ public abstract class AbstractAnnotationProcessor
     private void requireEqual(GenericDeclaration annotatedElement,
             RateGroup rateGroup, Operator lhs, Rates existing) {
         if(!existing.getOperator().equals(lhs)) {
-            throw new AnnotationProcessingException("Found inconsistent operator, for " + rateGroup
-                    + " declared at " + annotatedElement);
+            throw new AnnotationProcessingException("Found inconsistent operator, for "
+                    + rateGroup + " declared at " + annotatedElement);
         }
     }
 

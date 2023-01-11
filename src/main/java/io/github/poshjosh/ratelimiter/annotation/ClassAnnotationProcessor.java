@@ -32,7 +32,7 @@ class ClassAnnotationProcessor extends AbstractAnnotationProcessor<Class<?>, Rat
         final List<Element> superClasses = new ArrayList<>();
         final List<Node<RateConfig>> superClassNodes = new ArrayList<>();
         NodeConsumer collectSuperClassNodes = (element, superClassNode) -> {
-            if(!superClassNode.isEmpty() && superClasses.contains((Element)element)) {
+            if(!superClassNode.isEmptyNode() && superClasses.contains((Element)element)) {
                 superClassNodes.add(superClassNode);
             }
         };

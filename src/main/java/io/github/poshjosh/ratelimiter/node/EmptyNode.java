@@ -12,7 +12,11 @@ final class EmptyNode<V> implements Node<V>{
     EmptyNode() {}
 
     @Override
-    public void visitAll(Consumer<Node<V>> consumer) {}
+    public void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer, int depth) {
+        if (depth > 0 && filter.test(this)) {
+            consumer.accept(this);
+        }
+    }
 
     @Override
     public <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {

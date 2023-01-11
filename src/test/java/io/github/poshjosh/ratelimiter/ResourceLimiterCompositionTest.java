@@ -9,14 +9,14 @@ import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
-class MatchedResourceLimiterTest {
+class ResourceLimiterCompositionTest {
 
     final Object key = "one";
 
@@ -97,7 +97,35 @@ class MatchedResourceLimiterTest {
         assertFalse(c.tryConsume(key));
     }
 
+    static final String MY_RATE_GROUP_NAME = "my-rate-group";
+
+    @Rate(1)
+    @RateGroup(MY_RATE_GROUP_NAME)
+    public @interface MyRateGroup { }
+
+    @RateGroup(MY_RATE_GROUP_NAME)
+    static class MyRateGroupMember0{
+        void method0() {}
+    }
+
+    static class MyRateGroupMember1{
+        @RateGroup(MY_RATE_GROUP_NAME)
+        void method0() {}
+    }
+
+    @Test
+    void testGroupMetaAnnotation() {
+        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(2,
+                MyRateGroup.class, MyRateGroupMember0.class, MyRateGroupMember1.class);
+        assertTrue(resourceLimiter.tryConsume(MY_RATE_GROUP_NAME));
+        assertFalse(resourceLimiter.tryConsume(MY_RATE_GROUP_NAME));
+    }
+
     private ResourceLimiter<Object> buildRateLimiter(int expectedNodes, Class<?>... classes) {
+        return buildRateLimiter(expectedNodes, Arrays.asList(classes));
+    }
+
+    private ResourceLimiter<Object> buildRateLimiter(int expectedNodes, List<Class<?>> classes) {
 
         Node<RateConfig> rootNode = Node.of("root");
 
@@ -106,30 +134,12 @@ class MatchedResourceLimiterTest {
 
         assertEquals(expectedNodes, numberOfNodes(rootNode));
 
-        MatchedResourceLimiter.MatcherProvider<Object> matcherProvider =
-                node -> key -> key + "--" + node.getName();
-
-        MatchedResourceLimiter.LimiterProvider limiterProvider = this::getOrCreateLimiter;
-
-        return MatchedResourceLimiter.ofAnnotations(matcherProvider, limiterProvider, rootNode);
+        return ResourceLimiterComposition.ofAnnotations(rootNode);
     }
 
     private int numberOfNodes(Node node) {
         final AtomicInteger count = new AtomicInteger();
         node.visitAll(currentNode -> count.incrementAndGet());
         return count.decrementAndGet(); // We subtract the root node
-    }
-
-    private Map<String, ResourceLimiter<Object>> nameToLimiter = new HashMap<>();
-    private ResourceLimiter<Object> getOrCreateLimiter(Node<RateConfig> node) {
-        return nameToLimiter.computeIfAbsent(node.getName(), k -> createLimiter(node));
-    }
-
-    private ResourceLimiter<Object> createLimiter(Node<RateConfig> node) {
-        return node.getValueOptional()
-                .map(RateConfig::getValue)
-                .map(rates -> RateToBandwidthConverter.ofDefaults().convert(rates))
-                .map(ResourceLimiter::of)
-                .orElse(ResourceLimiter.NO_OP);
     }
 }

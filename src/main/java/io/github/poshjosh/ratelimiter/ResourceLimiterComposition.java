@@ -10,59 +10,84 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-public final class MatchedResourceLimiter<R> implements ResourceLimiter<R> {
+public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
+
+    private static final Logger log = LoggerFactory.getLogger(ResourceLimiterComposition.class);
+
+    public interface MatcherProvider<T>{
+        // Provides a matcher that will match all requests
+        static <T> MatcherProvider<T> ofDefaults() {
+            return node -> key -> key + "-" + node.getName();
+        }
+        Matcher<T, ?> getMatcher(Node<RateConfig> node);
+    }
+
+    public interface LimiterProvider{
+        static LimiterProvider ofDefaults() {
+            return new DefaultLimiterProvider();
+        }
+        ResourceLimiter<?> getLimiter(Node<RateConfig> node);
+    }
+
+    private static final class DefaultLimiterProvider implements LimiterProvider{
+        private final Map<String, ResourceLimiter<Object>> nameToLimiter = new HashMap<>();
+        public ResourceLimiter<Object> getLimiter(Node<RateConfig> node) {
+            return nameToLimiter.computeIfAbsent(node.getName(), k -> createLimiter(node));
+        }
+        private ResourceLimiter<Object> createLimiter(Node<RateConfig> node) {
+            return node.getValueOptional()
+                    .map(RateConfig::getValue)
+                    .map(rates -> RateToBandwidthConverter.ofDefaults().convert(rates))
+                    .map(ResourceLimiter::of)
+                    .orElse(ResourceLimiter.NO_OP);
+        }
+    }
+
+    public static <R> ResourceLimiter<R> ofAnnotations(Node<RateConfig> rootNode) {
+        return ofAnnotations(MatcherProvider.ofDefaults(), LimiterProvider.ofDefaults(), rootNode);
+    }
 
     public static <R> ResourceLimiter<R> ofAnnotations(
             MatcherProvider<R> matcherProvider,
             LimiterProvider limiterProvider,
             Node<RateConfig> rootNode) {
-        return new MatchedResourceLimiter<>(
+        return new ResourceLimiterComposition<>(
                 matcherProvider, limiterProvider, rootNode, false);
+    }
+
+    public static <R> ResourceLimiter<R> ofProperties(Node<RateConfig> rootNode) {
+        return ofProperties(MatcherProvider.ofDefaults(), LimiterProvider.ofDefaults(), rootNode);
     }
 
     public static <R> ResourceLimiter<R> ofProperties(
             MatcherProvider<R> matcherProvider,
             LimiterProvider limiterProvider,
             Node<RateConfig> rootNode) {
-        return new MatchedResourceLimiter<>(
+        return new ResourceLimiterComposition<>(
                 matcherProvider, limiterProvider, rootNode, true);
     }
 
     private enum VisitResult {SUCCESS, FAILURE, NOMATCH}
-
-    private static final Logger log = LoggerFactory.getLogger(MatchedResourceLimiter.class);
-    
-    public interface MatcherProvider<T>{
-        Matcher<T, ?> getMatcher(Node<RateConfig> node);
-    }
-    
-    public interface LimiterProvider{
-        ResourceLimiter<?> getLimiter(Node<RateConfig> node);
-    }
 
     private final MatcherProvider<R> matcherProvider;
     private final LimiterProvider limiterProvider;
     private final Node<RateConfig> rootNode;
     private final Set<Node<RateConfig>> leafNodes;
     private final boolean firstMatchOnly;
-    private UsageListener usageListener;
 
-    private MatchedResourceLimiter(MatcherProvider<R> matcherProvider,
-                                          LimiterProvider limiterProvider,
-                                          Node<RateConfig> rootNode,
-                                          boolean firstMatchOnly) {
+    private ResourceLimiterComposition(
+            MatcherProvider<R> matcherProvider, LimiterProvider limiterProvider,
+            Node<RateConfig> rootNode, boolean firstMatchOnly) {
         this.matcherProvider = Objects.requireNonNull(matcherProvider);
         this.limiterProvider = Objects.requireNonNull(limiterProvider);
         this.rootNode = Objects.requireNonNull(rootNode);
-        Set<Node<RateConfig>> set = new LinkedHashSet<>();
-        this.rootNode.visitAll(node -> {
-            if (node.isLeaf()) {
-                set.add(node);
-            }
-        });
-        this.leafNodes = Collections.unmodifiableSet(set);
+        this.leafNodes = collectLeafNodes(rootNode);
         this.firstMatchOnly = firstMatchOnly;
-        this.usageListener = UsageListener.NO_OP;
+    }
+    private Set<Node<RateConfig>> collectLeafNodes(Node<RateConfig> rootNode) {
+        Set<Node<RateConfig>> set = new LinkedHashSet<>();
+        rootNode.visitAll(Node::isLeaf, set::add);
+        return Collections.unmodifiableSet(set);
     }
 
     @Override
@@ -132,15 +157,9 @@ public final class MatchedResourceLimiter<R> implements ResourceLimiter<R> {
         final boolean success = ((ResourceLimiter)resourceLimiter)
                 .tryConsume(resourceId, permits, timeout, unit);
 
-        final RateConfig rateConfig = node.getValueOrDefault(null);
-        final Object limit = rateConfig == null ? null : rateConfig.getValue();
-        usageListener.onConsumed(request, permits, limit);
-
         if (success) {
             return VisitResult.SUCCESS;
         }
-
-        usageListener.onRejected(request, permits, limit);
 
         return VisitResult.FAILURE;
     }

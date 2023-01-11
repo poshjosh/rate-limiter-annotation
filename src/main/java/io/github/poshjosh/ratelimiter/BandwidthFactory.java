@@ -83,7 +83,6 @@ public interface BandwidthFactory {
         }
     }
 
-    /** Beta */
     final class AllOrNothing implements BandwidthFactory {
         @Override
         public Bandwidth createNew(long permits, long duration, TimeUnit timeUnit, long nowMicros) {
@@ -113,7 +112,6 @@ public interface BandwidthFactory {
         return new SmoothWarmingUp(warmupPeriod, timeUnit, coldFactor);
     }
 
-    /** Beta */
     static BandwidthFactory allOrNothing() {
         return getOrCreateBandwidthFactory(AllOrNothing.class);
     }

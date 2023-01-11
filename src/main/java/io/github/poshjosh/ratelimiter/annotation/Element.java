@@ -27,17 +27,11 @@ public abstract class Element {
     }
 
     static Element of(Method element) {
-        return of(element, Element.of(element.getDeclaringClass()));
-    }
-
-    static Element of(Method element, Element declaringElement) {
         Objects.requireNonNull(element);
-        Objects.requireNonNull(declaringElement);
         final String id = ElementId.of(element);
+        final Element declarer = Element.of(element.getDeclaringClass());
         return new Element() {
-            @Override public Element getDeclarer() {
-                return declaringElement;
-            }
+            @Override public Element getDeclarer() { return declarer; }
             @Override public String getId() {
                 return id;
             }

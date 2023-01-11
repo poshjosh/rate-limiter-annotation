@@ -1,50 +1,39 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
-import io.github.poshjosh.ratelimiter.MatchedResourceLimiter;
-import io.github.poshjosh.ratelimiter.RateToBandwidthConverter;
+import io.github.poshjosh.ratelimiter.ResourceLimiterComposition;
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.Matcher;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Objects;
 
 public final class ResourceLimiterFactory<R> {
 
     public static <R> ResourceLimiterFactory<R> ofDefaults() {
         return new ResourceLimiterFactory<>(
-                AnnotationProcessor.ofDefaults(), (node) -> Matcher.identity()
+                AnnotationProcessor.ofDefaults(),
+                ResourceLimiterComposition.MatcherProvider.ofDefaults(),
+                ResourceLimiterComposition.LimiterProvider.ofDefaults()
         );
     }
 
     private AnnotationProcessor<Class<?>> annotationProcessor;
-    private MatchedResourceLimiter.MatcherProvider<R> matcherProvider;
+    private ResourceLimiterComposition.MatcherProvider<R> matcherProvider;
+    private ResourceLimiterComposition.LimiterProvider limiterProvider;
 
     private ResourceLimiterFactory(
             AnnotationProcessor<Class<?>> annotationProcessor,
-            MatchedResourceLimiter.MatcherProvider<R> matcherProvider) {
-        this.annotationProcessor = annotationProcessor;
-        this.matcherProvider = matcherProvider;
+            ResourceLimiterComposition.MatcherProvider<R> matcherProvider,
+            ResourceLimiterComposition.LimiterProvider limiterProvider) {
+        this.annotationProcessor = Objects.requireNonNull(annotationProcessor);
+        this.matcherProvider = Objects.requireNonNull(matcherProvider);
+        this.limiterProvider = Objects.requireNonNull(limiterProvider);
     }
 
     public ResourceLimiter<R> create(Class<?>... sources) {
 
         Node<RateConfig> rootNode = processAll(sources);
 
-        Map<String, ResourceLimiter<R>> limitersMap = new HashMap<>();
-        rootNode.visitAll(node -> limitersMap.put(node.getName(), createResourceLimiter(node)));
-
-        MatchedResourceLimiter.LimiterProvider limiterProvider =
-                node -> limitersMap.getOrDefault(node.getName(), ResourceLimiter.noop());
-
-        return MatchedResourceLimiter.ofAnnotations(matcherProvider, limiterProvider, rootNode);
-    }
-
-    private ResourceLimiter<R> createResourceLimiter(Node<RateConfig> node) {
-        Bandwidths bandwidths = RateToBandwidthConverter.ofDefaults()
-                .convert(node.getValueOptional().orElseThrow(NullPointerException::new).getValue());
-        return ResourceLimiter.<R>of(bandwidths);
+        return ResourceLimiterComposition.ofAnnotations(matcherProvider, limiterProvider, rootNode);
     }
 
     private Node<RateConfig> processAll(Class<?>... sources) {
@@ -58,8 +47,13 @@ public final class ResourceLimiterFactory<R> {
         return this;
     }
 
-    public ResourceLimiterFactory<R> matcherProvider(MatchedResourceLimiter.MatcherProvider<R> matcherProvider) {
+    public ResourceLimiterFactory<R> matcherProvider(ResourceLimiterComposition.MatcherProvider<R> matcherProvider) {
         this.matcherProvider = matcherProvider;
+        return this;
+    }
+
+    public ResourceLimiterFactory<R> limiterProvider(ResourceLimiterComposition.LimiterProvider limiterProvider) {
+        this.limiterProvider = limiterProvider;
         return this;
     }
 }

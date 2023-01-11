@@ -47,7 +47,15 @@ public interface Node<V> {
         return new NodeImpl(name, value, parent);
     }
 
-    void visitAll(Consumer<Node<V>> consumer);
+    default void visitAll(Consumer<Node<V>> consumer) {
+        visitAll(node -> true, consumer);
+    }
+
+    default void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer) {
+        visitAll(filter, consumer, Integer.MAX_VALUE);
+    }
+
+    void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer, int depth);
 
     /**
      * Copy a transformed version of this node and it's children onto the specified parent.
@@ -61,7 +69,7 @@ public interface Node<V> {
      */
     <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter);
 
-    default boolean isEmpty() {
+    default boolean isEmptyNode() {
         return this == EMPTY;
     }
 

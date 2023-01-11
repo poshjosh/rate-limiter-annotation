@@ -8,11 +8,11 @@ import javax.tools.Diagnostic;
 import java.util.Collections;
 import java.util.Set;
 
-@SupportedAnnotationTypes(RateLimitProcessor.ANNOTATION_CLASS_NAME)
+@SupportedAnnotationTypes(RateProcessor.ANNOTATION_CLASS_NAME)
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
-public class RateLimitProcessor extends AbstractProcessor {
+public class RateProcessor extends AbstractProcessor {
 
-    public static final String ANNOTATION_CLASS_NAME = "Rate";
+    public static final String ANNOTATION_CLASS_NAME = "io.github.poshjosh.ratelimiter.annotation.Rate";
 
     private Messager messager;
 
@@ -35,11 +35,13 @@ public class RateLimitProcessor extends AbstractProcessor {
                 Rate rate = annotatedElement.getAnnotation(Rate.class);
                 final long limit = rate.permits();
                 if (limit < 0) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "Must not be negative, permits: " + limit);
+                    messager.printMessage(Diagnostic.Kind.ERROR,
+                            "Must not be negative, Rate.permits: " + limit);
                 }
                 final long duration = rate.duration();
                 if (duration < 0) {
-                    messager.printMessage(Diagnostic.Kind.ERROR, "Must not be negative, duration: " + duration);
+                    messager.printMessage(Diagnostic.Kind.ERROR,
+                            "Must not be negative, Rate.duration: " + duration);
                 }
             });
         });
@@ -49,7 +51,7 @@ public class RateLimitProcessor extends AbstractProcessor {
 
     @Override
     public Set<String> getSupportedAnnotationTypes() {
-        return Collections.singleton(RateLimitProcessor.ANNOTATION_CLASS_NAME);
+        return Collections.singleton(RateProcessor.ANNOTATION_CLASS_NAME);
     }
 
     @Override
