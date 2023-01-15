@@ -6,7 +6,6 @@ import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
 import io.github.poshjosh.ratelimiter.annotation.RateConfig;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.node.NodeFormatter;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import org.junit.jupiter.api.Test;
 
@@ -21,7 +20,7 @@ class AnnotationProcessingPerformanceIT {
         Usage bookmark = Usage.bookmark();
         Node<ResourceLimiter<Object>> rateLimiterRootNode = buildRateLimiters();
         bookmark.assertUsageLessThan(Usage.of(250, 25_000_000));
-        System.out.println(NodeFormatter.indentedHeirarchy().format(rateLimiterRootNode));
+        System.out.println(rateLimiterRootNode);
     }
 
     Node<ResourceLimiter<Object>> buildRateLimiters() {
@@ -29,7 +28,7 @@ class AnnotationProcessingPerformanceIT {
                 Collections.singletonList(getClass().getPackage().getName()),
                 clazz -> true);
         Node<RateConfig> rootNode = Node.of("root");
-        AnnotationProcessor.ofDefaults().processAll(rootNode, classList);
+        rootNode = AnnotationProcessor.ofDefaults().processAll(rootNode, classList);
 
         Function<Node<RateConfig>, ResourceLimiter<Object>> transformer = node -> {
             return node.getValueOptional().map(nodeValue -> {

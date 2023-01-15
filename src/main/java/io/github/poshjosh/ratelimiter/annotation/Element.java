@@ -10,50 +10,68 @@ import java.util.Optional;
  */
 public abstract class Element {
 
-    static Element of(Class<?> element) {
-        Objects.requireNonNull(element);
-        final String id = ElementId.of(element);
-        return new Element() {
-            @Override public Element getDeclarer() {
-                return this;
-            }
-            @Override public String getId() {
-                return id;
-            }
-            @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
-                return Optional.ofNullable(element.getAnnotation(annotationClass));
-            }
-        };
+    private static final class ClassElement extends Element {
+        private final String id;
+        private final Class<?> clazz;
+        private ClassElement(Class<?> clazz) {
+            this.id = ElementId.of(clazz);
+            this.clazz = clazz;
+        }
+        @Override public Element getDeclarer() {
+            return this;
+        }
+        @Override public String getId() {
+            return id;
+        }
+        @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
+            return Optional.ofNullable(clazz.getAnnotation(annotationClass));
+        }
     }
 
-    static Element of(Method element) {
-        Objects.requireNonNull(element);
-        final String id = ElementId.of(element);
-        final Element declarer = Element.of(element.getDeclaringClass());
-        return new Element() {
-            @Override public Element getDeclarer() { return declarer; }
-            @Override public String getId() {
-                return id;
-            }
-            @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
-                return Optional.ofNullable(element.getAnnotation(annotationClass));
-            }
-        };
+    private static final class MethodElement extends Element {
+        private final String id;
+        private final Method method;
+        private final Element declarer;
+        private MethodElement(Method method) {
+            this.id = ElementId.of(method);
+            this.method = method;
+            this.declarer = Element.of(method.getDeclaringClass());
+        }
+        @Override public Element getDeclarer() { return declarer; }
+        @Override public String getId() {
+            return id;
+        }
+        @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
+            return Optional.ofNullable(method.getAnnotation(annotationClass));
+        }
+    }
+
+    private static final class IdElement extends Element{
+        private final String id;
+        private IdElement(String id) {
+            this.id = Objects.requireNonNull(id);
+        }
+        @Override public Element getDeclarer() {
+            return this;
+        }
+        @Override public String getId() {
+            return id;
+        }
+        @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
+            return Optional.empty();
+        }
+    }
+
+    static Element of(Class<?> clazz) {
+        return new ClassElement(clazz);
+    }
+
+    static Element of(Method method) {
+        return new MethodElement(method);
     }
 
     static Element of(String id) {
-        Objects.requireNonNull(id);
-        return new Element() {
-            @Override public Element getDeclarer() {
-                return this;
-            }
-            @Override public String getId() {
-                return id;
-            }
-            @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
-                return Optional.empty();
-            }
-        };
+        return new IdElement(id);
     }
 
     public abstract Element getDeclarer();

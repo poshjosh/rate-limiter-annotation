@@ -18,6 +18,14 @@ public final class RateConfig {
         this.value = Objects.requireNonNull(value);
     }
 
+    public RateConfig withSource(Object source) {
+        return RateConfig.of(source, value);
+    }
+
+    public RateConfig withValue(Rates value) {
+        return RateConfig.of(source, value);
+    }
+
     public Object getSource() {
         return source;
     }

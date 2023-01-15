@@ -21,28 +21,7 @@ import java.util.Objects;
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 19, 2017 5:04:09 PM
  */
-public abstract class NodeFormatter {
-
-    private static class Indented extends NodeFormatter{
-
-        private final String indent;
-
-        private Indented(String indent) {
-            this.indent = Objects.requireNonNull(indent);
-        }
-
-        @Override
-        public <V> StringBuilder appendTo(Node<V> node, StringBuilder appendTo) {
-            if(node == null) {
-                return appendTo.append((Object)null);
-            }
-            final int nodeLevel = node.getLevel();
-            for(int i=nodeLevel; i>=0; i--) {
-                appendTo.append(indent);
-            }
-            return appendTo.append(node.getName()).append('=').append(node.getValueOrDefault(null));
-        }
-    }
+abstract class NodeFormatter {
 
     private static class IndentedHeirarchy extends NodeFormatter{
 
@@ -76,21 +55,15 @@ public abstract class NodeFormatter {
                 appendTo.append(node);
                 return;
             }
-            appendTo.append('\n');
+            if (appendTo.length() > 0) {
+                appendTo.append('\n');
+            }
             final int nodeLevel = node.getLevel();
             for(int i=nodeLevel; i>=0; i--) {
                 appendTo.append(indent);
             }
             appendTo.append(node.getName()).append('=').append(node.getValueOrDefault(null));
         }
-    }
-
-    public static NodeFormatter indented() {
-        return indented("  ");
-    }
-
-    public static NodeFormatter indented(String indent) {
-        return new NodeFormatter.Indented(indent);
     }
 
     public static NodeFormatter indentedHeirarchy() {
@@ -105,7 +78,7 @@ public abstract class NodeFormatter {
         return new NodeFormatter.IndentedHeirarchy(indent, maxLevelsToPrint);
     }
 
-    protected NodeFormatter() { }
+    NodeFormatter() { }
 
     public abstract <V> StringBuilder appendTo(Node<V> node, StringBuilder appendTo);
 

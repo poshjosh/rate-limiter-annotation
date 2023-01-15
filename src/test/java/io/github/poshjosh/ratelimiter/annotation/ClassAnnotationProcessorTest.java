@@ -1,15 +1,17 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.node.NodeFormatter;
+import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class ClassAnnotationProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
@@ -26,13 +28,23 @@ class ClassAnnotationProcessorTest extends AbstractAnnotationProcessorTest<Class
 
     @Test
     void nodeVisitingShouldBeAccurate() {
-        List<Class<?>> classes = findClasses();
-//        System.out.println("Found classes: " + classes);
+        final List<Class<?>> classes = Arrays.asList(
+                ClassWithClassAnnotations.class,
+                ClassWithClassAnnotations.ClassGroupOnlyAnon.class,
+                ClassWithClassAnnotations.ClassGroupOnlyNamedFire.class,
+                ClassWithClassAnnotations.ClassWithInternalClass.class,
+                ClassWithClassAnnotations.ClassWithInternalClass.InternalClass.class,
+                ClassWithClassAnnotations.PrivateClass.class,
+                ClassWithClassAnnotations.GroupAnnotationOnly.class,
+                ClassWithClassAnnotations.SecondClassGroupOnlyNamedFire.class,
+                ClassWithMethodAnnotations.class,
+                ClassWithMethodAnnotations.MethodGroupOnlyAnon.class
+
+        );
         final String rootNodeName = "sample-root-node";
         Node<RateConfig> root = Node.of(rootNodeName);
-        getInstance().processAll(root, classes);
-        System.out.println();
-        System.out.println(NodeFormatter.indentedHeirarchy("\t").format(root));
+        root = getInstance().processAll(root, classes);
+        System.out.println(root);
         assertThat(root.findFirstChild(node -> node.getName().equals(rootNodeName)).isPresent()).isTrue();
         assertHasChildrenHavingNames(root, "ClassGroupOnlyAnon", "PrivateClass", "InternalClass");
         assertHasChildrenHavingNames(root, "Fire");
@@ -86,5 +98,48 @@ class ClassAnnotationProcessorTest extends AbstractAnnotationProcessorTest<Class
 
     String getId(Class<?> element) {
         return element.getSimpleName();
+    }
+
+    public static class ClassWithClassAnnotations {
+
+        @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+        @Rate(permits = 10, timeUnit = MILLISECONDS)
+        public class ClassGroupOnlyAnon { }
+
+        @RateGroup(name = "Fire", operator = Operator.AND)
+        @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+        @Rate(permits = 10, timeUnit = MILLISECONDS)
+        @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+        @Rate(permits = 10, timeUnit = MILLISECONDS)
+        @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+        @Rate(permits = 10, timeUnit = MILLISECONDS)
+        public class ClassGroupOnlyNamedFire { }
+
+        public class ClassWithInternalClass {
+            @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+            @Rate(permits = 10, timeUnit = MILLISECONDS)
+            public class InternalClass{ }
+        }
+
+        @RateGroup("x")
+        public class GroupAnnotationOnly { }
+
+        @RateGroup("Fire")
+        public class SecondClassGroupOnlyNamedFire { }
+
+        @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+        @Rate(permits = 10, timeUnit = MILLISECONDS)
+        class PrivateClass{ }
+    }
+
+    public static class ClassWithMethodAnnotations {
+        public class MethodGroupOnlyAnon {
+            @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
+            @Rate(permits = 10, timeUnit = MILLISECONDS)
+            void anon() { }
+        }
+
+        @RateGroup("Fire")
+        void fire() { }
     }
 }

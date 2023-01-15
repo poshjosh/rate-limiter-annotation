@@ -38,7 +38,7 @@ public final class ResourceLimiterFactory<R> {
 
     private Node<RateConfig> processAll(Class<?>... sources) {
         Node<RateConfig> rootNode = Node.of("root");
-        annotationProcessor.processAll(rootNode, sources);
+        rootNode = annotationProcessor.processAll(rootNode, sources);
         return rootNode;
     }
 

@@ -16,11 +16,11 @@
 
 package io.github.poshjosh.ratelimiter.node;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.*;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 13, 2017 2:58:54 PM
@@ -43,8 +43,27 @@ public interface Node<V> {
         return of(name, value, null);
     }
 
+    static <T> Node<T> of(String name, Node<T> parent) {
+        return of(name, null, parent);
+    }
+
     static <T> Node<T> of(String name, T value, Node<T> parent) {
         return new NodeImpl(name, value, parent);
+    }
+
+    default int size() {
+        AtomicInteger sum = new AtomicInteger();
+        Consumer<Node<V>> consumer = e -> sum.incrementAndGet();
+        this.visitAll(consumer);
+        return sum.get();
+    }
+
+    default List<Node<V>> getSiblings() {
+        Node<V> parent = getParentOrDefault(null);
+        if (parent == null) { // is root
+            return Collections.emptyList();
+        }
+        return parent.getChildren();
     }
 
     default void visitAll(Consumer<Node<V>> consumer) {
@@ -58,22 +77,6 @@ public interface Node<V> {
     void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer, int depth);
 
     /**
-     * Copy a transformed version of this node and it's children onto the specified parent.
-     *
-     * @param <T> The type of the value of the transformed copy
-     * @param newParent The parent to copy a transformed version of this node and it's children to
-     * @param nameConverter The converter which will be applied to produce a new name for each node in this tree
-     * @param valueConverter The converter which will be applied to produce a new value for each node in this tree
-     * @return The transformed copy of this node
-     * @see #transform(Node, Function)
-     */
-    <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter);
-
-    default boolean isEmptyNode() {
-        return this == EMPTY;
-    }
-
-    /**
      * Copy this node and it's children onto the specified parent.
      *
      * The value of this node is not deep copied. To achieve deep copy use the transform method. Use that method's
@@ -81,31 +84,98 @@ public interface Node<V> {
      *
      * @param parent The parent to copy this node and it's children to
      * @return The copy version of this node
+     * @throws StackOverflowError If the Node calling this method is passed in as the parent argument
      * @see #transform(Node, Function)
      */
     default Node<V> copyTo(Node<V> parent) {
         return transform(parent, node -> node.getValueOrDefault(null));
     }
 
+    /**
+     * Retain all nodes (this node inclusive) which pass the test
+     * @see #transform(Predicate, Node, Function, Function)
+     */
+    default Optional<Node<V>> retainAll(Predicate<Node<V>> test) {
+        return transform(test, node -> node.getValueOrDefault(null));
+    }
+
+    /**
+     * Copy a transformed version of this node and it's children onto the specified parent.
+     * @see #transform(Predicate, Node, Function, Function)
+     */
     default <T> Node<T> transform(Function<Node<V>, T> valueConverter) {
-        return transform(Node.of(getName()), valueConverter);
+        return transform((Predicate<Node<V>>)(node -> true), valueConverter)
+                .orElseThrow(() -> new AssertionError("Should not happen"));
+    }
+
+    /**
+     * Copy a transformed version of this node and it's children onto the specified parent.
+     * @see #transform(Predicate, Node, Function, Function)
+     */
+    default <T> Optional<Node<T>> transform(Predicate<Node<V>> test, Function<Node<V>, T> valueConverter) {
+        return transform(test, null, valueConverter);
+    }
+
+    /**
+     * Copy a transformed version of this node and it's children onto the specified parent.
+     * @see #transform(Predicate, Node, Function, Function)
+     */
+    default <T> Node<T> transform(Node<T> newParent, Function<Node<V>, T> valueConverter) {
+        return transform(node -> true, newParent, valueConverter)
+                .orElseThrow(() -> new AssertionError("Should not happen"));
+    }
+
+    /**
+     * Copy a transformed version of this node and it's children onto the specified parent.
+     * @see #transform(Predicate, Node, Function, Function)
+     */
+    default <T> Optional<Node<T>> transform(Predicate<Node<V>> test, Node<T> newParent, Function<Node<V>, T> valueConverter) {
+        return transform(test, newParent, Node::getName, valueConverter);
+    }
+
+    /**
+     * Copy a transformed version of this node and it's children onto the specified parent.
+     * @see #transform(Predicate, Node, Function, Function)
+     */
+    default <T> Node<T> transform(Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
+        return transform(Node.of(getName()), nameConverter, valueConverter);
+    }
+
+    /**
+     * Copy a transformed version of this node and it's children onto the specified parent.
+     * @see #transform(Predicate, Node, Function, Function)
+     */
+    default <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
+        return transform(node -> true, newParent, nameConverter, valueConverter)
+                .orElseThrow(() -> new AssertionError("Should not happen"));
     }
 
     /**
      * Copy a transformed version of this node and it's children onto the specified parent.
      *
-     * @param newParent The parent to copy a transformed version of this node and it's children to
-     * @param valueConverter The converter which will be applied to produce a new value for each node in this tree
      * @param <T> The type of the value of the transformed copy
+     * @param test Only nodes that pass this test will be accepted to the transformed tree
+     * @param newParent The parent to copy a transformed version of this node and it's children to
+     * @param nameConverter The converter which will be applied to produce a new name for each node in this tree
+     * @param valueConverter The converter which will be applied to produce a new value for each node in this tree
      * @return The transformed copy of this node
-     * @see #transform(Node, Function, Function)
+     * @throws StackOverflowError If the Node calling this method is passed in as the newParent argument
+     * @see #transform(Node, Function)
      */
-    default <T> Node<T> transform(Node<T> newParent, Function<Node<V>, T> valueConverter) {
-        return transform(newParent, node -> node.getName(), valueConverter);
+    default <T> Optional<Node<T>> transform(Predicate<Node<V>> test, Node<T> newParent,
+            Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
+        if (!test.test(this)) {
+            return Optional.empty();
+        }
+        final String newName = nameConverter.apply(this);
+        final T newValue = valueConverter.apply(this);
+        final Node<T> newNode = Node.of(newName, newValue, newParent);
+        getChildren().forEach(child -> child.transform(test, newNode, nameConverter, valueConverter));
+        return Optional.of(newNode);
     }
 
-    default <T> Node<T> transform(Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
-        return transform(Node.of(getName()), nameConverter, valueConverter);
+    default boolean isEmptyNode() {
+        return this == EMPTY;
     }
 
     default boolean isRoot() {
@@ -136,6 +206,9 @@ public interface Node<V> {
      * @return The topmost <tt>parent node</tt> in this node's heirarchy.
      */
     default Node<V> getRoot() {
+        if (isRoot()) {
+            return this;
+        }
         Node<V> target = this;
         while(target.getParentOrDefault(null) != null) {
             target = target.getParentOrDefault(null);

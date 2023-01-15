@@ -1,19 +1,12 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 
 import java.lang.reflect.GenericDeclaration;
 import java.util.Arrays;
-import java.util.List;
 import java.util.stream.Collectors;
 
 public abstract class AbstractAnnotationProcessorTest<S extends GenericDeclaration> {
-
-    List<Class<?>> findClasses() {
-        String packageName = this.getClass().getPackage().getName();
-        return ClassesInPackageFinder.ofDefaults().findClasses(packageName, clazz -> true);
-    }
 
     void assertHasChildrenHavingNames(Node<RateConfig> parent, S... classes) {
         assertHasChildrenHavingNames(parent, toNames(classes));

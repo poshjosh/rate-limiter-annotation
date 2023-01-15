@@ -29,7 +29,7 @@ final class NodeImpl<V> implements Node<V> {
     private final V value;
     
     private final Node<V> parent;
-    
+
     private final List<Node<V>> children;
 
     NodeImpl(String name, V value, Node<V> parent) {
@@ -39,7 +39,7 @@ final class NodeImpl<V> implements Node<V> {
         this.children = new LinkedList<>();
         if(parent != null) {
             if(this.equals(parent)) {
-                throw new IllegalArgumentException("A node may not be parent to itself"); 
+                throw new IllegalArgumentException("A node may not be parent to itself");
             }
             if(this.parent instanceof NodeImpl) {
                 ((NodeImpl)this.parent).addChild(NodeImpl.this);
@@ -52,7 +52,7 @@ final class NodeImpl<V> implements Node<V> {
     boolean addChild(Node<V> child) {
         final Object ref = child.getParentOrDefault(null);
         if(Objects.equals(ref, this)) {
-            if(!this.children.contains(child)) {    
+            if(!this.children.contains(child)) {
                 return this.children.add(child);
             }else{
                 return false;
@@ -64,22 +64,13 @@ final class NodeImpl<V> implements Node<V> {
 
     @Override
     public void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer, int depth) {
-        new BreadthFirstNodeVisitor<>(filter, consumer, depth).accept(this);
+        new DepthFirstNodeVisitor<>(filter, consumer, depth).accept(this);
     }
 
     @Override
     public Node<V> copyTo(Node<V> parent) {
         final Node<V> newNode = Node.of(name, value, parent);
         children.forEach(child -> child.copyTo(newNode));
-        return newNode;
-    }
-
-    @Override
-    public <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
-        final String newName = name == null ? null : nameConverter.apply(this);
-        final T newValue = value == null ? null : valueConverter.apply(this);
-        final Node<T> newNode = Node.of(newName, newValue, newParent);
-        children.forEach(child -> child.transform(newNode, nameConverter, valueConverter));
         return newNode;
     }
 
@@ -100,9 +91,9 @@ final class NodeImpl<V> implements Node<V> {
     
     @Override
     public Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest) {
-        
+
         Node<V> found = null;
-        
+
         if(nodeTest.test(offset)) {
             found = offset;
         }else{
@@ -186,6 +177,9 @@ final class NodeImpl<V> implements Node<V> {
         if (!Objects.equals(this.value, other.value)) {
             return false;
         }
+        if (size() != other.size()) {
+            return false;
+        }
         if (!Objects.equals(this.parent, other.parent)) {
             return false;
         }
@@ -198,6 +192,6 @@ final class NodeImpl<V> implements Node<V> {
 
     @Override
     public String toString() {
-        return "NodeImpl{" + name + '=' + value + ", parent=" + (parent == null ? null : ("Node{"+parent.getName()+'='+parent.getValueOrDefault(null)+"}")) + ", children=" + children.size() + '}';
+        return NodeFormatter.indentedHeirarchy().format(this);
     }
 }

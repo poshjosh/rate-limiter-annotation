@@ -26,13 +26,18 @@ class ClassAnnotationProcessor extends AbstractAnnotationProcessor<Class<?>, Rat
         return Element.of(element);
     }
 
+    @Override
+    protected Node<RateConfig> findExistingParent(Node<RateConfig> root, Class<?> element) {
+        return root;
+    }
+
     // We override this here so we can process the class and its super classes
     @Override
     public Node<RateConfig> process(Node<RateConfig> root, NodeConsumer consumer, Class<?> source){
-        final List<Element> superClasses = new ArrayList<>();
+        final List<Class<?>> superClasses = new ArrayList<>();
         final List<Node<RateConfig>> superClassNodes = new ArrayList<>();
-        NodeConsumer collectSuperClassNodes = (element, superClassNode) -> {
-            if(!superClassNode.isEmptyNode() && superClasses.contains((Element)element)) {
+        NodeConsumer collectSuperClassNodes = (sourceClass, superClassNode) -> {
+            if(!superClassNode.isEmptyNode() && superClasses.contains((Class<?>)sourceClass)) {
                 superClassNodes.add(superClassNode);
             }
         };
@@ -40,23 +45,23 @@ class ClassAnnotationProcessor extends AbstractAnnotationProcessor<Class<?>, Rat
         Node<RateConfig> classNode = null;
         do{
 
-            Node<RateConfig> node = super.doProcess(root, collectSuperClassNodes.andThen(consumer), source);
+            Node<RateConfig> parent = findExistingParent(root, source);
 
-            final boolean mainNode = classNode == null;
+            Node<RateConfig> node = super.doProcess(root, parent, collectSuperClassNodes.andThen(consumer), source);
 
-            // If not main node, then it is a super class node, in which case we do not attach
-            // the super class node to the root by passing in null as its parent
-            // We will transfer all method nodes from each super class node to the main node
-            processMethods(mainNode ? root : null, source, consumer);
+            root = node.getRoot(); // The root may have changed
 
-            if(mainNode) { // The first successfully processed node is the base class
+            final boolean initialState = classNode == null;
+
+            root = processMethods(root, source, consumer);
+
+            if(initialState) { // The first successfully processed node is the base class
                 classNode = node;
             }else{
-                if (node != null) {
-                    node.getValueOptional().ifPresent(nodeValue -> {
-                        superClasses.add((Element)nodeValue.getSource());
-                    });
-                }
+                final Class<?> finalReference = source;
+                node.getValueOptional().ifPresent(nodeValue -> {
+                    superClasses.add(finalReference);
+                });
             }
 
             source = source.getSuperclass();
@@ -68,14 +73,14 @@ class ClassAnnotationProcessor extends AbstractAnnotationProcessor<Class<?>, Rat
         return root;
     }
 
-    private void processMethods(Node<RateConfig> root, Class<?> element, NodeConsumer consumer) {
+    private Node<RateConfig> processMethods(Node<RateConfig> root, Class<?> element, NodeConsumer consumer) {
         Method[] methods = element.getDeclaredMethods();
-        methodAnnotationProcessor.processAll(root, consumer, methods);
+        return methodAnnotationProcessor.processAll(root, consumer, methods);
     }
 
     /**
-     * If class A has 2 super classes B and C both containing resource api endpoint methods, then we transfer
-     * those resource api endpoint methods from classes B and C to A.
+     * If class A has 2 super classes B and C both host Rate related annotations, then we transfer
+     * the date resolved from those Rate related annotations from classes B and C to A.
      * @param classNode The receiving class
      * @param superClassNodes The giving class
      */
@@ -87,17 +92,10 @@ class ClassAnnotationProcessor extends AbstractAnnotationProcessor<Class<?>, Rat
                 List<Node<RateConfig>> superClassMethodNodes = superClassNode.getChildren();
 
                 // Transfer method nodes from the super class
-                superClassMethodNodes.forEach(node -> node.copyTo(classNode));
+                superClassMethodNodes.forEach(node -> {
+                    node.copyTo(classNode);
+                });
             }
         }
-    }
-
-    @Override
-    protected Node<RateConfig> getOrCreateParent(Node<RateConfig> root, Class<?> element,
-                                                   RateGroup rateGroup, Rate[] rates) {
-        Node<RateConfig> node = findOrCreateNodeForRateLimitGroupOrNull(root, root, element,
-                rateGroup,
-                rates);
-        return node == null ? root : node;
     }
 }

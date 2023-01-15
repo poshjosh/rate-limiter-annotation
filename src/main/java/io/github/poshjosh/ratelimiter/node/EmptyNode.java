@@ -4,7 +4,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 final class EmptyNode<V> implements Node<V>{
@@ -16,11 +15,6 @@ final class EmptyNode<V> implements Node<V>{
         if (depth > 0 && filter.test(this)) {
             consumer.accept(this);
         }
-    }
-
-    @Override
-    public <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
-        return (Node<T>)this;
     }
 
     @Override
@@ -56,5 +50,9 @@ final class EmptyNode<V> implements Node<V>{
     @Override
     public Node<V> getParentOrDefault(Node<V> outputIfNone) {
         return outputIfNone;
+    }
+
+    @Override public String toString() {
+        return "EmptyNode{}";
     }
 }

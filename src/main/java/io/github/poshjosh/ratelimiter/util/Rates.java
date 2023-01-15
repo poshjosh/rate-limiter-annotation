@@ -24,9 +24,7 @@ public class Rates {
         return of(Operator.OR, rates);
     }
 
-    public static Rates and(Rate... rates) {
-        return of(Operator.AND, rates);
-    }
+    public static Rates and(Rate... rates) { return of(Operator.AND, rates); }
 
     public static Rates of(Operator operator, Rate... rates) {
         return of(operator, rates == null ? Collections.emptyList() : Arrays.asList(rates));

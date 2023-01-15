@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.annotation.RateConfig;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.Rates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +18,7 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
     public interface MatcherProvider<T>{
         // Provides a matcher that will match all requests
         static <T> MatcherProvider<T> ofDefaults() {
-            return node -> key -> key + "-" + node.getName();
+            return node -> Matcher.identity();
         }
         Matcher<T, ?> getMatcher(Node<RateConfig> node);
     }
@@ -31,15 +32,18 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
 
     private static final class DefaultLimiterProvider implements LimiterProvider{
         private final Map<String, ResourceLimiter<Object>> nameToLimiter = new HashMap<>();
+        @Override
         public ResourceLimiter<Object> getLimiter(Node<RateConfig> node) {
-            return nameToLimiter.computeIfAbsent(node.getName(), k -> createLimiter(node));
+            return nameToLimiter.computeIfAbsent(node.getName(), key -> createLimiter(node));
         }
         private ResourceLimiter<Object> createLimiter(Node<RateConfig> node) {
-            return node.getValueOptional()
+            ResourceLimiter<Object> limiter = node.getValueOptional()
                     .map(RateConfig::getValue)
+                    .filter(Rates::hasLimits)
                     .map(rates -> RateToBandwidthConverter.ofDefaults().convert(rates))
                     .map(ResourceLimiter::of)
                     .orElse(ResourceLimiter.NO_OP);
+            return limiter;
         }
     }
 
@@ -52,7 +56,7 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
             LimiterProvider limiterProvider,
             Node<RateConfig> rootNode) {
         return new ResourceLimiterComposition<>(
-                matcherProvider, limiterProvider, rootNode, false);
+                matcherProvider, limiterProvider, rootNode);
     }
 
     public static <R> ResourceLimiter<R> ofProperties(Node<RateConfig> rootNode) {
@@ -64,29 +68,28 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
             LimiterProvider limiterProvider,
             Node<RateConfig> rootNode) {
         return new ResourceLimiterComposition<>(
-                matcherProvider, limiterProvider, rootNode, true);
+                matcherProvider, limiterProvider, rootNode);
     }
 
-    private enum VisitResult {SUCCESS, FAILURE, NOMATCH}
+    private enum VisitResult {NO_MATCH, LIMIT_NOT_SET, SUCCESS, FAILURE}
 
     private final MatcherProvider<R> matcherProvider;
     private final LimiterProvider limiterProvider;
     private final Node<RateConfig> rootNode;
-    private final Set<Node<RateConfig>> leafNodes;
-    private final boolean firstMatchOnly;
+    private final Collection<Node<RateConfig>> leafNodes;
 
     private ResourceLimiterComposition(
-            MatcherProvider<R> matcherProvider, LimiterProvider limiterProvider,
-            Node<RateConfig> rootNode, boolean firstMatchOnly) {
+            MatcherProvider<R> matcherProvider,
+            LimiterProvider limiterProvider,
+            Node<RateConfig> rootNode) {
         this.matcherProvider = Objects.requireNonNull(matcherProvider);
         this.limiterProvider = Objects.requireNonNull(limiterProvider);
         this.rootNode = Objects.requireNonNull(rootNode);
         this.leafNodes = collectLeafNodes(rootNode);
-        this.firstMatchOnly = firstMatchOnly;
     }
-    private Set<Node<RateConfig>> collectLeafNodes(Node<RateConfig> rootNode) {
-        Set<Node<RateConfig>> set = new LinkedHashSet<>();
-        rootNode.visitAll(Node::isLeaf, set::add);
+    private <V> Set<Node<V>> collectLeafNodes(Node<V> node) {
+        Set<Node<V>> set = new LinkedHashSet<>();
+        node.visitAll(Node::isLeaf, set::add);
         return Collections.unmodifiableSet(set);
     }
 
@@ -94,10 +97,10 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
     public boolean tryConsume(R request, int permits, long timeout, TimeUnit unit) {
         Function<Node<RateConfig>, VisitResult> consumePermits =
                 node -> tryConsume(request, permits, timeout, unit, node);
-        return visitNodes(firstMatchOnly, consumePermits);
+        return visitNodes(consumePermits);
     }
 
-    public boolean visitNodes(boolean firstMatchOnly, Function<Node<RateConfig>, VisitResult> visitor) {
+    public boolean visitNodes(Function<Node<RateConfig>, VisitResult> visitor) {
 
         int globalFailureCount = 0;
 
@@ -105,26 +108,20 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
 
             int nodeSuccessCount = 0;
 
-            while(node != rootNode && node != null && node.hasNodeValue()) {
+            final VisitResult result = visitor.apply(node);
 
-                final VisitResult result = visitor.apply(node);
+            log.debug("Result: {}, node: {}", result, node.getName());
 
-                switch(result) {
-                    case SUCCESS: ++nodeSuccessCount; break;
-                    case FAILURE: ++globalFailureCount; break;
-                    case NOMATCH:
-                        break;
-                    default: throw new IllegalArgumentException();
-                }
-
-                if(!VisitResult.SUCCESS.equals(result)) {
+            switch(result) {
+                case SUCCESS: ++nodeSuccessCount; break;
+                case FAILURE: ++globalFailureCount; break;
+                case NO_MATCH:
+                case LIMIT_NOT_SET:
                     break;
-                }
-
-                node = node.getParentOrDefault(null);
+                default: throw new IllegalArgumentException("Unexpected visit result: " + result);
             }
 
-            if(firstMatchOnly && nodeSuccessCount > 0) {
+            if(nodeSuccessCount > 0) {
                 break;
             }
         }
@@ -135,32 +132,34 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
     private VisitResult tryConsume(
             R request, int permits, long timeout, TimeUnit unit, Node<RateConfig> node) {
 
-        final ResourceLimiter<?> resourceLimiter = limiterProvider.getLimiter(node);
-
-        if(resourceLimiter == NO_OP) {
-            return VisitResult.NOMATCH;
-        }
-
         final Matcher<R, ?> matcher = matcherProvider.getMatcher(node);
 
         final Object resourceId = matcher.matchOrNull(request);
 
-        if(log.isTraceEnabled()) {
-            log.trace("Matched: {}, match: {}, name: {}, matcher: {}",
-                    resourceId != null, resourceId, node.getName(), matcher);
-        }
-
         if(resourceId == null) {
-            return VisitResult.NOMATCH;
+            return VisitResult.NO_MATCH;
         }
 
-        final boolean success = ((ResourceLimiter)resourceLimiter)
-                .tryConsume(resourceId, permits, timeout, unit);
+        final Node<RateConfig> limiterNode = getGroupNode(node);
 
-        if (success) {
-            return VisitResult.SUCCESS;
+        final ResourceLimiter resourceLimiter = limiterProvider.getLimiter(limiterNode);
+
+        log.trace("Limiter node: {}", limiterNode.getName());
+
+        if(resourceLimiter == NO_OP) {
+            return VisitResult.LIMIT_NOT_SET;
         }
 
-        return VisitResult.FAILURE;
+        final boolean success = resourceLimiter.tryConsume(resourceId, permits, timeout, unit);
+
+        return success ? VisitResult.SUCCESS : VisitResult.FAILURE;
+    }
+
+    private Node<RateConfig> getGroupNode(Node<RateConfig> node) {
+        if (!node.isLeaf()) {
+            return node;
+        }
+        Node<RateConfig> parent = node.getParentOrDefault(null);
+        return parent.isRoot() ? node : parent;
     }
 }

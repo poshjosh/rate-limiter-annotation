@@ -1,6 +1,5 @@
-package io.github.poshjosh.ratelimiter.utiil;
+package io.github.poshjosh.ratelimiter.util;
 
-import io.github.poshjosh.ratelimiter.util.Matcher;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

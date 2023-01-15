@@ -1,8 +1,8 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.node.NodeFormatter;
 import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.util.Rate;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,142 +11,205 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Array;
 import java.lang.reflect.GenericDeclaration;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public abstract class AbstractAnnotationProcessor
-        <S extends GenericDeclaration, I extends Annotation, O extends Rates>
-        implements AnnotationProcessor<S>{
+        <G extends GenericDeclaration, A extends Annotation, R extends Rates>
+        implements AnnotationProcessor<G>{
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractAnnotationProcessor.class);
 
-    private final AnnotationConverter<I, O> annotationConverter;
+    private final AnnotationConverter<A, R> annotationConverter;
 
-    protected AbstractAnnotationProcessor(AnnotationConverter<I, O> annotationConverter) {
+    protected AbstractAnnotationProcessor(AnnotationConverter<A, R> annotationConverter) {
         this.annotationConverter = Objects.requireNonNull(annotationConverter);
     }
 
-    protected abstract Node<RateConfig> getOrCreateParent(
-            Node<RateConfig> root, S element,
-            RateGroup rateGroup, I[] rates);
+    protected abstract Element toElement(G element);
 
-    protected abstract Element toElement(S element);
+    protected abstract Node<RateConfig> findExistingParent(Node<RateConfig> root, G element);
 
+    /**
+     * @param root the root node
+     * @param consumer a consumer that will be applied to each node processed
+     * @param element the element for which rate limit annotations will be processed
+     * @return The root node
+     */
     @Override
-    public Node<RateConfig> process(Node<RateConfig> root, NodeConsumer consumer, S element){
-        doProcess(root, consumer, element);
-        return root;
+    public Node<RateConfig> process(Node<RateConfig> root, NodeConsumer consumer, G element){
+        return doProcess(root, findExistingParent(root, element), consumer, element).getRoot();
     }
 
     /**
      * @return The processed node
      */
-    protected Node<RateConfig> doProcess(Node<RateConfig> root, NodeConsumer consumer, S source){
-
-        final I[] rates = source.getAnnotationsByType(annotationConverter.getAnnotationType());
-
-        final Node<RateConfig> node;
+    Node<RateConfig> doProcess(Node<RateConfig> root, Node<RateConfig> parent, NodeConsumer consumer, G source){
 
         final Element element = toElement(source);
 
-        if(rates.length > 0 ) {
+        final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
 
-            RateGroup rateGroup = source.getAnnotation(RateGroup.class);
-            Node<RateConfig> createdParent = getOrCreateParent(root, source, rateGroup, rates);
+        final A[] rateAnnotations = source.getAnnotationsByType(annotationConverter.getAnnotationType());
 
-            Node<RateConfig> parentNode = createdParent == null ? root : createdParent;
-            String name = element.getId();
-            node = createNodeForElementOrNull(parentNode, name, element, rateGroup, rates);
+        Optional<Node<RateConfig>> existingGroupOptional = rateGroup == null ? Optional.empty() :
+                findNodeForGroup(root, source, element, rateGroup, rateAnnotations);
 
-        }else{
-            node = Node.empty();
+        existingGroupOptional.ifPresent(groupNode ->
+                requireInitializedOnlyOnce(source, rateGroup, rateAnnotations, groupNode));
+
+        final String groupName = rateGroup == null ? null : getName(rateGroup, source);
+
+        // Call this method before creating the group
+        final boolean groupExisted = existingGroupOptional.isPresent();
+
+        Node<RateConfig> createdParent = rateGroup == null ? null :
+                existingGroupOptional.orElseGet(() ->
+                        createNodeForGroup(parent, groupName, rateGroup, rateAnnotations));
+
+        if (groupExisted && createdParent != null) {
+            // Copy existing rates to the newly created parent
+            createdParent = copyRatesToNode(root, createdParent, element, rateGroup, rateAnnotations);
+            root = createdParent.getRoot(); // Root may have changed
         }
+
+        final Node<RateConfig> parentNode = createdParent == null ? root : createdParent;
+
+        // If the rates have been added to the parent, we do not add them here
+        final A [] ratesUpdate = createdParent == null ? rateAnnotations :
+                (A[])Array.newInstance(annotationConverter.getAnnotationType(), 0);
+        final Node<RateConfig> node = createNodeForElement(
+                parentNode, element, rateGroup, ratesUpdate);
 
         if(LOG.isTraceEnabled()) {
-            LOG.trace("\nProcessed: {}\nInto Node: {}", element, NodeFormatter.indented().format(node));
+            LOG.trace("\nProcessed: {} into:\n{}", element, node);
         }
 
-        consumer.accept(element, node);
+        consumer.accept(source, node);
 
         return node;
     }
-
-    protected Node<RateConfig> findOrCreateNodeForRateLimitGroupOrNull(
-            Node<RateConfig> root, Node<RateConfig> parent,
-            GenericDeclaration annotatedElement, RateGroup rateGroup, I[] rates) {
-        String name = getName(rateGroup);
-        final Node<RateConfig> node;
-        if(root == null || rateGroup == null || name.isEmpty()) {
-            node = null;
-        }else{
-            node = root.findFirstChild(childNode -> name.equals(childNode.getName()))
-                    .map(foundNode -> requireConsistentData(foundNode, annotatedElement, rateGroup,
-                            rates))
-                    .orElseGet(() -> createNodeForGroupOrNull(parent, name, rateGroup, rates));
+    private Node<RateConfig> copyRatesToNode(
+            Node<RateConfig> root, Node<RateConfig> node,
+            Element element, RateGroup rateGroup, A [] rateAnnotations) {
+        R ratesData = annotationConverter.convert(rateGroup, element, rateAnnotations);
+        RateConfig updated = addCopyOfRatesTo(
+                RateConfig.of(element, ratesData), requireNodeValue(node));
+        Node<RateConfig> newRoot = Node.of(root.getName(), root.getValueOrDefault(null));
+        Node<RateConfig> newParent = Node.of(node.getName(), updated, newRoot);
+        node.getChildren().forEach(child -> child.copyTo(newParent));
+        return newParent;
+    }
+    private RateConfig addCopyOfRatesTo(RateConfig srcConfig, RateConfig tgtConfig) {
+        final Rates srcRates = srcConfig.getValue();
+        if (!srcRates.hasLimits()) {
+            return tgtConfig;
         }
-
-        return node;
-    }
-
-    private String getName(RateGroup rateGroup) {
-        return rateGroup == null ? "" : selectFirstValidOrEmptyText(rateGroup.name(), rateGroup.value());
-    }
-
-    private String selectFirstValidOrEmptyText(String ...candidates) {
-        for(String candidate : candidates) {
-            if(candidate != null && !candidate.isEmpty()) {
-                return candidate;
-            }
+        final Rates tgtRates = tgtConfig.getValue();
+        // If we implement [Rates x Rates x...], given that each Rates is [Rate x Rate x...]
+        // and x represents the operator. Then we would be able to compose multiple Rates, each
+        // with a different operator.
+        requireEqualOperator(tgtConfig.getSource(), tgtRates.getOperator(),
+                srcConfig.getSource(), srcRates.getOperator());
+        if (!tgtRates.hasLimits()) {
+            return tgtConfig.withValue(Rates.of(srcRates));
         }
-        return "";
+        final Operator operator = Arrays.stream(new Rates[]{tgtRates, srcRates})
+                .map(Rates::getOperator)
+                .filter(optr -> !Operator.DEFAULT.equals(optr))
+                .findAny()
+                .orElse(Operator.DEFAULT);
+        List<io.github.poshjosh.ratelimiter.util.Rate> composite = new ArrayList<>();
+        composite.addAll(tgtRates.getLimits().stream().map(Rate::of).collect(Collectors.toList()));
+        composite.addAll(srcRates.getLimits().stream().map(Rate::of).collect(Collectors.toList()));
+        return tgtConfig.withValue(Rates.of(operator, composite));
     }
 
-    private Node<RateConfig> createNodeForGroupOrNull(
+    private Optional<Node<RateConfig>> findNodeForGroup(
+            Node<RateConfig> root, G source, Element element, RateGroup rateGroup, A[] rates) {
+        final String name = getName(rateGroup, source);
+        return root.findFirstChild(childNode -> name.equals(childNode.getName()))
+                .map(foundNode -> requireConsistentData(foundNode, element, rateGroup, rates));
+    }
+
+    private String getName(RateGroup rateGroup, Object source) {
+        return Arrays.stream(new String[]{rateGroup.name(), rateGroup.value()})
+                .filter(value -> value != null && !value.isEmpty())
+                .findAny().orElseThrow(() -> err("RateGroup name required at: " + source));
+    }
+
+    private Node<RateConfig> createNodeForGroup(
             Node<RateConfig> parentNode, String name,
-            RateGroup rateGroup, I[] rateAnnotations) {
-        if(rateAnnotations.length == 0) {
-            return null;
-        }else{
-            Element element = Element.of(name);
-            O rates = annotationConverter.convert(rateGroup, element,
-                    (I[])Array.newInstance(annotationConverter.getAnnotationType(), 0));
-            return Node.of(name, RateConfig.of(element, rates), parentNode);
-        }
+            RateGroup rateGroup, A[] rateAnnotations) {
+        Element element = Element.of(name);
+        R rates = annotationConverter.convert(rateGroup, element, rateAnnotations);
+        checkRateGroupOperator(rates.getOperator(), rateAnnotations);
+        return Node.of(name, RateConfig.of(element, rates), parentNode);
     }
 
-    protected Node<RateConfig> createNodeForElementOrNull(
-            Node<RateConfig> parentNode, String name, Element element,
-            RateGroup rateGroup, I[] rateAnnotations) {
-        if(rateAnnotations.length == 0) {
-            return Node.empty();
-        }else{
-            final O rates = annotationConverter.convert(rateGroup, element, rateAnnotations);
-            return Node.of(name, RateConfig.of(element, rates), parentNode);
-        }
+    private Node<RateConfig> createNodeForElement(
+            Node<RateConfig> parentNode, Element element, RateGroup rateGroup, A[] rateAnnotations) {
+        final R rates = annotationConverter.convert(rateGroup, element, rateAnnotations);
+        return Node.of(element.getId(), RateConfig.of(element, rates), parentNode);
     }
+
+    private void requireInitializedOnlyOnce(
+            G source, RateGroup rateGroup, A [] rates, Node<RateConfig> existingGroupNode) {
+        if (rateGroup != null && rates.length > 0) {
+            existingGroupNode.getValueOptional().ifPresent(rateConfig -> {
+                if (rateConfig.getValue().hasLimits()) {
+                    throw err("Each RateGroup annotation may be initialized (i.e co-located with Rate annotations) at only one location. For group: " +
+                            rateConfig.getSource() + ", found additional at " + source);
+                }
+            });
+        }
+   }
 
     private Node<RateConfig> requireConsistentData(
-            Node<RateConfig> rateLimitGroupNode, GenericDeclaration annotatedElement,
-            RateGroup rateGroup, I[] rates) {
+            Node<RateConfig> rateLimitGroupNode, Element element, RateGroup rateGroup, A[] rates) {
         if(rateGroup != null && rates.length != 0) {
-            final Operator operator = operator(rateGroup);
-            rateLimitGroupNode.getChildren().stream()
-                    .map(childNode -> childNode.getValueOptional()
-                            .orElseThrow(() -> new AnnotationProcessingException("Only the root node may have no value")))
-                    .map(RateConfig::getValue)
-                    .forEach(existing -> requireEqual(annotatedElement, rateGroup, operator, existing));
+            rateLimitGroupNode.getChildren().stream().map(this::requireNodeValue)
+                    .forEach(rateConfig -> requireEqualOperator(element, rateGroup, rateConfig));
         }
 
         return rateLimitGroupNode;
     }
 
-    private void requireEqual(GenericDeclaration annotatedElement,
-            RateGroup rateGroup, Operator lhs, Rates existing) {
-        if(!existing.getOperator().equals(lhs)) {
-            throw new AnnotationProcessingException("Found inconsistent operator, for "
-                    + rateGroup + " declared at " + annotatedElement);
+    private void requireEqualOperator(Element src, RateGroup grp, RateConfig cfg) {
+        requireEqualOperator(src, operator(grp), cfg.getSource(), cfg.getValue().getOperator());
+    }
+
+    private void requireEqualOperator(Object src0, Operator optr0, Object src1, Operator optr1) {
+        if (Operator.DEFAULT.equals(optr1) || Operator.DEFAULT.equals(optr0)) {
+            return;
+        }
+        if(!optr1.equals(optr0)) {
+            throw err("Operator declared at " + src1 + " = " + optr1 +
+                    " must match that declared at " + src0 + " = " + optr0);
         }
     }
 
+    private void checkRateGroupOperator(Operator operator, A [] rateAnnotations) {
+        if (rateAnnotations.length > 0) {
+            return;
+        }
+        if (!Operator.DEFAULT.equals(operator)) {
+            throw err("The operator field may not be specified for a RateGroup when no Rates are co-located with the RateGroup");
+        }
+    }
+
+    private RateConfig requireNodeValue(Node<RateConfig> node) {
+        return node.getValueOptional().orElseThrow(this::noValueForNodeException);
+    }
+
+    private AnnotationProcessingException noValueForNodeException() {
+        return err("Only the root node may have no value");
+    }
+
+    private AnnotationProcessingException err(String msg) {
+        return new AnnotationProcessingException(msg);
+    }
+
     private Operator operator(RateGroup rateGroup) {
-        return rateGroup == null ? AnnotationProcessor.DEFAULT_OPERATOR : rateGroup.operator();
+        return rateGroup == null ? Operator.DEFAULT : rateGroup.operator();
     }
 }

@@ -26,9 +26,9 @@ import java.util.function.Predicate;
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 16, 2017 9:21:53 PM
  */
-final class BreadthFirstNodeVisitor<T> implements Consumer<Node<T>>{
+final class DepthFirstNodeVisitor<T> implements Consumer<Node<T>>{
 
-    private static final Logger LOG = LoggerFactory.getLogger(BreadthFirstNodeVisitor.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(DepthFirstNodeVisitor.class.getName());
 
     private final Predicate<Node<T>> filter;
     
@@ -36,15 +36,15 @@ final class BreadthFirstNodeVisitor<T> implements Consumer<Node<T>>{
     
     private final int depth;
 
-    BreadthFirstNodeVisitor(Consumer<Node<T>> consumer) {
+    DepthFirstNodeVisitor(Consumer<Node<T>> consumer) {
         this(node -> true, consumer);
     }
 
-    BreadthFirstNodeVisitor(Predicate<Node<T>> filter, Consumer<Node<T>> consumer) {
+    DepthFirstNodeVisitor(Predicate<Node<T>> filter, Consumer<Node<T>> consumer) {
         this(filter, consumer, Integer.MAX_VALUE);
     }
 
-    BreadthFirstNodeVisitor(Predicate<Node<T>> filter, Consumer<Node<T>> consumer, int depth) {
+    DepthFirstNodeVisitor(Predicate<Node<T>> filter, Consumer<Node<T>> consumer, int depth) {
         this.filter = Objects.requireNonNull(filter);
         this.consumer = Objects.requireNonNull(consumer);
         this.depth = depth;
@@ -56,7 +56,7 @@ final class BreadthFirstNodeVisitor<T> implements Consumer<Node<T>>{
         this.visit(node, this.depth);
     }
     
-    public void visit(Node<T> node, int depth) {
+    private void visit(Node<T> node, int depth) {
 
         if(LOG.isTraceEnabled()) {
             LOG.trace("Visiting: {}", node);

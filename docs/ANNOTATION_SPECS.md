@@ -2,23 +2,24 @@
 
 - The `@Rate` annotation may be placed on a super class.
 
-- A `@Rate` annotation at the class level applies to all methods of the class having a
+- The `@Rate` annotation at the class level applies to all methods of the class having a
   `@Rate` annotation.
   
-- Multiple annotations on an element (e.g class, method) many not belong to different groups.
-
 - A `@Rate` annotation may be assigned to a group using a `@RateGroup` annotation.
 
-- If A `@RateGroup` annotation is not specified the `@Rate` annotation, is
+- Each `@RateGroup` is identified by name.
+  
+- Each `@RateGroup` may be initialized (i.e co-located with `@Rate`s) at only one location.
+  Apart from that one location, the `@RateGroup` may be placed at other locations, as long
+  as it is not co-located with `@Rate`.
+
+- If a `@RateGroup` annotation is not specified the `@Rate` annotation, is
   assigned to a default group:
 
     * At the class level, the group is named after the fully qualified class name.
 
     * At the method level, the group is named after the fully qualified class name and method signature.
-
-- The `@RateGroup` annotation may span either multiple classes/interfaces/annotations/methods but 
-  not a mixing.
-
+  
 **Simple Example**
 
 All the members of the rate limit group below will have the same rate applied.

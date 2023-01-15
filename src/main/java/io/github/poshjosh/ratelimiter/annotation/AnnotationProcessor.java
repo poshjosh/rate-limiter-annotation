@@ -1,7 +1,6 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.util.Rates;
 
 import java.lang.reflect.GenericDeclaration;
@@ -11,8 +10,7 @@ import java.util.Objects;
 
 public interface AnnotationProcessor<S extends GenericDeclaration> {
 
-    Operator DEFAULT_OPERATOR = Operator.OR;
-
+    @FunctionalInterface
     interface NodeConsumer{
         void accept(Object o, Node<RateConfig> node);
         default NodeConsumer andThen(NodeConsumer after) {
@@ -32,20 +30,23 @@ public interface AnnotationProcessor<S extends GenericDeclaration> {
         return new ClassAnnotationProcessor(annotationConverter);
     }
 
-    default void processAll(Node<RateConfig> root, S... elements) {
-        processAll(root, Arrays.asList(elements));
+    default Node<RateConfig> processAll(Node<RateConfig> root, S... elements) {
+        return processAll(root, Arrays.asList(elements));
     }
 
-    default void processAll(Node<RateConfig> root, List<S> elements) {
-        processAll(root, (element, node) -> {}, elements);
+    default Node<RateConfig> processAll(Node<RateConfig> root, List<S> elements) {
+        return processAll(root, (element, node) -> {}, elements);
     }
 
-    default void processAll(Node<RateConfig> root, NodeConsumer consumer, S... elements) {
-        processAll(root, consumer, Arrays.asList(elements));
+    default Node<RateConfig> processAll(Node<RateConfig> root, NodeConsumer consumer, S... elements) {
+        return processAll(root, consumer, Arrays.asList(elements));
     }
 
-    default void processAll(Node<RateConfig> root, NodeConsumer consumer, List<S> elements) {
-        elements.forEach(clazz -> process(root, consumer, clazz));
+    default Node<RateConfig> processAll(Node<RateConfig> root, NodeConsumer consumer, List<S> elements) {
+        for(S element : elements) {
+            root = process(root, consumer, element);
+        }
+        return root;
     }
 
     default Node<RateConfig> process(S element) {

@@ -31,7 +31,7 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
     }
 
     private Operator operator(RateGroup rateGroup) {
-        return rateGroup == null ? AnnotationProcessor.DEFAULT_OPERATOR : rateGroup.operator();
+        return rateGroup == null ? Operator.DEFAULT : rateGroup.operator();
     }
 
     protected io.github.poshjosh.ratelimiter.util.Rate convert(Rate rate) {

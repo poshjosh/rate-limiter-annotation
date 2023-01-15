@@ -20,7 +20,7 @@ class ResourceLimiterCompositionTest {
 
     final Object key = "one";
 
-    @Rate(permits = 1, timeUnit = SECONDS)
+    @Rate(1)
     static class RateLimitedClass0{ }
 
     @Test
@@ -37,7 +37,7 @@ class ResourceLimiterCompositionTest {
 
     @Test
     void testClassWithSingleRateLimitedMethod() {
-        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(1, RateLimitedClass1.class);
+        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(2, RateLimitedClass1.class);
         assertTrue(resourceLimiter.tryConsume(key));
         assertFalse(resourceLimiter.tryConsume(key));
     }
@@ -55,30 +55,34 @@ class ResourceLimiterCompositionTest {
         assertFalse(resourceLimiter.tryConsume(key));
     }
 
-    @RateGroup(operator = Operator.OR)
+    @RateGroup(name = RateLimitedClass3.id, operator = Operator.OR)
     @Rate(permits = 1, timeUnit = SECONDS)
     @Rate(permits = 3, timeUnit = SECONDS)
-    static class RateLimitedClass3{ }
+    static class RateLimitedClass3{
+        private static final String id = "rate-limited-class3";
+    }
 
     @Test
     void testRateLimitedClassWithOrLimits() {
-        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(1, RateLimitedClass3.class);
-        assertTrue(resourceLimiter.tryConsume(key));
-        assertFalse(resourceLimiter.tryConsume(key));
+        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(2, RateLimitedClass3.class);
+        assertTrue(resourceLimiter.tryConsume(RateLimitedClass3.id));
+        assertFalse(resourceLimiter.tryConsume(RateLimitedClass3.id));
     }
 
-    @RateGroup(operator = Operator.AND)
+    @RateGroup(name = RateLimitedClass4.id, operator = Operator.AND)
     @Rate(permits = 1, timeUnit = SECONDS)
     @Rate(permits = 3, timeUnit = SECONDS)
-    static class RateLimitedClass4{ }
+    static class RateLimitedClass4{
+        private static final String id = "rate-limited-class4";
+    }
 
     @Test
     void testRateLimitedClassWithAndLimits() {
-        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(1, RateLimitedClass4.class);
-        assertTrue(resourceLimiter.tryConsume(key));
-        assertTrue(resourceLimiter.tryConsume(key));
-        assertTrue(resourceLimiter.tryConsume(key));
-        assertFalse(resourceLimiter.tryConsume(key));
+        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(2, RateLimitedClass4.class);
+        assertTrue(resourceLimiter.tryConsume(RateLimitedClass4.id));
+        assertTrue(resourceLimiter.tryConsume(RateLimitedClass4.id));
+        assertTrue(resourceLimiter.tryConsume(RateLimitedClass4.id));
+        assertFalse(resourceLimiter.tryConsume(RateLimitedClass4.id));
     }
 
     @Rate(permits = 10, timeUnit = SECONDS)
@@ -97,28 +101,30 @@ class ResourceLimiterCompositionTest {
         assertFalse(c.tryConsume(key));
     }
 
-    static final String MY_RATE_GROUP_NAME = "my-rate-group";
+    private static final String RATE_GROUP_NAME = "my-rate-group";
 
-    @Rate(1)
-    @RateGroup(MY_RATE_GROUP_NAME)
-    public @interface MyRateGroup { }
-
-    @RateGroup(MY_RATE_GROUP_NAME)
+    @RateGroup(RATE_GROUP_NAME)
     static class MyRateGroupMember0{
         void method0() {}
     }
 
     static class MyRateGroupMember1{
-        @RateGroup(MY_RATE_GROUP_NAME)
+        @RateGroup(RATE_GROUP_NAME)
         void method0() {}
     }
 
+    @Rate(1)
+    @Rate(2)
+    @RateGroup(value = RATE_GROUP_NAME, operator = Operator.AND)
+    public @interface MyRateGroup { }
+
     @Test
     void testGroupMetaAnnotation() {
-        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(2,
-                MyRateGroup.class, MyRateGroupMember0.class, MyRateGroupMember1.class);
-        assertTrue(resourceLimiter.tryConsume(MY_RATE_GROUP_NAME));
-        assertFalse(resourceLimiter.tryConsume(MY_RATE_GROUP_NAME));
+        ResourceLimiter<Object> resourceLimiter = buildRateLimiter(4,
+                MyRateGroupMember0.class, MyRateGroup.class, MyRateGroupMember1.class);
+        assertTrue(resourceLimiter.tryConsume(RATE_GROUP_NAME));
+        assertTrue(resourceLimiter.tryConsume(RATE_GROUP_NAME));
+        assertFalse(resourceLimiter.tryConsume(RATE_GROUP_NAME));
     }
 
     private ResourceLimiter<Object> buildRateLimiter(int expectedNodes, Class<?>... classes) {
@@ -129,8 +135,8 @@ class ResourceLimiterCompositionTest {
 
         Node<RateConfig> rootNode = Node.of("root");
 
-        AnnotationProcessor.ofDefaults().processAll(rootNode, classes);
-        //System.out.println(NodeFormatter.indentedHeirarchy().format(rootNode));
+        rootNode = AnnotationProcessor.ofDefaults().processAll(rootNode, classes);
+        System.out.println(rootNode);
 
         assertEquals(expectedNodes, numberOfNodes(rootNode));
 

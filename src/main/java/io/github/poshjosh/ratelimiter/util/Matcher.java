@@ -5,8 +5,14 @@ import java.util.Objects;
 @FunctionalInterface
 public interface Matcher<I, O> {
 
-    Matcher<Object, Object> MATCH_NONE = target -> null;
-    Matcher<Object, Object> IDENTITY = target -> target;
+    Matcher<Object, Object> MATCH_NONE = new Matcher<Object, Object>() {
+        @Override public Object matchOrNull(Object target) { return null; }
+        @Override public String toString() { return Matcher.class.getSimpleName() + "$MATCH_NONE"; }
+    };
+    Matcher<Object, Object> IDENTITY = new Matcher<Object, Object>() {
+        @Override public Object matchOrNull(Object target) { return target; }
+        @Override public String toString() { return Matcher.class.getSimpleName() + "$IDENTITY"; }
+    };
 
     @SuppressWarnings("unchecked")
     static <T, K> Matcher<T, K> matchNone() {

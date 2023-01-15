@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Rates;
 
 import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 class MethodAnnotationProcessor extends AbstractAnnotationProcessor<Method, Rate, Rates>{
@@ -16,21 +17,23 @@ class MethodAnnotationProcessor extends AbstractAnnotationProcessor<Method, Rate
         return Element.of(element);
     }
 
-    @Override
-    protected Node<RateConfig> getOrCreateParent(
-            Node<RateConfig> root, Method method,
-            RateGroup rateGroup, Rate[] rates) {
+    @Override protected Node<RateConfig> findExistingParent(Node<RateConfig> root, Method element) {
+        return getParentNodeOrDefault(element, root);
+    }
 
+    private Node<RateConfig> getParentNodeOrDefault(Method method, Node<RateConfig> resultIfNone) {
+        return getDeclaringClassNode(resultIfNone, method).orElse(resultIfNone);
+    }
+
+    private Optional<Node<RateConfig>> getDeclaringClassNode(Node<RateConfig> root, Method method) {
+        final String declaringClassId = ElementId.of(method.getDeclaringClass());
         Predicate<Node<RateConfig>> testForDeclaringClass = node -> {
-            RateConfig rateConfig = node == null ? null : node.getValueOrDefault(null);
-            return rateConfig != null && method.getDeclaringClass().equals(rateConfig.getSource());
+            RateConfig rateConfig = node.getValueOrDefault(null);
+            if (rateConfig == null) {
+                return false;
+            }
+            return declaringClassId.equals(((Element)rateConfig.getSource()).getId());
         };
-
-        Node<RateConfig> nodeForDeclaringClass = root == null ? null : root.findFirstChild(testForDeclaringClass).orElse(null);
-
-        Node<RateConfig> nodeForRateLimitGroup = findOrCreateNodeForRateLimitGroupOrNull(
-                root, nodeForDeclaringClass, method, rateGroup, rates);
-
-        return nodeForRateLimitGroup == null ? nodeForDeclaringClass : nodeForRateLimitGroup;
+        return root.findFirstChild(testForDeclaringClass);
     }
 }
