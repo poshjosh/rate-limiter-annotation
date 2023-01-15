@@ -2,6 +2,30 @@
 
 __Rate limiting simplified using annotations__
 
+We believe rate limiting should as easy as:
+
+```java
+// All methods collectively limited to 10 permits per second
+@Rate(10)
+class RateLimitedResource {
+
+    // 2 permits per second only when system free memory is less than 1GB
+    @Rate(2) 
+    @RateCondition("sys.memory.free<1GB")
+    @Path("/greet")
+    public String greet(String who) {
+        return "Hello " + who;
+    }
+
+    // 50 permits per minute
+    @Rate(permits = 50, duration =  TimeUnit.MINUTES)
+    @Path("/smile")
+    public String smile() {
+        return ":)";
+    }
+}
+```
+
 Based on [rate-limiter](https://github.com/poshjosh/rate-limiter).
 
 Please first read the [rate-limiter documentation](https://github.com/poshjosh/rate-limiter).
@@ -24,26 +48,6 @@ To add a dependency on `rate-limiter-annotation` using Maven, use the following:
             <artifactId>rate-limiter-annotation</artifactId>
             <version>0.2.0</version> 
         </dependency>
-```
-
-```java
-// All methods collectively limited to 120 invocations every 1 minute
-@Rate(permits = 120, timeUnit = TimeUnit.MINUTES)
-class RateLimitedResource {
-
-    // Method limited to 3 invocations every 2 seconds OR 100 invocations every 1 minute
-    @Rate(permits = 3, duration = 2)
-    @Rate(permits = 100, timeUnit = TimeUnit.MINUTES)
-    void rateLimitedMethod_1() {
-        return "Hello World 1!";
-    }
-
-    // Method limited to 3 invocations every 1 second
-    @Rate(3)
-    void rateLimitedMethod_2() {
-        return "Hello World 2!";
-    }
-}
 ```
 
 ### Sample Usage

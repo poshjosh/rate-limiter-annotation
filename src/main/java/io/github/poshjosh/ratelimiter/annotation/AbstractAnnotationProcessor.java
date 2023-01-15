@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.util.Rate;
@@ -8,7 +9,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Array;
 import java.lang.reflect.GenericDeclaration;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -64,21 +64,19 @@ public abstract class AbstractAnnotationProcessor
 
         Node<RateConfig> createdParent = rateGroup == null ? null :
                 existingGroupOptional.orElseGet(() ->
-                        createNodeForGroup(parent, groupName, rateGroup, rateAnnotations));
+                        createNodeForGroup(parent, source, groupName, rateAnnotations));
 
         if (groupExisted && createdParent != null) {
             // Copy existing rates to the newly created parent
-            createdParent = copyRatesToNode(root, createdParent, element, rateGroup, rateAnnotations);
+            createdParent = copyRatesToNode(root, createdParent, source, element);
             root = createdParent.getRoot(); // Root may have changed
         }
 
         final Node<RateConfig> parentNode = createdParent == null ? root : createdParent;
 
         // If the rates have been added to the parent, we do not add them here
-        final A [] ratesUpdate = createdParent == null ? rateAnnotations :
-                (A[])Array.newInstance(annotationConverter.getAnnotationType(), 0);
-        final Node<RateConfig> node = createNodeForElement(
-                parentNode, element, rateGroup, ratesUpdate);
+        final boolean empty = createdParent != null;
+        final Node<RateConfig> node = createNodeForElement(parentNode, source, element, empty);
 
         if(LOG.isTraceEnabled()) {
             LOG.trace("\nProcessed: {} into:\n{}", element, node);
@@ -89,11 +87,10 @@ public abstract class AbstractAnnotationProcessor
         return node;
     }
     private Node<RateConfig> copyRatesToNode(
-            Node<RateConfig> root, Node<RateConfig> node,
-            Element element, RateGroup rateGroup, A [] rateAnnotations) {
-        R ratesData = annotationConverter.convert(rateGroup, element, rateAnnotations);
+            Node<RateConfig> root, Node<RateConfig> node, G source, Element element) {
+        R ratesData = annotationConverter.convert(source);
         RateConfig updated = addCopyOfRatesTo(
-                RateConfig.of(element, ratesData), requireNodeValue(node));
+                RateConfig.of(element, ratesData), Checks.requireNodeValue(node));
         Node<RateConfig> newRoot = Node.of(root.getName(), root.getValueOrDefault(null));
         Node<RateConfig> newParent = Node.of(node.getName(), updated, newRoot);
         node.getChildren().forEach(child -> child.copyTo(newParent));
@@ -131,24 +128,25 @@ public abstract class AbstractAnnotationProcessor
                 .map(foundNode -> requireConsistentData(foundNode, element, rateGroup, rates));
     }
 
-    private String getName(RateGroup rateGroup, Object source) {
-        return Arrays.stream(new String[]{rateGroup.name(), rateGroup.value()})
-                .filter(value -> value != null && !value.isEmpty())
-                .findAny().orElseThrow(() -> err("RateGroup name required at: " + source));
+    private String getName(RateGroup rateGroup, G source) {
+        return Checks.requireOneContent(source, "RateGroup name",
+                rateGroup.name(), rateGroup.value());
     }
 
     private Node<RateConfig> createNodeForGroup(
-            Node<RateConfig> parentNode, String name,
-            RateGroup rateGroup, A[] rateAnnotations) {
+            Node<RateConfig> parentNode, G source, String name, A[] rateAnnotations) {
         Element element = Element.of(name);
-        R rates = annotationConverter.convert(rateGroup, element, rateAnnotations);
+        R rates = annotationConverter.convert(source);
         checkRateGroupOperator(rates.getOperator(), rateAnnotations);
         return Node.of(name, RateConfig.of(element, rates), parentNode);
     }
 
     private Node<RateConfig> createNodeForElement(
-            Node<RateConfig> parentNode, Element element, RateGroup rateGroup, A[] rateAnnotations) {
-        final R rates = annotationConverter.convert(rateGroup, element, rateAnnotations);
+            Node<RateConfig> parentNode, G source, Element element, boolean empty) {
+        if (empty) {
+            return Node.of(element.getId(), RateConfig.of(element, Rates.of()), parentNode);
+        }
+        final R rates = annotationConverter.convert(source);
         return Node.of(element.getId(), RateConfig.of(element, rates), parentNode);
     }
 
@@ -157,7 +155,8 @@ public abstract class AbstractAnnotationProcessor
         if (rateGroup != null && rates.length > 0) {
             existingGroupNode.getValueOptional().ifPresent(rateConfig -> {
                 if (rateConfig.getValue().hasLimits()) {
-                    throw err("Each RateGroup annotation may be initialized (i.e co-located with Rate annotations) at only one location. For group: " +
+                    throw Checks.exception(
+                            "Each RateGroup annotation may be initialized (i.e co-located with Rate annotations) at only one location. For group: " +
                             rateConfig.getSource() + ", found additional at " + source);
                 }
             });
@@ -167,7 +166,7 @@ public abstract class AbstractAnnotationProcessor
     private Node<RateConfig> requireConsistentData(
             Node<RateConfig> rateLimitGroupNode, Element element, RateGroup rateGroup, A[] rates) {
         if(rateGroup != null && rates.length != 0) {
-            rateLimitGroupNode.getChildren().stream().map(this::requireNodeValue)
+            rateLimitGroupNode.getChildren().stream().map(Checks::requireNodeValue)
                     .forEach(rateConfig -> requireEqualOperator(element, rateGroup, rateConfig));
         }
 
@@ -183,7 +182,7 @@ public abstract class AbstractAnnotationProcessor
             return;
         }
         if(!optr1.equals(optr0)) {
-            throw err("Operator declared at " + src1 + " = " + optr1 +
+            throw Checks.exception("Operator declared at " + src1 + " = " + optr1 +
                     " must match that declared at " + src0 + " = " + optr0);
         }
     }
@@ -193,20 +192,9 @@ public abstract class AbstractAnnotationProcessor
             return;
         }
         if (!Operator.DEFAULT.equals(operator)) {
-            throw err("The operator field may not be specified for a RateGroup when no Rates are co-located with the RateGroup");
+            throw Checks.exception(
+                    "The operator field may not be specified for a RateGroup when no Rates are co-located with the RateGroup");
         }
-    }
-
-    private RateConfig requireNodeValue(Node<RateConfig> node) {
-        return node.getValueOptional().orElseThrow(this::noValueForNodeException);
-    }
-
-    private AnnotationProcessingException noValueForNodeException() {
-        return err("Only the root node may have no value");
-    }
-
-    private AnnotationProcessingException err(String msg) {
-        return new AnnotationProcessingException(msg);
     }
 
     private Operator operator(RateGroup rateGroup) {

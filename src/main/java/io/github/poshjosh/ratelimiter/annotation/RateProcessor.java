@@ -1,5 +1,7 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotations.Rate;
+
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -12,7 +14,7 @@ import java.util.Set;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class RateProcessor extends AbstractProcessor {
 
-    public static final String ANNOTATION_CLASS_NAME = "io.github.poshjosh.ratelimiter.annotation.Rate";
+    public static final String ANNOTATION_CLASS_NAME = "io.github.poshjosh.ratelimiter.annotations.Rate";
 
     private Messager messager;
 

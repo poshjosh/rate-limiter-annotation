@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Rates;
 

@@ -2,7 +2,7 @@ package io.github.poshjosh.ratelimiter.readme;
 
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.annotation.ResourceLimiterFactory;
-import io.github.poshjosh.ratelimiter.annotation.Rate;
+import io.github.poshjosh.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
 

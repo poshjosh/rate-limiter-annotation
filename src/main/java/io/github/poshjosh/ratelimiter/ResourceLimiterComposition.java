@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateConfig;
+import io.github.poshjosh.ratelimiter.matcher.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.Rates;
@@ -16,11 +17,39 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
     private static final Logger log = LoggerFactory.getLogger(ResourceLimiterComposition.class);
 
     public interface MatcherProvider<T>{
-        // Provides a matcher that will match all requests
         static <T> MatcherProvider<T> ofDefaults() {
-            return node -> Matcher.identity();
+            return new DefaultMatcherProvider<>();
         }
         Matcher<T, ?> getMatcher(Node<RateConfig> node);
+    }
+
+    private static final class DefaultMatcherProvider<T> implements MatcherProvider<T> {
+        private final Map<String, Matcher<T,?>> nameToMatcher = new HashMap<>();
+        private final ExpressionMatcher<T, Long> sysMemoryMatcher;
+        private final ExpressionMatcher<T, Long> sysTimeMatcher;
+        private DefaultMatcherProvider() {
+            sysMemoryMatcher = ExpressionMatcher.ofSystemMemory();
+            sysTimeMatcher = ExpressionMatcher.ofSystemTimeElapsed();
+        }
+        @Override public Matcher<T, ?> getMatcher(Node<RateConfig> node) {
+            return nameToMatcher.computeIfAbsent(node.getName(), k -> createMatcher(node));
+        }
+        private Matcher<T, ?> createMatcher(Node<RateConfig> node) {
+            final String expression = node.getValueOptional()
+                    .map(RateConfig::getValue)
+                    .map(Rates::getRateCondition)
+                    .orElse("");
+            if (expression.isEmpty()) {
+                return Matcher.identity();
+            }
+            if (sysTimeMatcher.isSupported(expression)) {
+                return sysTimeMatcher.with(expression);
+            } else if(sysMemoryMatcher.isSupported(expression)) {
+                return sysMemoryMatcher.with(expression);
+            } else {
+                return Matcher.identity();
+            }
+        }
     }
 
     public interface LimiterProvider{
@@ -32,6 +61,7 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
 
     private static final class DefaultLimiterProvider implements LimiterProvider{
         private final Map<String, ResourceLimiter<Object>> nameToLimiter = new HashMap<>();
+        private DefaultLimiterProvider() {}
         @Override
         public ResourceLimiter<Object> getLimiter(Node<RateConfig> node) {
             return nameToLimiter.computeIfAbsent(node.getName(), key -> createLimiter(node));
@@ -110,7 +140,7 @@ public final class ResourceLimiterComposition<R> implements ResourceLimiter<R> {
 
             final VisitResult result = visitor.apply(node);
 
-            log.debug("Result: {}, node: {}", result, node.getName());
+            log.trace("Result: {}, node: {}", result, node.getName());
 
             switch(result) {
                 case SUCCESS: ++nodeSuccessCount; break;

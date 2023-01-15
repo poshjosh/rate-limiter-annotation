@@ -1,14 +1,19 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotations.Rate;
+import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.Rates;
 
-public interface AnnotationConverter<I, O> {
+import java.lang.annotation.Annotation;
+import java.lang.reflect.GenericDeclaration;
+
+public interface AnnotationConverter<A extends Annotation, R> {
 
     static AnnotationConverter<Rate, Rates> ofRate() {
         return new RateAnnotationConverter();
     }
 
-    Class<I> getAnnotationType();
+    Class<A> getAnnotationType();
 
-    O convert(RateGroup rateGroup, Element element, I[] rates);
+    R convert(GenericDeclaration source);
 }

@@ -63,7 +63,7 @@ public final class Rate {
 
     Rate(long permits, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
         Checks.requireNotNegative(permits, "permits");
-        Checks.requireFalse(duration.isNegative(), "Duration must be positive, duration: " + duration);
+        Checks.requireFalse(duration.isNegative(), "Duration must be withPositiveOperator, duration: " + duration);
         this.permits = permits;
         this.duration = Objects.requireNonNull(duration);
         this.factoryClass = Objects.requireNonNull(factoryClass);

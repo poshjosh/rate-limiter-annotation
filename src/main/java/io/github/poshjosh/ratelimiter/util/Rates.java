@@ -34,7 +34,7 @@ public class Rates {
         return new Rates(operator, rates);
     }
 
-    private Operator operator = Operator.OR;
+    private Operator operator = Operator.DEFAULT;
 
     /**
      * Multiple limits. Either set this or {@link #limit} but not both.
@@ -55,9 +55,40 @@ public class Rates {
     private Rate limit;
 
     /**
-     * Configuration for creating matchers
+     * An expression which specifies the condition for rate limiting.
+     *
+     * May be any supported string for example:
+     *
+     * <p><code>sys.memory.available<1_000_000_000</code></p>
+     * <p><code>web.request.user.role=ROLE_GUEST</code></p>
+     *
+     * Support must be provide for the expression. Support is provided by default for the following:
+     *
+     * <p><code>sys.memory.available</code></p>
+     * <p><code>sys.memory.free</code></p>
+     * <p><code>sys.memory.max</code></p>
+     * <p><code>sys.memory.total</code></p>
+     * <p><code>sys.memory.used</code></p>
+     * <p><code>sys.time.elapsed</code></p>
+     * <p><code>sys.time</code></p>
+     *
+     * Supported operators are:
+     *
+     * <pre>
+     * =  equals
+     * >  greater
+     * >= greater or equals
+     * <  less
+     * <= less or equals
+     * ^  starts with
+     * $  ends with
+     * %  contains
+     * !  not (e.g !=, !>, !$ etc)
+     * </pre>
+     *
+     * @see io.github.poshjosh.ratelimiter.matcher.ExpressionResolver
      */
-    private Map<String, String> match = Collections.emptyMap();
+    private String rateCondition = "";
 
     // A public no-argument constructor is required
     public Rates() { }
@@ -122,17 +153,17 @@ public class Rates {
         this.limits = limits;
     }
 
-    public Rates match(Map<String, String> match) {
-        this.match = match;
+    public Rates rateCondition(String rateCondition) {
+        this.rateCondition = rateCondition;
         return this;
     }
 
-    public Map<String, String> getMatch() {
-        return match;
+    public String getRateCondition() {
+        return rateCondition;
     }
 
-    public void setMatch(Map<String, String> match) {
-        this.match = match;
+    public void setRateCondition(String rateCondition) {
+        this.rateCondition = rateCondition;
     }
 
     // Rate related properties
@@ -179,17 +210,19 @@ public class Rates {
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        Rates that = (Rates) o;
-        return operator == that.operator && Objects.equals(getLimits(), that.getLimits());
+        Rates rates = (Rates) o;
+        return operator == rates.operator && Objects.equals(getLimits(), rates.getLimits())
+                && Objects.equals(rateCondition, rates.rateCondition);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(operator, getLimits());
+        return Objects.hash(operator, getLimits(), rateCondition);
     }
 
     @Override
     public String toString() {
-        return "Rates{" + "operator=" + operator + ", limits=" + getLimits() + '}';
+        return "Rates{condition=" + rateCondition +
+                ", operator=" + operator + ", limits=" + getLimits() + '}';
     }
 }

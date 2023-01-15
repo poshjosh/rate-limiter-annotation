@@ -1,10 +1,9 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotations.Rate;
+
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public final class ElementId {
 
@@ -62,6 +61,7 @@ public final class ElementId {
         final String methodString = method.toString();
         final int indexOfClassName = methodString.indexOf(method.getDeclaringClass().getName());
         if(indexOfClassName == -1) {
+            // Should not happen
             throw new AssertionError("Method#toString() does not contain the method's declaring class name as expected. Method: " + method);
         }
         return methodString.substring(indexOfClassName);
@@ -75,19 +75,6 @@ public final class ElementId {
         if (rates.length == 1) {
             return rates[0].name();
         }
-        return requireSameId(rates, source);
-    }
-
-    private static String requireSameId(Rate[] rates, Object source) {
-        Set<String> uniqueNames = Arrays.stream(rates)
-                .map(Rate::name).collect(Collectors.toSet());
-        if (uniqueNames.size() > 1) {
-            throw new AnnotationProcessingException(
-                    "Multiple " + Rate.class.getSimpleName() +
-                            " annotations on a single node must resolve to only one unique name, found: " +
-                            uniqueNames + " at " + source);
-
-        }
-        return uniqueNames.iterator().next();
+        return Checks.requireSameId(rates, source);
     }
 }

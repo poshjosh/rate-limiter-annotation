@@ -1,8 +1,12 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotations.Rate;
+import io.github.poshjosh.ratelimiter.annotations.RateCondition;
+import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.util.Rates;
 
+import java.lang.reflect.GenericDeclaration;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
@@ -18,7 +22,12 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
     }
 
     @Override
-    public Rates convert(RateGroup rateGroup, Element element, Rate[] rates) {
+    public Rates convert(GenericDeclaration source) {
+        final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
+        final Rate[] rates = source.getAnnotationsByType(getAnnotationType());
+        final RateCondition rateCondition = source.getAnnotation(RateCondition.class);
+        final String expression = rateCondition == null ? "" : getExpression(rateCondition, source);
+
         final Operator operator = operator(rateGroup);
         if (rates.length == 0) {
             return Rates.of(operator);
@@ -27,7 +36,12 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
         for (int i = 0; i < rates.length; i++) {
             configs[i] = convert(rates[i]);
         }
-        return Rates.of(operator, configs);
+        return Rates.of(operator, configs).rateCondition(expression);
+    }
+
+    private String getExpression(RateCondition rateGroup, GenericDeclaration source) {
+        return Checks.requireOneContent(source, "RateCondition expression",
+                rateGroup.expression(), rateGroup.value());
     }
 
     private Operator operator(RateGroup rateGroup) {
@@ -64,6 +78,6 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
         if (TimeUnit.DAYS.equals(timeUnit)) {
             return ChronoUnit.DAYS;
         }
-        throw new IllegalArgumentException("Unexpected TimeUnit: " + timeUnit);
+        throw Checks.illegal(timeUnit);
     }
 }
