@@ -30,7 +30,7 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
 
         final Operator operator = operator(rateGroup);
         if (rates.length == 0) {
-            return Rates.of(operator);
+            return Rates.of(operator).rateCondition(expression);
         }
         final io.github.poshjosh.ratelimiter.util.Rate[] configs = new io.github.poshjosh.ratelimiter.util.Rate[rates.length];
         for (int i = 0; i < rates.length; i++) {

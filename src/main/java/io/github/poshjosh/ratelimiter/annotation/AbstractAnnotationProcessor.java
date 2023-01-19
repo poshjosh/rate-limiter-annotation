@@ -51,20 +51,19 @@ public abstract class AbstractAnnotationProcessor
 
         final A[] rateAnnotations = source.getAnnotationsByType(annotationConverter.getAnnotationType());
 
-        Optional<Node<RateConfig>> existingGroupOptional = rateGroup == null ? Optional.empty() :
-                findNodeForGroup(root, source, element, rateGroup, rateAnnotations);
+        Optional<Node<RateConfig>> existingGroupOptional =
+                !isGroupNode(element, rateGroup, rateAnnotations) ? Optional.empty() :
+                        findNodeForGroup(root, source, element, rateGroup, rateAnnotations);
 
         existingGroupOptional.ifPresent(groupNode ->
                 requireInitializedOnlyOnce(source, rateGroup, rateAnnotations, groupNode));
 
-        final String groupName = rateGroup == null ? null : getName(rateGroup, source);
-
         // Call this method before creating the group
         final boolean groupExisted = existingGroupOptional.isPresent();
 
-        Node<RateConfig> createdParent = rateGroup == null ? null :
-                existingGroupOptional.orElseGet(() ->
-                        createNodeForGroup(parent, source, groupName, rateAnnotations));
+        Node<RateConfig> createdParent = !isGroupNode(element, rateGroup, rateAnnotations) ? null :
+                existingGroupOptional.orElseGet(
+                        () -> createNodeForGroup(parent, source, rateGroup, rateAnnotations));
 
         if (groupExisted && createdParent != null) {
             // Copy existing rates to the newly created parent
@@ -78,13 +77,17 @@ public abstract class AbstractAnnotationProcessor
         final boolean empty = createdParent != null;
         final Node<RateConfig> node = createNodeForElement(parentNode, source, element, empty);
 
-        if(LOG.isTraceEnabled()) {
-            LOG.trace("\nProcessed: {} into:\n{}", element, node);
-        }
+        LOG.trace("Processed: {} into: {}", element, node);
 
         consumer.accept(source, node);
 
         return node;
+    }
+    private boolean isGroupNode(Element element, RateGroup rateGroup, A [] rates) {
+        if (rateGroup == null) {
+            return rates.length != 0 && element.isOwnDeclarer();
+        }
+        return true;
     }
     private Node<RateConfig> copyRatesToNode(
             Node<RateConfig> root, Node<RateConfig> node, G source, Element element) {
@@ -123,30 +126,38 @@ public abstract class AbstractAnnotationProcessor
 
     private Optional<Node<RateConfig>> findNodeForGroup(
             Node<RateConfig> root, G source, Element element, RateGroup rateGroup, A[] rates) {
-        final String name = getName(rateGroup, source);
+        final String name = getName(rateGroup, source, rates);
         return root.findFirstChild(childNode -> name.equals(childNode.getName()))
                 .map(foundNode -> requireConsistentData(foundNode, element, rateGroup, rates));
     }
 
-    private String getName(RateGroup rateGroup, G source) {
-        return Checks.requireOneContent(source, "RateGroup name",
-                rateGroup.name(), rateGroup.value());
+    private String getName(RateGroup rateGroup, G source, A [] rateAnnotations) {
+        if (rateGroup == null) {
+            if (rateAnnotations.length == 0) {
+                throw new AssertionError();
+            }
+            return "group-" + toElement(source).getId();
+        }
+        return Checks.requireOneContent(
+                source, "RateGroup name", rateGroup.name(), rateGroup.value());
     }
 
     private Node<RateConfig> createNodeForGroup(
-            Node<RateConfig> parentNode, G source, String name, A[] rateAnnotations) {
-        Element element = Element.of(name);
+            Node<RateConfig> parentNode, G source, RateGroup rateGroup, A[] rateAnnotations) {
+        final String groupName = getName(rateGroup, source, rateAnnotations);
+        Element element = Element.of(groupName);
         R rates = annotationConverter.convert(source);
         checkRateGroupOperator(rates.getOperator(), rateAnnotations);
-        return Node.of(name, RateConfig.of(element, rates), parentNode);
+        return Node.of(groupName, RateConfig.of(element, rates), parentNode);
     }
 
     private Node<RateConfig> createNodeForElement(
             Node<RateConfig> parentNode, G source, Element element, boolean empty) {
-        if (empty) {
-            return Node.of(element.getId(), RateConfig.of(element, Rates.of()), parentNode);
-        }
+        // We call this, even when creating an empty instance, it initializes other required fields
         final R rates = annotationConverter.convert(source);
+        if (empty) {
+            rates.limits();
+        }
         return Node.of(element.getId(), RateConfig.of(element, rates), parentNode);
     }
 
