@@ -53,47 +53,45 @@ To add a dependency on `rate-limiter-annotation` using Maven, use the following:
 ### Sample Usage
 
 ```java
-
-import ResourceLimiterFactory;
+import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.ResourceLimiters;
+import io.github.poshjosh.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
 
-    static final int permits = 3;
-
     static class RateLimitedResource {
 
-        final ResourceLimiter resourceLimiter;
+        final ResourceLimiter<String> resourceLimiter;
 
-        RateLimitedResource(ResourceLimiter resourceLimiter) {
+        RateLimitedResource(ResourceLimiter<String> resourceLimiter) {
             this.resourceLimiter = resourceLimiter;
         }
 
         // Limited to 3 invocations every second
-        void rateLimitedMethod() {
-
-            if (!resourceLimiter.tryConsume("rateLimitedMethodId")) {
+        @Rate(name = "smile", permits = 3)
+        String smile() {
+            if (!resourceLimiter.tryConsume("smile")) {
                 throw new RuntimeException("Limit exceeded");
             }
+            return ":)";
         }
     }
 
     public static void main(String... args) {
 
-        ResourceLimiter resourceLimiter = ResourceLimiterFactory.ofDefaults()
-                .create(RateLimitedResource.class);
+        ResourceLimiter<String> resourceLimiter = ResourceLimiters.of(RateLimitedResource.class);
 
         RateLimitedResource rateLimitedResource = new RateLimitedResource(resourceLimiter);
 
         int i = 0;
-        for (; i < LIMIT; i++) {
+        for(; i < 3; i++) {
 
-            System.out.println("Invocation " + i + " of " + LIMIT);
-            rateLimitedResource.rateLimitedMethod();
+            System.out.println("Invocation " + i + " of 3 should succeed");
+            rateLimitedResource.smile();
         }
 
-        System.out.println("Invocation " + i + " of " + LIMIT + " should fail");
-        // Should fail
-        rateLimitedResource.rateLimitedMethod();
+        System.out.println("Invocation " + i + " of 3 should fail");
+        rateLimitedResource.smile();
     }
 }
 ```

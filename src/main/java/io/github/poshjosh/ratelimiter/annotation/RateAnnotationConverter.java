@@ -3,13 +3,12 @@ package io.github.poshjosh.ratelimiter.annotation;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
-import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.Operator;
 import io.github.poshjosh.ratelimiter.util.Rates;
-
 import java.lang.reflect.GenericDeclaration;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> {

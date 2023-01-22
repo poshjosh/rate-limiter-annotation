@@ -1,7 +1,8 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotation.exceptions.AnnotationProcessingException;
+import io.github.poshjosh.ratelimiter.annotation.exceptions.MisMatchedRateNameException;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
-import io.github.poshjosh.ratelimiter.node.Node;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -11,9 +12,6 @@ final class Checks {
     private Checks() {}
     static AnnotationProcessingException exception(String msg) {
         return new AnnotationProcessingException(msg);
-    }
-    static <V> V requireNodeValue(Node<V> node) {
-        return node.getValueOptional().orElseThrow(() -> new NodeValueAbsentException(node));
     }
     static String requireOneContent(Object source, String what, String... values) {
         return Arrays.stream(values)
@@ -25,7 +23,7 @@ final class Checks {
         Set<String> uniqueNames = Arrays.stream(rates)
                 .map(Rate::name).collect(Collectors.toSet());
         if (uniqueNames.size() > 1) {
-            throw new MisMatchedRateIdException(
+            throw new MisMatchedRateNameException(
                     "Multiple " + Rate.class.getSimpleName() +
                             " annotations on a single node must resolve to only one unique name, found: " +
                             uniqueNames + " at " + source);

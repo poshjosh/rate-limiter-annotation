@@ -3,6 +3,19 @@ package io.github.poshjosh.ratelimiter.matcher;
 import java.util.Objects;
 
 public final class Expression<T> {
+
+    public static final Expression<Object> TRUE = new Expression<>("", Operator.EQUALS, "");
+    public static final Expression<Object> FALSE = TRUE.flipOperator();
+
+    @SuppressWarnings("unchecked")
+    public static <T> Expression<T> isTrue() {
+        return (Expression<T>)TRUE;
+    }
+    public @SuppressWarnings("unchecked")
+    static <T> Expression<T> isFalse() {
+        return (Expression<T>)FALSE;
+    }
+
     public static Expression<String> ofLenient(String expression) {
         final String [] parts = Splitter.ofExpression().lenient().split(expression);
         return of(parts[0], parts[1], parts[2]);

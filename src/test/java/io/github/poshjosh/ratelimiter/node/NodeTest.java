@@ -10,6 +10,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class NodeTest {
 
     @Test
+    void testIsRoot() {
+        Node<Integer> node = TestNode.breadthFirst();
+        assertTrue(node.getRoot().isRoot());
+        assertFalse(node.getRoot().getChild(0).isRoot());
+    }
+
+    @Test
     void getChildren() {
         Node<Integer> node = TestNode.breadthFirst();
         List<Node<Integer>> expected = node.getChildren();

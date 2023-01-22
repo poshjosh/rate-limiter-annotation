@@ -28,7 +28,7 @@ public interface ExpressionMatcher<R, T> extends Matcher<R, String> {
     }
 
     static <R> ExpressionMatcher<R, Object> of(ExpressionMatcher<R, ?>... matchers) {
-        return new CompositeExpressionMatcher<>(matchers);
+        return new ExpressionMatcherComposite<>(matchers);
     }
 
     static <R> ExpressionMatcher<R, Long> ofSystemMemory() {

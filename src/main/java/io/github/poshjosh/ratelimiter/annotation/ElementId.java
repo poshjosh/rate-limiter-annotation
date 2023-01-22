@@ -1,9 +1,11 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.annotations.Rate;
+import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 public final class ElementId {
 
@@ -68,7 +70,28 @@ public final class ElementId {
     }
 
     private static String getSpecifiedId(AnnotatedElement source) {
+        // @RateGroup is only allowed on annotation types
+        // If the source contains a @RateGroup, then it is an annotation type
+        //
+        final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
+        final String nameFromGroup = getSpecifiedId(rateGroup);
+        if (!nameFromGroup.isEmpty()) {
+            return nameFromGroup;
+        }
         final Rate[] rates = source.getAnnotationsByType(Rate.class);
+        return getSpecifiedId(source, rates);
+    }
+
+    private static String getSpecifiedId(RateGroup rateGroup) {
+        if (rateGroup == null) {
+            return "";
+        }
+        return Arrays.stream(new String[]{rateGroup.value(), rateGroup.name()})
+                .filter(id -> id != null && !id.isEmpty())
+                .findAny().orElse("");
+    }
+
+    private static String getSpecifiedId(AnnotatedElement source, Rate [] rates) {
         if (rates == null || rates.length == 0) {
             return "";
         }

@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
 @Repeatable(Rate.List.class)
 @Documented
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.TYPE, ElementType.METHOD})
+@Target({ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface Rate {
 
     String name() default "";

@@ -1,7 +1,5 @@
 package io.github.poshjosh.ratelimiter.performance;
 
-import io.github.poshjosh.ratelimiter.MemoryUtil;
-
 import java.util.Objects;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -26,8 +24,8 @@ public final class Usage {
     public void assertUsageLessThan(Usage limit) {
         Usage usage = usage();
         System.out.printf("Spent %s", DurationText.of(usage.getDuration()));
-        assertThat(usage.getDuration()).isLessThanOrEqualTo(limit.getDuration());
         System.out.printf(", %s", ByteText.of(usage.getMemory()));
+        assertThat(usage.getDuration()).isLessThanOrEqualTo(limit.getDuration());
         assertThat(usage.getMemory()).isLessThanOrEqualTo(limit.getMemory());
     }
 

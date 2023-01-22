@@ -1,24 +1,25 @@
 # Annotation Specification
 
-- The `@Rate` annotation may be placed on a super class.
+- `@Rate` annotations could be placed on a class, super class or their respective methods.
 
-- The `@Rate` annotation at the class level applies to all methods of the class having a
-  `@Rate` annotation.
+- `@Rate` annotations at the class level applies to all methods of the class.
   
-- A `@Rate` annotation may be assigned to a group using a `@RateGroup` annotation.
+- The same rate could be defined for multiple targets as follows:
+
+```java
+import io.github.poshjosh.ratelimiter.annotations.Rate;
+import io.github.poshjosh.ratelimiter.annotations.RateCondition;
+
+// 5 permits per second for users in role GUEST
+@Rate(5)  
+@RateCondition("web.session.user.role=GUEST")
+@interface MyRateGroup { }
+``` 
+You could then use the above annotation for as many classes/methods that apply.
+
+- Use a `@RateGroup` annotation for customizing a group of co-located `@Rate` annotations. 
 
 - Each `@RateGroup` is identified by name.
-  
-- Each `@RateGroup` may be initialized (i.e co-located with `@Rate`s) at only one location.
-  Apart from that one location, the `@RateGroup` may be placed at other locations, as long
-  as it is not co-located with `@Rate`.
-
-- If a `@RateGroup` annotation is not specified the `@Rate` annotation, is
-  assigned to a default group:
-
-    * At the class level, the group is named after the fully qualified class name.
-
-    * At the method level, the group is named after the fully qualified class name and method signature.
   
 **Simple Example**
 
@@ -26,68 +27,95 @@ All the members of the rate limit group below will have the same rate applied.
 All the members are bound by the group name.
 
 ```java
-@Rate(1)
-@RateGroup(MY_RATE_GROUP_NAME)
-public @interface MyRateGroup { }
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+import io.github.poshjosh.ratelimiter.annotations.Rate;
+import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 
-@RateGroup(MY_RATE_GROUP_NAME)
-static class MyRateGroupMember0{
-    
-    void method0() {}
+// 1 permit per second when system memory is below 1GB
+@Rate(1) 
+@RateCondition("sys.memory.free<1G")
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+public @interface GuestUserRate { }
+
+@GuestUserRate 
+static class MyRateGroupMember0 {
+    void method0() { }
 }
 
-static class MyRateGroupMember1{
-    
-    @RateGroup(MY_RATE_GROUP_NAME)
-    void method0() {}
+static class MyRateGroupMember1 {
+
+    @GuestUserRate 
+    void method0() { }
 }
 ```
 
 **Complex Example**
 
-Lets say we have 3 classes `Resource1`, `Resource2` and `Resource3`; rate limited as shown below:
+Given the following rate groups:
+
+```java
+// 1 request per second for requests whose locale is not either en_US or en_UK
+@Rate(1)
+@RateCondition("web.request.locale!=[en_US|en_UK]")
+@RateGroup("class-group")
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@interface ClassGroup{ }
+
+// 1 request per second for requests with the specified header
+@Rate(1)
+@RateCondition("web.request.header=X-Rate-Limited")
+@RateGroup("method-group")
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+@interface MethodGroup{ }
+```
+
+And 3 resource classes `Resource1`, `Resource2` and `Resource3`, rate limited as shown below:
 
 ```java
 class Resource1{
     
-    @Rate(permits = 1)
+    @Rate(1)
     void methodA() {}
 
-    @Rate(permits = 1)
+    @Rate(1)
     void methodB() {}
 
-    @Rate(permits = 1)
-    @RateGroup("method-group")
+    @Rate(1)
+    @MethodGroup
     void methodC() {}
 }
 ```
 
 ```java
-@RateGroup("class-group")
+@ClassGroup
 class Resource2{
     
-    @Rate(permits = 1)
+    @Rate(1)
     void methodA() {}
 
-    @Rate(permits = 1)
-    @RateGroup("method-group")
+    @Rate(1)
+    @MethodGroup
     void methodB() {}
 
-    @Rate(permits = 1)
+    @Rate(1)
     void methodC() {}
 }
 ```
 
 ```java
-@RateGroup("class-group")
+@ClassGroup
 class Resource3{
     
-    @Rate(permits = 1)
+    @Rate(1)
     void methodA() {}
 }
 ```
 
-**Example Hierarchy**
+**Resulting Hierarchy**
 
 ```
                                               root
@@ -102,5 +130,4 @@ Resource2           Resource3                  |                            Reso
     |                   |                      |                                | 
 Resource2#methodA   Resource3#methodA   Resource1#methodC                   Resource1#methodA
 Resource2#methodC                       Resource2#methodB                   Resource1#methodB
-
 ```

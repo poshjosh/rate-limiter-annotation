@@ -1,7 +1,6 @@
 package io.github.poshjosh.ratelimiter.util;
 
 import io.github.poshjosh.ratelimiter.BandwidthFactory;
-import io.github.poshjosh.ratelimiter.Checks;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 
 import java.time.Duration;
@@ -62,11 +61,19 @@ public final class Rate {
     }
 
     Rate(long permits, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
-        Checks.requireNotNegative(permits, "permits");
-        Checks.requireFalse(duration.isNegative(), "Duration must be withPositiveOperator, duration: " + duration);
+        requireNotNegative(permits, "permits");
+        requireFalse(duration.isNegative(), "Duration must be withPositiveOperator, duration: " + duration);
         this.permits = permits;
         this.duration = Objects.requireNonNull(duration);
         this.factoryClass = Objects.requireNonNull(factoryClass);
+    }
+    private void requireNotNegative(double amount, String what) {
+        requireFalse(amount < 0, "Must not be negative, %s: %d", what, amount);
+    }
+    private void requireFalse(boolean expression, String errorMessageFormat, Object... args) {
+        if (expression) {
+            throw new IllegalArgumentException(String.format(errorMessageFormat, args));
+        }
     }
 
     public boolean isSet() {

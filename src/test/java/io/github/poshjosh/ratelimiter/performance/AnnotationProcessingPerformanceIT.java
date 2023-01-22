@@ -1,42 +1,40 @@
 package io.github.poshjosh.ratelimiter.performance;
 
-import io.github.poshjosh.ratelimiter.RateToBandwidthConverter;
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.annotation.AnnotationProcessor;
-import io.github.poshjosh.ratelimiter.annotation.RateConfig;
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
+import io.github.poshjosh.ratelimiter.ResourceLimiters;
+import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
+import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
-import java.util.function.Function;
+
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class AnnotationProcessingPerformanceIT {
 
     @Test
     void annotationProcessShouldConsumeLimitedTimeAndMemory() {
+
+        // This package contains 100 randomly rate limited classes
+        final String packageName = "io.github.poshjosh.ratelimiter.performance.dummyclasses";
+
         Usage bookmark = Usage.bookmark();
-        Node<ResourceLimiter<Object>> rateLimiterRootNode = buildRateLimiters();
-        bookmark.assertUsageLessThan(Usage.of(250, 25_000_000));
-        System.out.println(rateLimiterRootNode);
-    }
+        List<Class<?>> classList = ClassesInPackageFinder.ofDefaults()
+                .findClasses(Collections.singletonList(packageName), clazz -> true);
+        assertFalse(classList.isEmpty());
 
-    Node<ResourceLimiter<Object>> buildRateLimiters() {
-        List<Class<?>> classList = ClassesInPackageFinder.ofDefaults().findClasses(
-                Collections.singletonList(getClass().getPackage().getName()),
-                clazz -> true);
-        Node<RateConfig> rootNode = Node.of("root");
-        rootNode = AnnotationProcessor.ofDefaults().processAll(rootNode, classList);
+        Node<RateConfig> rootNode = RateProcessor.ofDefaults().processAll(new HashSet<>(classList));
 
-        Function<Node<RateConfig>, ResourceLimiter<Object>> transformer = node -> {
-            return node.getValueOptional().map(nodeValue -> {
-                Bandwidths bandwidths = RateToBandwidthConverter.ofDefaults().convert(nodeValue.getValue());
-                return ResourceLimiter.of(bandwidths);
-            }).orElse(null);
-        };
+        ResourceLimiters.of(rootNode);
 
-        return rootNode.transform(transformer);
+        final int size = classList.size();
+
+        bookmark.assertUsageLessThan(Usage.of(size * 4, size * 350_000));
+
+        // This should come after recording usage
+        //System.out.println(rootNode);
     }
 }

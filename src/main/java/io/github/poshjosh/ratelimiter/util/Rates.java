@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.util;
 
 import io.github.poshjosh.ratelimiter.BandwidthFactory;
+import io.github.poshjosh.ratelimiter.Operator;
 
 import java.time.Duration;
 import java.util.*;
