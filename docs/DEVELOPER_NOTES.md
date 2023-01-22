@@ -1,5 +1,11 @@
 # Developer Notes
 
+Release to maven central using the following command:
+
+```shell
+mvn clean deploy -Prelease -Dgpg.passphrase=[YOUR GPG PASSPHRASE]
+```
+
 __Why do we currently use a tree structure for our rate limiters?__
 
 Rate limiters could be created per method (for javaee within a DynamicFeature) or

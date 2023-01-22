@@ -9,6 +9,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.3.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.3.0) ] - 2023-01-22
+
+### Added
+
+- Implement `@RateCondition` using expressions
+- Add method `getResourceClasses` to `RateLimitProperties`
+- Add a default operator i.e `Operator.DEFAULT`
+- Add more tests
+- Improve performance
+
+### Changed
+
+- Restrict `@RateGroup` annotation to `ElementType.ANNOTATION_TYPE`
+- Rename `MatchedResourceLimiter` to `ResourceLimiters`
+- Make `@RateGroup#name` or `@RateGroup#value` mandatory.
+- Rename `Bandwidths.getMembers` to `Bandwidths.getBandwidths`
+
+### Removed
+
+- Remove annotation `@RateReqestIf`
+
 ## [ [0.2.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.2.0) ] - 2023-01-08
 
 ### Added
