@@ -12,7 +12,7 @@ final class SystemTimeExpressionParser<S> implements ExpressionParser<S, LocalDa
     public boolean isSupported(Expression<String> expression) {
         final String lhs = expression.getLeft();
         if (TIME.equals(lhs)) {
-            return Operator.OperatorType.COMPARISON.equals(expression.getOperator().getType());
+            return Operator.Type.COMPARISON.equals(expression.getOperator().getType());
         }
         return false;
     }

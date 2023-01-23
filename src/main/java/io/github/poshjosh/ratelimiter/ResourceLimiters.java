@@ -40,9 +40,9 @@ public final class ResourceLimiters<R> implements ResourceLimiter<R> {
 
     private static final class DefaultMatcherProvider<T> implements MatcherProvider<T> {
         private final Map<String, Matcher<T,?>> nameToMatcher = new HashMap<>();
-        private final ExpressionMatcher<T, Object> sysExpressionMatcher;
+        private final ExpressionMatcher<T, Object> expressionMatcher;
         private DefaultMatcherProvider() {
-            sysExpressionMatcher = ExpressionMatcher.ofSystem();
+            expressionMatcher = ExpressionMatcher.ofDefault();
         }
         @Override public Matcher<T, ?> getMatcher(Node<RateConfig> node) {
             return nameToMatcher.computeIfAbsent(node.getName(), k -> createMatcher(node));
@@ -55,8 +55,8 @@ public final class ResourceLimiters<R> implements ResourceLimiter<R> {
             if (expression.isEmpty()) {
                 return new NodeNameMatcher<>(node);
             }
-            if (sysExpressionMatcher.isSupported(expression)) {
-                return sysExpressionMatcher.with(expression);
+            if (expressionMatcher.isSupported(expression)) {
+                return expressionMatcher.with(expression);
             } else {
                 return new NodeNameMatcher<>(node);
             }

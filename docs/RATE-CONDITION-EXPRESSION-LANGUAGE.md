@@ -2,9 +2,16 @@
 
 A language for expressing the condition for rate limiting.
 
+An expression is of format `LHS` `OPERATOR` `RHS` e.g `jvm.thread.count>99`
+
+`LHS` = `jvm.thread.count`,
+`OPERATOR` = `>`,
+`RHS` = `99`
+
 Examples:
 
 ```java
+// 5 permits per second when available system memory is less than 1 giga byte
 @Rate(5)
 @RateCondition("sys.memory.available<1GB")
 class Resource{ }
@@ -42,6 +49,42 @@ __sys.time__ supported input formats: ISO-8601 Time formats:
 __sys.time.elapsed__ supported input formats: ISO-8601 duration format `PnDTnHnMn.nS` with days 
 considered to be exactly 24 hours. See `java.time.Duration#parse(CharSequence)` for some 
 examples of this format.
+
+### jvm.thread
+
+name                                | description
+------------------------------------|----------------
+jvm.thread.count                    |
+jvm.thread.count.daemon             |
+jvm.thread.count.deadlocked         |
+jvm.thread.count.deadlocked.monitor |
+jvm.thread.count.peak               |
+jvm.thread.count.started            |
+jvm.thread.current.count.blocked    |
+jvm.thread.current.count.waited     |
+
+__jvm.thread(.current).count__ supported format `digits` e.g `128`, `9`
+
+name                                | description
+------------------------------------|----------------
+jvm.thread.current.state            | `java.lang.Thread.State` of the current thread.
+jvm.thread.current.suspended        | if the current thread is suspended
+
+__jvm.thread.current.state__ supported RHS values [NEW | RUNNABLE |BLOCKED | WAITING | TIMED_WAITING | TERMINATED]
+
+__jvm.thread.current.suspended__ supported RHS values [true | false]
+
+name                                | description
+------------------------------------|----------------
+jvm.thread.current.time.blocked     |
+jvm.thread.current.time.cpu         |
+jvm.thread.current.time.user        |
+jvm.thread.current.time.waited      |
+
+__jvm.thread.current.time__ supported input formats: ISO-8601 duration format `PnDTnHnMn.nS` with days
+considered to be exactly 24 hours. See `java.time.Duration#parse(CharSequence)` for some
+examples of this format 
+
 
 ### Operators
 

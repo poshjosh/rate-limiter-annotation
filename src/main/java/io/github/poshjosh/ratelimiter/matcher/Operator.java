@@ -3,15 +3,15 @@ package io.github.poshjosh.ratelimiter.matcher;
 import java.util.Objects;
 
 public final class Operator {
-    enum OperatorType{COMPARISON, STRING}
-    public static final Operator EQUALS = new Operator("=", OperatorType.COMPARISON);
-    public static final Operator GREATER = new Operator(">", OperatorType.COMPARISON);
-    public static final Operator GREATER_OR_EQUALS = new Operator(">=", OperatorType.COMPARISON);
-    public static final Operator LESS = new Operator("<", OperatorType.COMPARISON);
-    public static final Operator LESS_OR_EQUALS = new Operator("<=", OperatorType.COMPARISON);
-    public static final Operator LIKE = new Operator("%", OperatorType.STRING);
-    public static final Operator STARTS_WITH = new Operator("^", OperatorType.STRING);
-    public static final Operator ENDS_WITH = new Operator("$", OperatorType.STRING);
+    enum Type {COMPARISON, STRING}
+    public static final Operator EQUALS = new Operator("=", Type.COMPARISON);
+    public static final Operator GREATER = new Operator(">", Type.COMPARISON);
+    public static final Operator GREATER_OR_EQUALS = new Operator(">=", Type.COMPARISON);
+    public static final Operator LESS = new Operator("<", Type.COMPARISON);
+    public static final Operator LESS_OR_EQUALS = new Operator("<=", Type.COMPARISON);
+    public static final Operator LIKE = new Operator("%", Type.STRING);
+    public static final Operator STARTS_WITH = new Operator("^", Type.STRING);
+    public static final Operator ENDS_WITH = new Operator("$", Type.STRING);
     public static Operator of(String s) {
         if (s.startsWith("!")) {
             return of(s.substring(1)).flip();
@@ -29,8 +29,8 @@ public final class Operator {
         }
     }
     private final String value;
-    private final OperatorType type;
-    private Operator(String value, OperatorType type) {
+    private final Type type;
+    private Operator(String value, Type type) {
         this.value = Checks.requireContent(value);
         this.type = Objects.requireNonNull(type);
     }
@@ -46,7 +46,7 @@ public final class Operator {
     public Operator flip() {
         return new Operator((isNegation() ? value.substring(1) : "!" + value), type);
     }
-    public OperatorType getType() {
+    public Type getType() {
         return type;
     }
     public String getValue() {

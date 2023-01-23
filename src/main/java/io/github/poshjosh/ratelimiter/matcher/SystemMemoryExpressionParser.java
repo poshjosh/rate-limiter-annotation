@@ -26,7 +26,7 @@ final class SystemMemoryExpressionParser<S> implements ExpressionParser<S, Long>
             case MEMORY_MAX:
             case MEMORY_TOTAL:
             case MEMORY_USED:
-                return Operator.OperatorType.COMPARISON.equals(expression.getOperator().getType());
+                return Operator.Type.COMPARISON.equals(expression.getOperator().getType());
             default:
                 return false;
         }

@@ -30,6 +30,6 @@ class StringExpressionResolver implements ExpressionResolver<String>{
 
     @Override
     public boolean isSupported(Operator operator) {
-        return Operator.OperatorType.STRING.equals(operator.getType());
+        return Operator.Type.STRING.equals(operator.getType());
     }
 }

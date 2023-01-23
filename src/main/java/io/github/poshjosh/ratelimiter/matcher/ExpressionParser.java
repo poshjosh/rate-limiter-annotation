@@ -21,6 +21,10 @@ public interface ExpressionParser<S, T> {
         return new SystemTimeElapsedExpressionParser<>();
     }
 
+    static <S> ExpressionParser<S, Object> ofJvmThread() {
+        return new JvmThreadExpressionParser<>();
+    }
+
     /**
      * @param expression the expression to check if supported
      * @return true if the provided expression is supported

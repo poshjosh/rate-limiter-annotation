@@ -14,7 +14,7 @@ final class SystemTimeElapsedExpressionParser<S> implements ExpressionParser<S, 
     public boolean isSupported(Expression<String> expression) {
         final String lhs = expression.getLeft();
         if (TIME_ELAPSED.equals(lhs)) {
-            return Operator.OperatorType.COMPARISON.equals(expression.getOperator().getType());
+            return Operator.Type.COMPARISON.equals(expression.getOperator().getType());
         }
         return false;
     }

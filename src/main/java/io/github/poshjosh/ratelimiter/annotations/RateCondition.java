@@ -12,6 +12,20 @@ import java.lang.annotation.*;
  *
  * Support must be provide for the expression. Support is provided by default for the following:
  *
+ * <p><code>jvm.thread.count</code></p>
+ * <p><code>jvm.thread.count.daemon</code></p>
+ * <p><code>jvm.thread.count.deadlocked</code></p>
+ * <p><code>jvm.thread.count.deadlocked.monitor</code></p>
+ * <p><code>jvm.thread.count.peak</code></p>
+ * <p><code>jvm.thread.count.started</code></p>
+ * <p><code>jvm.thread.current.count.blocked</code></p>
+ * <p><code>jvm.thread.current.count.waited</code></p>
+ * <p><code>jvm.thread.current.state</code></p>
+ * <p><code>jvm.thread.current.suspended</code></p>
+ * <p><code>jvm.thread.current.time.blocked</code></p>
+ * <p><code>jvm.thread.current.time.cpu</code></p>
+ * <p><code>jvm.thread.current.time.user</code></p>
+ * <p><code>jvm.thread.current.time.waited</code></p>
  * <p><code>sys.memory.available</code></p>
  * <p><code>sys.memory.free</code></p>
  * <p><code>sys.memory.max</code></p>

@@ -32,6 +32,6 @@ final class DecimalExpressionResolver implements ExpressionResolver<Double> {
 
     @Override
     public boolean isSupported(Operator operator) {
-        return Operator.OperatorType.COMPARISON.equals(operator.getType());
+        return Operator.Type.COMPARISON.equals(operator.getType());
     }
 }

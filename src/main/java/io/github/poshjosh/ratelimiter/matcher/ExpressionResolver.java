@@ -27,6 +27,7 @@ public interface ExpressionResolver<T> {
         return new StringExpressionResolver();
     }
     static ExpressionResolver<LocalDateTime> ofDateTime() { return new DateTimeExpressionResolver(); }
+    static ExpressionResolver<Object> ofJvmThread() { return new JvmThreadExpressionResolver(); }
 
     boolean resolve(Expression<T> expression);
 

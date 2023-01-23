@@ -23,8 +23,8 @@ public interface ExpressionMatcher<R, T> extends Matcher<R, String> {
         return (ExpressionMatcher<T, K>)MATCH_NONE;
     }
 
-    static <R> ExpressionMatcher<R, Object> ofSystem() {
-        return of(ofSystemMemory(), ofSystemTime(), ofSystemTimeElapsed());
+    static <R> ExpressionMatcher<R, Object> ofDefault() {
+        return of(ofSystemMemory(), ofSystemTime(), ofSystemTimeElapsed(), ofJvmThread());
     }
 
     static <R> ExpressionMatcher<R, Object> of(ExpressionMatcher<R, ?>... matchers) {
@@ -47,6 +47,12 @@ public interface ExpressionMatcher<R, T> extends Matcher<R, String> {
         return of(ExpressionParser.ofSystemTimeElapsed(),
                 ExpressionResolver.ofLong(),
                 SystemTimeElapsedExpressionParser.TIME_ELAPSED+"=");
+    }
+
+    static <R> ExpressionMatcher<R, Object> ofJvmThread() {
+        return of(ExpressionParser.ofJvmThread(),
+                ExpressionResolver.ofJvmThread(),
+                JvmThreadExpressionParser.COUNT+"=");
     }
 
     static <R, T> ExpressionMatcher<R, T> of(

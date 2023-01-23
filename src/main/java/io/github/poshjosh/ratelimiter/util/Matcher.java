@@ -9,19 +9,10 @@ public interface Matcher<I, O> {
         @Override public Object matchOrNull(Object target) { return null; }
         @Override public String toString() { return Matcher.class.getSimpleName() + "$MATCH_NONE"; }
     };
-    Matcher<Object, Object> IDENTITY = new Matcher<Object, Object>() {
-        @Override public Object matchOrNull(Object target) { return target; }
-        @Override public String toString() { return Matcher.class.getSimpleName() + "$IDENTITY"; }
-    };
 
     @SuppressWarnings("unchecked")
     static <T, K> Matcher<T, K> matchNone() {
         return (Matcher<T, K>)MATCH_NONE;
-    }
-
-    @SuppressWarnings("unchecked")
-    static <T, K> Matcher<T, K> identity() {
-        return (Matcher<T, K>)IDENTITY;
     }
 
     default boolean matches(I target) {
@@ -31,8 +22,8 @@ public interface Matcher<I, O> {
     O matchOrNull(I target);
 
   /**
-   * Returns a composed {@code Matcher}. The returned Matcher will return the result of the first
-   * match, only if both matchers succeed otherwise it return's <code>null</code>.
+   * Returns a composed {@code Matcher} that returns the result of the first match,
+   * only if both matchers succeed, otherwise it return's <code>null</code>.
    *
    * <p>Compose a {@code Matcher} that performs, in sequence, this operation followed by the {@code
    * after} operation. If performing either operation throws an exception, it is relayed to the
