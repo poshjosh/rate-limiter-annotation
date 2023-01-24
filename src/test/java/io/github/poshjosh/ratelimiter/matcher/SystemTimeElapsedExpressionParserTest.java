@@ -35,7 +35,7 @@ class SystemTimeElapsedExpressionParserTest {
             SystemTimeElapsedExpressionParser.TIME_ELAPSED+"<PT24H",
     })
     void shouldSucceed_givenValidExpression(String value) {
-        ExpressionParser.ofSystemTimeElapsed().parse("", Expression.of(value));
+        ExpressionParser.ofSystemTimeElapsed().parse(this, Expression.of(value));
     }
 
     @ParameterizedTest
@@ -44,6 +44,6 @@ class SystemTimeElapsedExpressionParserTest {
     })
     void shouldFail_givenInvalidExpression(String value) {
       assertThrows(RuntimeException.class, () -> 
-              ExpressionParser.ofSystemTimeElapsed().parse("", Expression.of(value)));
+              ExpressionParser.ofSystemTimeElapsed().parse(this, Expression.of(value)));
     }
 }

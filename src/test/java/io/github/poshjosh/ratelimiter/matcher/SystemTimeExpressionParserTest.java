@@ -30,7 +30,7 @@ class SystemTimeExpressionParserTest {
             SystemTimeExpressionParser.TIME+"<=2023-01-18T20:14",
     })
     void shouldSucceed_givenValidExpression(String value) {
-        ExpressionParser.ofSystemTime().parse("", Expression.of(value));
+        ExpressionParser.ofSystemTime().parse(this, Expression.of(value));
     }
 
     @ParameterizedTest
@@ -41,6 +41,6 @@ class SystemTimeExpressionParserTest {
     })
     void shouldFail_givenInvalidExpression(String value) {
       assertThrows(RuntimeException.class, () -> 
-              ExpressionParser.ofSystemTime().parse("", Expression.of(value)));
+              ExpressionParser.ofSystemTime().parse(this, Expression.of(value)));
     }
 }

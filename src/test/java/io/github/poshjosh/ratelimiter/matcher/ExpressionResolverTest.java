@@ -9,6 +9,31 @@ class ExpressionResolverTest {
 
     @ParameterizedTest
     @CsvSource({
+            JvmThreadExpressionParser.COUNT + ">=0,true",
+            JvmThreadExpressionParser.COUNT_DAEMON + ">=0,true",
+            JvmThreadExpressionParser.COUNT_DEADLOCKED + ">=0,true",
+            JvmThreadExpressionParser.COUNT_DEADLOCKED_MONITOR + ">=0,true",
+            JvmThreadExpressionParser.COUNT_PEAK + ">=0,true",
+            JvmThreadExpressionParser.COUNT_STARTED + ">=0,true",
+            JvmThreadExpressionParser.CURRENT_COUNT_BLOCKED + ">=0,true",
+            JvmThreadExpressionParser.CURRENT_COUNT_WAITED + ">=0,true",
+            JvmThreadExpressionParser.CURRENT_STATE + "=RUNNABLE,true",
+            JvmThreadExpressionParser.CURRENT_STATE + "=BLOCKED,false",
+            JvmThreadExpressionParser.CURRENT_SUSPENDED + "=false,true",
+            JvmThreadExpressionParser.CURRENT_TIME_BLOCKED + "<=PT0S,true",
+            JvmThreadExpressionParser.CURRENT_TIME_CPU + ">=PT0S,true",
+            JvmThreadExpressionParser.CURRENT_TIME_USER + ">=PT0S,true",
+            JvmThreadExpressionParser.CURRENT_TIME_WAITED + "<=PT0S,true",
+    })
+    void testJvmThreadExpression(String expressionString, String expectedResult) {
+        Expression<Object> expression = ExpressionParser.ofJvmThread()
+                .parse(this, Expression.of(expressionString));
+        //System.out.println(expression);
+        testExpression(ExpressionResolver.ofJvmThread(), expression, expectedResult);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
             "1,=,1,true",
             "1,>,1,false",
             "1,>=,1,true",
@@ -18,7 +43,7 @@ class ExpressionResolverTest {
     void testValidLongExpression(String lhs, String operator, String rhs, String expectedResult) {
         Long l = Long.parseLong(lhs);
         Long r = Long.parseLong(rhs);
-        testValidNumericExpression(ExpressionResolver.ofLong(), l, operator, r, expectedResult);
+        testExpression(ExpressionResolver.ofLong(), l, operator, r, expectedResult);
     }
 
     @ParameterizedTest
@@ -32,12 +57,16 @@ class ExpressionResolverTest {
     void testValidDecimalExpression(String lhs, String operator, String rhs, String expectedResult) {
         Double l = Double.parseDouble(lhs);
         Double r = Double.parseDouble(rhs);
-        testValidNumericExpression(ExpressionResolver.ofDecimal(), l, operator, r, expectedResult);
+        testExpression(ExpressionResolver.ofDecimal(), l, operator, r, expectedResult);
     }
 
-    <T> void testValidNumericExpression(ExpressionResolver<T> resolver,
-            T l, String operator, T r, String expectedResult) {
-        Expression<T> expression = Expression.of(l, operator, r);
+    void testExpression(ExpressionResolver<?> resolver,
+            Object l, String operator, Object r, String expectedResult) {
+        Expression<?> expression = Expression.of(l, operator, r);
+        testExpression(resolver, expression, expectedResult);
+    }
+
+    void testExpression(ExpressionResolver<?> resolver, Expression expression, String expectedResult) {
         boolean expected = Boolean.parseBoolean(expectedResult);
         boolean result = resolver.resolve(expression);
         assertEquals(expected, result);

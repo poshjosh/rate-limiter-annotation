@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.3.1](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.1) ] - 2023-01-24
+
+### Added
+
+- Implement JVM thread rate condition expression, setup code coverage
+
 ## [ [0.3.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.3.0) ] - 2023-01-22
 
 ### Added

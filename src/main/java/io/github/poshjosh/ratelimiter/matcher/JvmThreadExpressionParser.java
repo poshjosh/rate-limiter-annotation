@@ -57,15 +57,15 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
         final Object right = right(expression);
         switch (lhs) {
             case COUNT:
-                return expression.with(threadMXBean.getThreadCount(), right);
+                return expression.with((long)threadMXBean.getThreadCount(), right);
             case COUNT_DAEMON:
-                return expression.with(threadMXBean.getDaemonThreadCount(), right);
+                return expression.with((long)threadMXBean.getDaemonThreadCount(), right);
             case COUNT_DEADLOCKED:
-                return expression.with(threadMXBean.findDeadlockedThreads().length, right);
+                return expression.with(length(threadMXBean.findDeadlockedThreads()), right);
             case COUNT_DEADLOCKED_MONITOR:
-                return expression.with(threadMXBean.findMonitorDeadlockedThreads().length, right);
+                return expression.with(length(threadMXBean.findMonitorDeadlockedThreads()), right);
             case COUNT_PEAK:
-                return expression.with(threadMXBean.getPeakThreadCount(), right);
+                return expression.with((long)threadMXBean.getPeakThreadCount(), right);
             case COUNT_STARTED:
                 return expression.with(threadMXBean.getTotalStartedThreadCount(), right);
             case CURRENT_COUNT_BLOCKED:
@@ -87,6 +87,10 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
             default:
                 throw Checks.notSupported(this, lhs);
         }
+    }
+
+    private long length(long [] array) {
+        return array == null ? 0 : array.length;
     }
 
     private ThreadInfo threadInfo() {

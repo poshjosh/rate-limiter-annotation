@@ -8,10 +8,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class JvmThreadExpressionParserTest {
 
-    @Test
-    void shouldSupport() {
-        assertTrue(ExpressionParser.ofJvmThread().isSupported(
-                JvmThreadExpressionParser.COUNT+"="));
+    @ParameterizedTest
+    @ValueSource(strings = {
+            JvmThreadExpressionParser.COUNT+"=",
+            JvmThreadExpressionParser.CURRENT_STATE+"=",
+    })
+    void shouldSupport(String expression) {
+        assertTrue(ExpressionParser.ofJvmThread().isSupported(expression));
     }
 
     @Test
@@ -21,7 +24,20 @@ class JvmThreadExpressionParserTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            JvmThreadExpressionParser.COUNT+">0",
+            JvmThreadExpressionParser.COUNT + ">0",
+            JvmThreadExpressionParser.COUNT_DAEMON + ">=0",
+            JvmThreadExpressionParser.COUNT_DEADLOCKED + ">=0",
+            JvmThreadExpressionParser.COUNT_DEADLOCKED_MONITOR + ">=0",
+            JvmThreadExpressionParser.COUNT_PEAK + ">=0",
+            JvmThreadExpressionParser.COUNT_STARTED + ">=0",
+            JvmThreadExpressionParser.CURRENT_COUNT_BLOCKED + ">=0",
+            JvmThreadExpressionParser.CURRENT_COUNT_WAITED + ">=0",
+            JvmThreadExpressionParser.CURRENT_STATE + "=NEW",
+            JvmThreadExpressionParser.CURRENT_SUSPENDED + "=false",
+            JvmThreadExpressionParser.CURRENT_TIME_BLOCKED + ">PT0S",
+            JvmThreadExpressionParser.CURRENT_TIME_CPU + ">PT0S",
+            JvmThreadExpressionParser.CURRENT_TIME_USER + ">PT0S",
+            JvmThreadExpressionParser.CURRENT_TIME_WAITED + ">PT0S",
     })
     void shouldSucceed_givenValidExpression(String value) {
         ExpressionParser.ofJvmThread().parse("", Expression.of(value));
