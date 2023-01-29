@@ -46,7 +46,7 @@ To add a dependency on `rate-limiter-annotation` using Maven, use the following:
         <dependency>
             <groupId>io.github.poshjosh</groupId>
             <artifactId>rate-limiter-annotation</artifactId>
-            <version>0.3.1</version> 
+            <version>0.3.2</version> 
         </dependency>
 ```
 

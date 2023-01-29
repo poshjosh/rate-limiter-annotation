@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.3.2](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.2) ] - 2023-01-29
+
+### Added
+
+- Added `when` field to `@Rate` annotation. It is an alias for `@RateCondition`
+
+### Changed
+
+- Moved `ResourceLimiter` from [rate-limiter](https://github.com/poshjosh/rate-limiter) to [rate-limiter-annotation](https://github.com/poshjosh/rate-limiter-annotation).
+
+### Removed
+
+- Removed `ResourceLimiters.of`. Rather use: `ResourceLimiter.of`
+
 ## [ [0.3.1](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.1) ] - 2023-01-24
 
 ### Added
