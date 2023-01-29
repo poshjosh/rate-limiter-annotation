@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotation.exceptions.AnnotationProcessingException;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
@@ -24,8 +25,7 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
     public Rates convert(GenericDeclaration source) {
         final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
         final Rate[] rates = source.getAnnotationsByType(getAnnotationType());
-        final RateCondition rateCondition = source.getAnnotation(RateCondition.class);
-        final String expression = rateCondition == null ? "" : getExpression(rateCondition, source);
+        final String expression = getRateCondition(source, rates);
 
         final Operator operator = operator(rateGroup);
         if (rates.length == 0) {
@@ -38,9 +38,29 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
         return Rates.of(operator, configs).rateCondition(expression);
     }
 
-    private String getExpression(RateCondition rateGroup, GenericDeclaration source) {
-        return Checks.requireOneContent(source, "RateCondition expression",
-                rateGroup.expression(), rateGroup.value());
+    private String getRateCondition(GenericDeclaration source, Rate[]rates) {
+        String conditionFromRates = "";
+        for(Rate rate : rates) {
+            if (!rate.when().isEmpty()) {
+                conditionFromRates = rate.when();
+                break;
+            }
+        }
+        if (rates.length > 1 && !conditionFromRates.isEmpty()) {
+            throw new AnnotationProcessingException(
+                    "To specify rate condition for multiple rates use: " + RateCondition.class.getName());
+        }
+        if (conditionFromRates.isEmpty()) {
+            final RateCondition rateCondition = source.getAnnotation(RateCondition.class);
+            return getExpression(source, rateCondition);
+        }
+        return conditionFromRates;
+    }
+
+    private String getExpression(GenericDeclaration source, RateCondition rateCondition) {
+        return rateCondition == null ? "" :
+                Checks.requireOneContent(source, "RateCondition expression",
+                rateCondition.expression(), rateCondition.value());
     }
 
     private Operator operator(RateGroup rateGroup) {

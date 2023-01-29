@@ -1,13 +1,13 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.util.Rate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import java.time.Duration;
 import java.util.Objects;
-import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -130,10 +130,11 @@ abstract class AbstractResourceLimiterTest {
 
     @Test
     void testAndThen() {
-        ResourceLimiter<String> a = getRateLimiter(Bandwidth.allOrNothing(10));
-        ResourceLimiter<String> b = getRateLimiter(Bandwidth.allOrNothing(1));
+        ResourceLimiter<String> a = getRateLimiter(
+                getRate(10, 1000, BandwidthFactory.AllOrNothing.class));
+        ResourceLimiter<String> b = getRateLimiter(
+                getRate(1, 1000, BandwidthFactory.AllOrNothing.class));
         ResourceLimiter<String> c = a.andThen(b);
-        final String key = "one";
         assertTrue(c.tryConsume(key), "Unable to acquire initial permit");
         assertFalse(c.tryConsume(key), "Capable of acquiring additional permit");
     }
@@ -150,12 +151,15 @@ abstract class AbstractResourceLimiterTest {
         assertThrows(RuntimeException.class, executable);
     }
 
-    public <T> ResourceLimiter<T> getRateLimiter(Bandwidth... limits) {
-        return ResourceLimiter.of(limits);
+    public <T> ResourceLimiter<T> getRateLimiter(Rate... limits) {
+        return ResourceLimiter.of(key, limits);
     }
 
-    protected Bandwidth getRate(long permits, long durationMillis) {
-        BandwidthFactory bandwidthFactory = BandwidthFactories.getOrCreateBandwidthFactory(factoryClass);
-        return bandwidthFactory.createNew(permits, durationMillis, TimeUnit.MILLISECONDS);
+    protected Rate getRate(long permits, long durationMillis) {
+        return getRate(permits, durationMillis, factoryClass);
+    }
+
+    protected Rate getRate(long permits, long durationMillis, Class<? extends BandwidthFactory> factoryClass) {
+        return Rate.of(permits, Duration.ofMillis(durationMillis), factoryClass);
     }
 }

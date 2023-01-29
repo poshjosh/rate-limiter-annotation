@@ -50,11 +50,41 @@ To add a dependency on `rate-limiter-annotation` using Maven, use the following:
         </dependency>
 ```
 
+### Concept
+
+Unlike `RateLimiter`, `ResourceLimiter` introduces the concept of resources. One `ResourceLimiter`
+could be used to rate limit multiple resources distributed across different machines.
+
+```java
+import java.util.Arrays;
+
+class Concept {
+
+    @Rate(name="resource-a", permits=1)
+    static class ResourceA{}
+    
+    @Rate(name="resource-b", permits=5)
+    static class ResourceB{}
+
+    public static void main(String... args) {
+
+        List<Class<?>> resourceClasses = Arrays.asList(ResourceA.class, ResourceB.class);
+
+        ResourceLimiter<String> resourceLimiter = ResourceLimiter.of(resourceClasses);
+
+        resourceLimiter.tryConsume("resource-a"); // true
+        resourceLimiter.tryConsume("resource-a"); // false
+
+        resourceLimiter.tryConsume("resource-b"); // false
+    }
+}
+```
+
+
 ### Sample Usage
 
 ```java
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.ResourceLimiters;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
@@ -79,7 +109,7 @@ public class SampleUsage {
 
     public static void main(String... args) {
 
-        ResourceLimiter<String> resourceLimiter = ResourceLimiters.of(RateLimitedResource.class);
+        ResourceLimiter<String> resourceLimiter = ResourceLimiter.of(RateLimitedResource.class);
 
         RateLimitedResource rateLimitedResource = new RateLimitedResource(resourceLimiter);
 

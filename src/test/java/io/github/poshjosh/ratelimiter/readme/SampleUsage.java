@@ -1,7 +1,6 @@
 package io.github.poshjosh.ratelimiter.readme;
 
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.ResourceLimiters;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
@@ -26,7 +25,7 @@ public class SampleUsage {
 
     public static void main(String... args) {
 
-        ResourceLimiter<String> resourceLimiter = ResourceLimiters.of(RateLimitedResource.class);
+        ResourceLimiter<String> resourceLimiter = ResourceLimiter.of(RateLimitedResource.class);
 
         RateLimitedResource rateLimitedResource = new RateLimitedResource(resourceLimiter);
 

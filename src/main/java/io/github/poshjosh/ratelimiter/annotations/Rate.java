@@ -25,6 +25,12 @@ public @interface Rate {
     TimeUnit timeUnit() default TimeUnit.SECONDS;
 
     /**
+     * This rate should be applied when this condition is true.
+     * @see RateCondition
+     */
+    String when() default "";
+
+    /**
      * A {@link BandwidthFactory} that will be dynamically instantiated and used to create
      * {@link Bandwidth}s from this rate limit.
      * The class must have a zero-argument constructor.

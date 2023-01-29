@@ -4,6 +4,10 @@ import java.util.Objects;
 
 public final class RateConfig {
 
+    public static RateConfig of(Rates value) {
+        return new RateConfig(value, value);
+    }
+
     public static RateConfig of(Object source, Rates value) {
         return new RateConfig(source, value);
     }

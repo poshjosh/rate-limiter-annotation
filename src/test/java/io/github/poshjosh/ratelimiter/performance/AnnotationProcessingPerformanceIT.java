@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.performance;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiters;
+import io.github.poshjosh.ratelimiter.ResourceLimiter;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.node.Node;
@@ -28,7 +28,7 @@ class AnnotationProcessingPerformanceIT {
 
         Node<RateConfig> rootNode = RateProcessor.ofDefaults().processAll(new HashSet<>(classList));
 
-        ResourceLimiters.of(rootNode);
+        ResourceLimiter.of(rootNode);
 
         final int size = classList.size();
 

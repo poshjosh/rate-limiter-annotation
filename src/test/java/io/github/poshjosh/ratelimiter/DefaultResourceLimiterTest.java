@@ -10,6 +10,7 @@ import io.github.poshjosh.ratelimiter.node.Node;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.*;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -18,7 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ResourceLimitersTest {
+class DefaultResourceLimiterTest {
 
     static final String key = "one";
 
@@ -105,10 +106,11 @@ class ResourceLimitersTest {
 
     @Test
     void testAndThen() {
+        final String key = "one";
         ResourceLimiter<Object> a = buildRateLimiter(2, RateLimitedClass5.class);
-        ResourceLimiter<Object> b = ResourceLimiter.of(Bandwidth.bursty(1));
+        ResourceLimiter<Object> b =
+            ResourceLimiter.of(key, io.github.poshjosh.ratelimiter.util.Rate.ofSeconds(1));
         ResourceLimiter<Object> c = a.andThen(b);
-        final Object key = "one";
         assertTrue(c.tryConsume(key));
         assertFalse(c.tryConsume(key));
     }
@@ -153,6 +155,16 @@ class ResourceLimitersTest {
         assertTrue(limiter.tryConsume(key));
     }
 
+    @Rate(permits=1, when="sys.memory.free<1")
+    public class RateLimitedClass6b{ }
+
+    @Test
+    void givenRateWhenResolvesToFalse_shouldNotBeRateLimited() {
+        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass6b.class);
+        assertTrue(limiter.tryConsume(key));
+        assertTrue(limiter.tryConsume(key));
+    }
+
     @Rate(1)
     @RateCondition("sys.time.elapsed>PT0S")
     public class RateLimitedClass7{ }
@@ -160,6 +172,16 @@ class ResourceLimitersTest {
     @Test
     void givenRateConditionTrue_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass7.class);
+        assertTrue(limiter.tryConsume(key));
+        assertFalse(limiter.tryConsume(key));
+    }
+
+    @Rate(permits=1, when="sys.time.elapsed>PT0S")
+    public class RateLimitedClass7b{ }
+
+    @Test
+    void givenRateWhenResolvesToTrue_shouldBeRateLimited() {
+        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass7b.class);
         assertTrue(limiter.tryConsume(key));
         assertFalse(limiter.tryConsume(key));
     }
@@ -175,6 +197,16 @@ class ResourceLimitersTest {
         assertFalse(limiter.tryConsume(key));
     }
 
+    @Rate(permits=1, when=" sys.time.elapsed > PT0S ")
+    public class RateLimitedClass8b{ }
+
+    @Test
+    void givenRateWhenResolvesToTrue_andHavingSpaces_shouldBeRateLimited() {
+        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass8b.class);
+        assertTrue(limiter.tryConsume(key));
+        assertFalse(limiter.tryConsume(key));
+    }
+
     @Rate(1)
     @RateCondition("sys.time.elapsed!<=PT0S")
     public class RateLimitedClass9{ }
@@ -182,6 +214,16 @@ class ResourceLimitersTest {
     @Test
     void givenRateConditionFalse_afterNegation_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass9.class);
+        assertTrue(limiter.tryConsume(key));
+        assertFalse(limiter.tryConsume(key));
+    }
+
+    @Rate(permits=1, when="sys.time.elapsed!<=PT0S")
+    public class RateLimitedClass9b{ }
+
+    @Test
+    void givenRateWhenResolvesToFalse_afterNegation_shouldBeRateLimited() {
+        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass9b.class);
         assertTrue(limiter.tryConsume(key));
         assertFalse(limiter.tryConsume(key));
     }
@@ -197,8 +239,7 @@ class ResourceLimitersTest {
 
         assertEquals(expectedNodes, numberOfNodes(rootNode));
 
-        return new ResourceLimiters<>(ResourceLimiters.MatcherProvider.ofDefaults(),
-                ResourceLimiters.LimiterProvider.ofDefaults(), rootNode);
+        return ResourceLimiter.of(rootNode);
     }
 
     private int numberOfNodes(Node node) {

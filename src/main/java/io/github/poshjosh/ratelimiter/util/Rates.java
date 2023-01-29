@@ -9,13 +9,13 @@ import java.util.stream.Collectors;
 
 public class Rates {
 
-    public static Rates of(Rate... limits) {
-        return ofDefaults().limits(limits);
-    }
+    public static Rates of(Rate... limits) { return ofDefaults().limits(limits); }
 
     public static Rates ofDefaults() {
-        return new Rates();
+        return empty();
     }
+
+    public static Rates empty() { return new Rates(); }
 
     public static Rates of(Rates rates) {
         return new Rates(rates);

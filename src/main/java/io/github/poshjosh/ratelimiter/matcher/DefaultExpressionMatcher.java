@@ -35,7 +35,9 @@ final class DefaultExpressionMatcher<R, T> implements ExpressionMatcher<R, T> {
     public String matchOrNull(R request) {
         Expression<T> typedExpression = expressionParser.parse(request, expression);
         boolean success = expressionResolver.resolve(typedExpression);
-        LOG.debug("Result: {}, expr typed: {}, text: {}", success, typedExpression, expression);
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Result: {}, expr typed: {}, text: {}", success, typedExpression, expression);
+        }
         return success ? expression.getId() : null;
     }
 
