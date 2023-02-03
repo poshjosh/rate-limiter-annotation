@@ -28,11 +28,20 @@ public class Rates {
     public static Rates and(Rate... rates) { return of(Operator.AND, rates); }
 
     public static Rates of(Operator operator, Rate... rates) {
-        return of(operator, rates == null ? Collections.emptyList() : Arrays.asList(rates));
+        return of(operator, "", rates);
+    }
+
+    public static Rates of(Operator operator, String rateCondition, Rate... rates) {
+        return of(operator, rateCondition,
+                rates == null ? Collections.emptyList() : Arrays.asList(rates));
     }
 
     public static Rates of(Operator operator, List<Rate> rates) {
-        return new Rates(operator, rates);
+        return new Rates(operator, "", rates);
+    }
+
+    public static Rates of(Operator operator, String rateCondition, List<Rate> rates) {
+        return new Rates(operator, rateCondition, rates);
     }
 
     private Operator operator = Operator.DEFAULT;
@@ -56,52 +65,7 @@ public class Rates {
     private Rate limit;
 
     /**
-     * An expression which specifies the condition for rate limiting.
-     *
-     * May be any supported string for example:
-     *
-     * <p><code>sys.memory.available<1_000_000_000</code></p>
-     * <p><code>web.request.user.role=ROLE_GUEST</code></p>
-     *
-     * Support must be provide for the expression. Support is provided by default for the following:
-     *
-     * <p><code>jvm.thread.count</code></p>
-     * <p><code>jvm.thread.count.daemon</code></p>
-     * <p><code>jvm.thread.count.deadlocked</code></p>
-     * <p><code>jvm.thread.count.deadlocked.monitor</code></p>
-     * <p><code>jvm.thread.count.peak</code></p>
-     * <p><code>jvm.thread.count.started</code></p>
-     * <p><code>jvm.thread.current.count.blocked</code></p>
-     * <p><code>jvm.thread.current.count.waited</code></p>
-     * <p><code>jvm.thread.current.state</code></p>
-     * <p><code>jvm.thread.current.suspended</code></p>
-     * <p><code>jvm.thread.current.time.blocked</code></p>
-     * <p><code>jvm.thread.current.time.cpu</code></p>
-     * <p><code>jvm.thread.current.time.user</code></p>
-     * <p><code>jvm.thread.current.time.waited</code></p>
-     * <p><code>sys.memory.available</code></p>
-     * <p><code>sys.memory.free</code></p>
-     * <p><code>sys.memory.max</code></p>
-     * <p><code>sys.memory.total</code></p>
-     * <p><code>sys.memory.used</code></p>
-     * <p><code>sys.time.elapsed</code></p>
-     * <p><code>sys.time</code></p>
-     *
-     * Supported operators are:
-     *
-     * <pre>
-     * =  equals
-     * >  greater
-     * >= greater or equals
-     * <  less
-     * <= less or equals
-     * ^  starts with
-     * $  ends with
-     * %  contains
-     * !  not (e.g !=, !>, !$ etc)
-     * </pre>
-     *
-     * @see io.github.poshjosh.ratelimiter.matcher.ExpressionResolver
+     * @see Rate#getRateCondition()
      */
     private String rateCondition = "";
 
@@ -109,11 +73,12 @@ public class Rates {
     public Rates() { }
 
     protected Rates(Rates rates) {
-        this(rates.operator, rates.limits);
+        this(rates.operator, rates.rateCondition, rates.limits);
     }
 
-    protected Rates(Operator operator, List<Rate> limits) {
-        this.operator = operator;
+    protected Rates(Operator operator, String rateCondition, List<Rate> limits) {
+        this.operator = Objects.requireNonNull(operator);
+        this.rateCondition = Objects.requireNonNull(rateCondition);
         this.limits = limits == null ? Collections.emptyList() : limits.stream()
                 .map(Rate::new).collect(Collectors.toList());
     }
@@ -213,7 +178,7 @@ public class Rates {
 
     public void setFactoryClass(Class<? extends BandwidthFactory> factoryClass) {
         if(limit == null) {
-            limit = Rate.of(0, Duration.ZERO, factoryClass);
+            limit = Rate.of(0, Duration.ZERO, "", factoryClass);
             return;
         }
         limit.setFactoryClass(factoryClass);

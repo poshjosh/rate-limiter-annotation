@@ -18,23 +18,15 @@ public interface RateToBandwidthConverter{
 
     Bandwidth convert(Rate rate, long nowMicros);
 
-    default Bandwidths convert(Rates rates) {
-        return convert(rates, 0);
-    }
-
-    default Bandwidths convert(Rates rates, long nowMicros) {
+    default Bandwidths convert(String id, Rates rates, long nowMicros) {
         final List<Rate> limits = rates.getLimits();
         if (limits == null || limits.isEmpty()) {
-            return Bandwidths.empty(rates.getOperator());
+            return (Bandwidths)Bandwidths.empty(rates.getOperator());
         }
         Bandwidth[] members = new Bandwidth[limits.size()];
         for (int i = 0; i < members.length; i++) {
             members[i] = convert(limits.get(i), nowMicros);
         }
-        return Bandwidths.of(rates.getOperator(), members);
-    }
-
-    default Bandwidth convert(Rate rate) {
-        return convert(rate, 0);
+        return (Bandwidths)Bandwidths.of(id, rates.getOperator(), members);
     }
 }

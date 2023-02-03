@@ -1,23 +1,23 @@
 package io.github.poshjosh.ratelimiter.store;
 
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 
 import java.util.Map;
 import java.util.Objects;
 
 final class BandwidthsStoreOfMap<K> implements BandwidthsStore<K>{
 
-    private final Map<K, Bandwidths> map;
+    private final Map<K, Bandwidth[]> map;
 
-    BandwidthsStoreOfMap(Map<K, Bandwidths> map) {
+    BandwidthsStoreOfMap(Map<K, Bandwidth[]> map) {
         this.map = Objects.requireNonNull(map);
     }
 
-    @Override public Bandwidths get(K key) {
+    @Override public Bandwidth[] get(K key) {
         return map.get(key);
     }
 
-    @Override public void put(K key, Bandwidths bandwidths) {
+    @Override public void put(K key, Bandwidth[] bandwidths) {
         map.put(key, bandwidths);
     }
 }

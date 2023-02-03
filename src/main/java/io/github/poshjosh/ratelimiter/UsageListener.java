@@ -4,7 +4,9 @@ import java.util.Objects;
 
 public interface UsageListener {
 
-    UsageListener NO_OP = new UsageListener() { };
+    UsageListener NO_OP = new UsageListener() {
+        @Override public String toString() { return "UsageListener$NO_OP"; }
+    };
 
     default void onConsumed(Object resource, int hits, Object limit) { }
 
@@ -34,6 +36,9 @@ public interface UsageListener {
             public void onRejected(Object resource, int hits, Object limit) {
                 UsageListener.this.onRejected(resource, hits, limit);
                 after.onRejected(resource, hits, limit);
+            }
+            @Override public String toString() {
+                return "UsageListener$andThen{1=" + this + ", 2=" + after + "}";
             }
         };
     }

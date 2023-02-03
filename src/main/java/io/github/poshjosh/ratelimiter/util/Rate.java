@@ -37,7 +37,12 @@ public final class Rate {
     }
 
     public static Rate of(long permits, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
-        return new Rate(permits, duration, factoryClass);
+        return new Rate(permits, duration, "", factoryClass);
+    }
+
+    public static Rate of(long permits, Duration duration,
+            String rateCondition, Class<? extends BandwidthFactory> factoryClass) {
+        return new Rate(permits, duration, rateCondition, factoryClass);
     }
 
     public static Rate of(Rate rate) {
@@ -46,6 +51,58 @@ public final class Rate {
 
     private long permits;
     private Duration duration = Duration.ofSeconds(1);
+
+
+    /**
+     * An expression which specifies the condition for rate limiting.
+     *
+     * May be any supported string for example:
+     *
+     * <p><code>sys.memory.available<1_000_000_000</code></p>
+     * <p><code>web.request.user.role=ROLE_GUEST</code></p>
+     *
+     * Support must be provide for the expression. Support is provided by default for the following:
+     *
+     * <p><code>jvm.thread.count</code></p>
+     * <p><code>jvm.thread.count.daemon</code></p>
+     * <p><code>jvm.thread.count.deadlocked</code></p>
+     * <p><code>jvm.thread.count.deadlocked.monitor</code></p>
+     * <p><code>jvm.thread.count.peak</code></p>
+     * <p><code>jvm.thread.count.started</code></p>
+     * <p><code>jvm.thread.current.count.blocked</code></p>
+     * <p><code>jvm.thread.current.count.waited</code></p>
+     * <p><code>jvm.thread.current.state</code></p>
+     * <p><code>jvm.thread.current.suspended</code></p>
+     * <p><code>jvm.thread.current.time.blocked</code></p>
+     * <p><code>jvm.thread.current.time.cpu</code></p>
+     * <p><code>jvm.thread.current.time.user</code></p>
+     * <p><code>jvm.thread.current.time.waited</code></p>
+     * <p><code>sys.memory.available</code></p>
+     * <p><code>sys.memory.free</code></p>
+     * <p><code>sys.memory.max</code></p>
+     * <p><code>sys.memory.total</code></p>
+     * <p><code>sys.memory.used</code></p>
+     * <p><code>sys.time.elapsed</code></p>
+     * <p><code>sys.time</code></p>
+     *
+     * Supported operators are:
+     *
+     * <pre>
+     * =  equals
+     * >  greater
+     * >= greater or equals
+     * <  less
+     * <= less or equals
+     * ^  starts with
+     * $  ends with
+     * %  contains
+     * !  not (e.g !=, !>, !$ etc)
+     * </pre>
+     *
+     * @see io.github.poshjosh.ratelimiter.expression.ExpressionResolver
+     * @see Rates#getRateCondition()
+     */
+    private String rateCondition = "";
 
     /**
      * A {@link BandwidthFactory} that will be dynamically instantiated and used to create
@@ -57,14 +114,16 @@ public final class Rate {
     public Rate() { }
 
     Rate(Rate rate) {
-        this(rate.permits, rate.duration, rate.factoryClass);
+        this(rate.permits, rate.duration, rate.rateCondition, rate.factoryClass);
     }
 
-    Rate(long permits, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
+    Rate(long permits, Duration duration, String rateCondition,
+            Class<? extends BandwidthFactory> factoryClass) {
         requireNotNegative(permits, "permits");
         requireFalse(duration.isNegative(), "Duration must be withPositiveOperator, duration: " + duration);
         this.permits = permits;
         this.duration = Objects.requireNonNull(duration);
+        this.rateCondition = Objects.requireNonNull(rateCondition);
         this.factoryClass = Objects.requireNonNull(factoryClass);
     }
     private void requireNotNegative(double amount, String what) {
@@ -106,6 +165,19 @@ public final class Rate {
         this.duration = duration;
     }
 
+    public Rate rateCondition(String rateCondition) {
+        setRateCondition(rateCondition);
+        return this;
+    }
+
+    public String getRateCondition() {
+        return rateCondition;
+    }
+
+    public void setRateCondition(String rateCondition) {
+        this.rateCondition = rateCondition;
+    }
+
     public Rate factoryClass(Class<? extends BandwidthFactory> factoryClass) {
         setFactoryClass(factoryClass);
         return this;
@@ -124,12 +196,13 @@ public final class Rate {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Rate that = (Rate) o;
-        return permits == that.permits && duration.equals(that.duration) && factoryClass.equals(that.factoryClass);
+        return permits == that.permits && duration.equals(that.duration)
+                && rateCondition.equals(that.rateCondition) && factoryClass.equals(that.factoryClass);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(permits, duration, factoryClass);
+        return Objects.hash(permits, duration, rateCondition, factoryClass);
     }
 
     @Override
@@ -137,6 +210,7 @@ public final class Rate {
         return "Rate{" +
                 "permits=" + permits +
                 ", duration=" + duration +
+                ", rateCondition=" + rateCondition +
                 ", factoryClass=" + (factoryClass == null ? null : factoryClass.getSimpleName()) +
                 '}';
     }

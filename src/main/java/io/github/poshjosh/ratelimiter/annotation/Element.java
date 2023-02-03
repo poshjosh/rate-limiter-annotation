@@ -69,6 +69,7 @@ public abstract class Element {
             return Optional.empty();
         }
         @Override public boolean isRateLimited() { return true; }
+        @Override public boolean isGroupType() { return true; }
     }
 
     static Element of(Class<?> clazz) {
@@ -88,6 +89,7 @@ public abstract class Element {
     public abstract <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass);
     public abstract boolean isRateLimited();
 
+    public boolean isGroupType() { return false; }
     public boolean isOwnDeclarer() {
         return getDeclarer() == this;
     }

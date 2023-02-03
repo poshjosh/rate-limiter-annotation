@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.annotation.ElementId;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
@@ -34,15 +35,16 @@ class DefaultResourceLimiterTest {
     }
 
     static class RateLimitedClass1{
-        @Rate(permits = 1, name = key)
-        void method_0() { }
+        @Rate(1)
+        void hi() { }
     }
 
     @Test
-    void testClassWithSingleRateLimitedMethod() {
+    void testClassWithSingleRateLimitedMethod() throws Exception {
         ResourceLimiter<Object> limiter = buildRateLimiter(2, RateLimitedClass1.class);
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        final String resourceId = ElementId.of(RateLimitedClass1.class.getDeclaredMethod("hi"));
+        assertTrue(limiter.tryConsume(resourceId));
+        assertFalse(limiter.tryConsume(resourceId));
     }
 
     @Rate(permits = 1, name = "class")
@@ -54,48 +56,46 @@ class DefaultResourceLimiterTest {
     @Test
     void testRateLimitedClassWithSingleRateLimitedMethod() {
         ResourceLimiter<Object> limiter = buildRateLimiter(2, RateLimitedClass2.class);
-        assertTrue(limiter.tryConsume("class"));
-        assertFalse(limiter.tryConsume("class"));
+        assertTrue(limiter.tryConsume("method"));
+        assertFalse(limiter.tryConsume("method"));
     }
 
     @Rate(permits = 1, timeUnit = SECONDS)
     @Rate(permits = 3, timeUnit = SECONDS)
-    @RateGroup(name = RateLimitedClass3.groupId, operator = Operator.OR)
+    @RateGroup(operator = Operator.OR)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     @interface RateLimitedClass3Group{ }
 
     @RateLimitedClass3Group
-    static class RateLimitedClass3{
-        private static final String groupId = "rate-limited-class3";
-    }
+    static class RateLimitedClass3{ }
 
     @Test
     void testRateLimitedClassWithOrLimits() {
         ResourceLimiter<Object> limiter = buildRateLimiter(2, RateLimitedClass3.class);
-        assertTrue(limiter.tryConsume(RateLimitedClass3.groupId));
-        assertFalse(limiter.tryConsume(RateLimitedClass3.groupId));
+        final String id = ElementId.of(RateLimitedClass3.class);
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
     }
 
     @Rate(permits = 1, timeUnit = SECONDS)
     @Rate(permits = 3, timeUnit = SECONDS)
-    @RateGroup(name = RateLimitedClass4.groupId, operator = Operator.AND)
+    @RateGroup(operator = Operator.AND)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     @interface RateLimitedClass4Group {  }
 
     @RateLimitedClass4Group
-    static class RateLimitedClass4{
-        private static final String groupId = "rate-limited-class4";
-    }
+    static class RateLimitedClass4{ }
 
     @Test
     void testRateLimitedClassWithAndLimits() {
         ResourceLimiter<Object> limiter = buildRateLimiter(2, RateLimitedClass4.class);
-        assertTrue(limiter.tryConsume(RateLimitedClass4.groupId));
-        assertTrue(limiter.tryConsume(RateLimitedClass4.groupId));
-        assertTrue(limiter.tryConsume(RateLimitedClass4.groupId));
-        assertFalse(limiter.tryConsume(RateLimitedClass4.groupId));
+        final String id = ElementId.of(RateLimitedClass4.class);
+        assertTrue(limiter.tryConsume(id));
+        assertTrue(limiter.tryConsume(id));
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
     }
 
     @Rate(permits = 10, timeUnit = SECONDS)
@@ -135,13 +135,27 @@ class DefaultResourceLimiterTest {
     public @interface MyRateGroup { }
 
     @Test
-    void testGroupMetaAnnotation() {
+    void testGroupMember_shouldBeRateLimited() {
+        ResourceLimiter<Object> limiter = testGroupLimiter();
+        final String id = ElementId.of(MyRateGroupMember0.class);
+        assertTrue(limiter.tryConsume(id));
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
+    }
+
+    @Test
+    void testGroupAnnotation_shouldNotBeRateLimited() {
+        ResourceLimiter<Object> limiter = testGroupLimiter();
+        final String id = ElementId.of(MyRateGroupMember0.class);
+        assertTrue(limiter.tryConsume(RATE_GROUP_NAME));
+        assertTrue(limiter.tryConsume(RATE_GROUP_NAME));
+        assertTrue(limiter.tryConsume(RATE_GROUP_NAME));
+    }
+
+    private ResourceLimiter<Object> testGroupLimiter() {
         // The classes should be not be in order, as is expected in real situations
-        ResourceLimiter<Object> limiter = buildRateLimiter(4,
+        return buildRateLimiter(4,
                 MyRateGroupMember0.class, MyRateGroup.class, MyRateGroupMember1.class);
-        assertTrue(limiter.tryConsume(RATE_GROUP_NAME));
-        assertTrue(limiter.tryConsume(RATE_GROUP_NAME));
-        assertFalse(limiter.tryConsume(RATE_GROUP_NAME));
     }
 
     @Rate(1)
@@ -182,8 +196,9 @@ class DefaultResourceLimiterTest {
     @Test
     void givenRateWhenResolvesToTrue_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass7b.class);
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        final String id = ElementId.of(RateLimitedClass7b.class);
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
     }
 
     @Rate(1)
@@ -197,7 +212,7 @@ class DefaultResourceLimiterTest {
         assertFalse(limiter.tryConsume(key));
     }
 
-    @Rate(permits=1, when=" sys.time.elapsed > PT0S ")
+    @Rate(name = key, permits=1, when=" sys.time.elapsed > PT0S ")
     public class RateLimitedClass8b{ }
 
     @Test
@@ -224,8 +239,22 @@ class DefaultResourceLimiterTest {
     @Test
     void givenRateWhenResolvesToFalse_afterNegation_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass9b.class);
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        final String id = ElementId.of(RateLimitedClass9b.class);
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
+    }
+
+    @Rate(permits=1, when="sys.time.elapsed<=PT0S")
+    @Rate(permits=2, when="sys.time.elapsed>PT0S")
+    public class RateLimitedClass10{ }
+
+    @Test
+    void givenNonComposedRates() {
+        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass10.class);
+        final String id = ElementId.of(RateLimitedClass10.class);
+        assertTrue(limiter.tryConsume(id));
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
     }
 
     private ResourceLimiter<Object> buildRateLimiter(int expectedNodes, Class<?>... classes) {

@@ -48,7 +48,7 @@ import java.lang.annotation.*;
  * !  not (e.g !=, !>, !$ etc)
  * </pre>
  *
- * @see io.github.poshjosh.ratelimiter.matcher.ExpressionResolver
+ * @see io.github.poshjosh.ratelimiter.expression.ExpressionResolver
  */
 @Documented
 @Retention(RetentionPolicy.RUNTIME)

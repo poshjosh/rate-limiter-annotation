@@ -25,36 +25,35 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
     public Rates convert(GenericDeclaration source) {
         final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
         final Rate[] rates = source.getAnnotationsByType(getAnnotationType());
-        final String expression = getRateCondition(source, rates);
+        final String rateConditionForAllRates = getRateCondition(source);
 
         final Operator operator = operator(rateGroup);
+        validate(source, operator, rates);
         if (rates.length == 0) {
-            return Rates.of(operator).rateCondition(expression);
+            return Rates.of(operator, rateConditionForAllRates);
         }
         final io.github.poshjosh.ratelimiter.util.Rate[] configs = new io.github.poshjosh.ratelimiter.util.Rate[rates.length];
         for (int i = 0; i < rates.length; i++) {
             configs[i] = convert(rates[i]);
         }
-        return Rates.of(operator, configs).rateCondition(expression);
+        return Rates.of(operator, rateConditionForAllRates, configs);
     }
 
-    private String getRateCondition(GenericDeclaration source, Rate[]rates) {
-        String conditionFromRates = "";
-        for(Rate rate : rates) {
+    private void validate(GenericDeclaration source, Operator operator, Rate[] rates) {
+        if (Operator.DEFAULT.equals(operator)) {
+            return;
+        }
+        for (Rate rate : rates) {
             if (!rate.when().isEmpty()) {
-                conditionFromRates = rate.when();
-                break;
+                throw new AnnotationProcessingException(
+                        "@Rate may not have when() specified, if @RateGroup has operator() specified; at: " + source);
             }
         }
-        if (rates.length > 1 && !conditionFromRates.isEmpty()) {
-            throw new AnnotationProcessingException(
-                    "To specify rate condition for multiple rates use: " + RateCondition.class.getName());
-        }
-        if (conditionFromRates.isEmpty()) {
-            final RateCondition rateCondition = source.getAnnotation(RateCondition.class);
-            return getExpression(source, rateCondition);
-        }
-        return conditionFromRates;
+    }
+
+    private String getRateCondition(GenericDeclaration source) {
+        final RateCondition rateCondition = source.getAnnotation(RateCondition.class);
+        return getExpression(source, rateCondition);
     }
 
     private String getExpression(GenericDeclaration source, RateCondition rateCondition) {
@@ -71,7 +70,7 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
         final long value = rate.value() == Long.MAX_VALUE ? rate.permits() : rate.value();
         Duration duration = Duration.of(rate.duration(), toChronoUnit(rate.timeUnit()));
         return io.github.poshjosh.ratelimiter.util.Rate
-                .of(value, duration, rate.factoryClass());
+                .of(value, duration, rate.when(), rate.factoryClass());
     }
 
     protected ChronoUnit toChronoUnit(TimeUnit timeUnit) {

@@ -3,13 +3,12 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.util.Rate;
-import io.github.poshjosh.ratelimiter.util.RateConfig;
-import io.github.poshjosh.ratelimiter.util.Rates;
+import io.github.poshjosh.ratelimiter.util.*;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
@@ -19,7 +18,7 @@ public interface ResourceLimiter<K> {
         @Override public ResourceLimiter<Object> listener(UsageListener listener) { return this; }
         @Override public UsageListener getListener() { return UsageListener.NO_OP; }
         @Override public boolean tryConsume(Object key, int permits, long timeout, TimeUnit unit) {
-            return false;
+            return true;
         }
     };
 
@@ -43,24 +42,15 @@ public interface ResourceLimiter<K> {
     static <R> ResourceLimiter<R> of(Node<RateConfig> node) {
         return of(
                 UsageListener.NO_OP, SleepingTicker.zeroOffset(),
-                BandwidthsStore.ofDefaults(), MatcherProvider.ofDefaults(),
+                BandwidthsStore.ofDefaults(), (MatcherProvider)MatcherProvider.ofDefaults(),
                 node
         );
     }
 
     static <R> ResourceLimiter<R> of(
             UsageListener listener,
-            BandwidthsStore<?> store,
-            MatcherProvider<R> matcherProvider,
-            Class<?>... sourceOfRateLimitInfo) {
-        Node<RateConfig> rootNode = RateProcessor.ofDefaults().processAll(sourceOfRateLimitInfo);
-        return of(listener, store, matcherProvider, rootNode);
-    }
-
-    static <R> ResourceLimiter<R> of(
-            UsageListener listener,
-            BandwidthsStore<?> store,
-            MatcherProvider<R> matcherProvider,
+            BandwidthsStore<Object> store,
+            MatcherProvider<R, Object> matcherProvider,
             Node<RateConfig> rootNode) {
         return of(listener, SleepingTicker.zeroOffset(), store, matcherProvider, rootNode);
     }
@@ -68,11 +58,19 @@ public interface ResourceLimiter<K> {
     static <R> ResourceLimiter<R> of(
             UsageListener listener,
             SleepingTicker ticker,
-            BandwidthsStore<?> store,
-            MatcherProvider<R> matcherProvider,
-            Node<RateConfig> rootNode) {
-        BandwidthsContext<?> context = BandwidthsContext.of(ticker, store);
-        return new DefaultResourceLimiter<>(listener, context, matcherProvider, rootNode);
+            BandwidthsStore<Object> store,
+            MatcherProvider<R, Object> matcherProvider,
+            Node<RateConfig> node) {
+        RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
+        Function<Node<RateConfig>, LimiterConfig<R, Object>> transformer = n -> {
+             RateConfig rateConfig = n.getValueOrDefault(null);
+             if (rateConfig == null) {
+                 return null;
+             }
+             return LimiterConfig.of(n, converter, matcherProvider, ticker);
+        };
+        return new DefaultResourceLimiter<>(listener, LimiterProvider.of(store),
+                node.getRoot().transform(transformer));
     }
 
     ResourceLimiter<K> listener(UsageListener listener);
