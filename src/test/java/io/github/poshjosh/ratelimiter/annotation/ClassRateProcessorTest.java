@@ -23,27 +23,26 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
     }
 
     @Test
-    void classCannotHaveMultipleClassLevelResourceAnnotationsInHeirarchy() {
+    void classCannotHaveMultipleClassLevelResourceAnnotationsInHierarchy() {
         // @TODO
     }
 
     @Test
     void nodeVisitingShouldBeAccurate() {
-    final Class<?>[] classes =
-        new Class[] {
-                  GroupAnnotationsOnlyGroup.class,
-                  ClassWithClassAnnotationsGroup.class,
-                  ClassWithClassAnnotations.class,
-                  ClassWithClassAnnotations.ClassGroupOnlyAnon.class,
-                  ClassWithClassAnnotations.ClassGroupOnlyNamedFire.class,
-                  ClassWithClassAnnotations.ClassWithInternalClass.class,
-                  ClassWithClassAnnotations.ClassWithInternalClass.InternalClass.class,
-                  ClassWithClassAnnotations.PrivateClass.class,
-                  ClassWithClassAnnotations.GroupAnnotationOnly.class,
-                  ClassWithClassAnnotations.SecondClassGroupOnlyNamedFire.class,
-                  ClassWithMethodAnnotations.class,
-                  ClassWithMethodAnnotations.MethodGroupOnlyAnon.class
-        };
+        final Class<?>[] classes = new Class[] {
+                          GroupAnnotationsOnlyGroup.class,
+                          ClassWithClassAnnotationsGroup.class,
+                          ClassWithClassAnnotations.class,
+                          ClassWithClassAnnotations.ClassGroupOnlyAnon.class,
+                          ClassWithClassAnnotations.ClassGroupOnlyNamedFire.class,
+                          ClassWithClassAnnotations.ClassWithInternalClass.class,
+                          ClassWithClassAnnotations.ClassWithInternalClass.InternalClass.class,
+                          ClassWithClassAnnotations.PrivateClass.class,
+                          ClassWithClassAnnotations.GroupAnnotationOnly.class,
+                          ClassWithClassAnnotations.SecondClassGroupOnlyNamedFire.class,
+                          ClassWithMethodAnnotations.class,
+                          ClassWithMethodAnnotations.MethodGroupOnlyAnon.class
+                };
         Node<RateConfig> root = getInstance().processAll(classes);
         System.out.println(root);
         assertThat(root.findFirstChild(node -> node.getName().equals(root.getName())).isPresent()).isTrue();

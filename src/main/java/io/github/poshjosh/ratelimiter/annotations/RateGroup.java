@@ -15,5 +15,5 @@ public @interface RateGroup {
     /** Alias for name() */
     String value() default "";
 
-    Operator operator() default Operator.DEFAULT;
+    Operator operator() default Operator.NONE;
 }

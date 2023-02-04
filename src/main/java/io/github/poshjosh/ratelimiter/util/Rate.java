@@ -32,12 +32,16 @@ public final class Rate {
         return of(permits, Duration.ofDays(1));
     }
 
-    public static Rate of(long permits, Duration duration) {
-        return of(permits, duration, BandwidthFactory.Default.class);
+    public static Rate of(long permits, String rateCondition) {
+        return of(permits, Duration.ofSeconds(1), rateCondition);
     }
 
-    public static Rate of(long permits, Duration duration, Class<? extends BandwidthFactory> factoryClass) {
-        return new Rate(permits, duration, "", factoryClass);
+    public static Rate of(long permits, Duration duration) {
+        return of(permits, duration, "");
+    }
+
+    public static Rate of(long permits, Duration duration, String rateCondition) {
+        return of(permits, duration, rateCondition, BandwidthFactory.Default.class);
     }
 
     public static Rate of(long permits, Duration duration,
@@ -210,7 +214,7 @@ public final class Rate {
         return "Rate{" +
                 "permits=" + permits +
                 ", duration=" + duration +
-                ", rateCondition=" + rateCondition +
+                ", condition=" + rateCondition +
                 ", factoryClass=" + (factoryClass == null ? null : factoryClass.getSimpleName()) +
                 '}';
     }

@@ -8,6 +8,7 @@ import javax.cache.Cache;
 import java.util.List;
 import java.util.Map;
 
+// This is an internal interface
 interface LimiterProvider<R, K> {
 
     static <R, K> LimiterProvider<R, K> ofDefaults() {
@@ -26,5 +27,5 @@ interface LimiterProvider<R, K> {
         return new DefaultLimiterProvider<>(store);
     }
 
-    List<RateLimiter> getLimiters(K key, String name, LimiterConfig<R, K> rateConfig);
+    List<RateLimiter> getOrCreateLimiters(K key, LimiterConfig<R, K> rateConfig);
 }

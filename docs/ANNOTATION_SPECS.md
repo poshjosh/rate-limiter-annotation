@@ -20,6 +20,8 @@ You could then use the above annotation for as many classes/methods that apply.
 - Use a `@RateGroup` annotation for customizing a group of co-located `@Rate` annotations. 
 
 - Each `@RateGroup` is identified by name.
+
+- `@RateGroup` operator may not be specified when multiple rate-conditions are specified.
   
 **Simple Example**
 

@@ -23,7 +23,7 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
     }
 
     @Override
-    public List<RateLimiter> getLimiters(K key, String name, LimiterConfig<R, K> limiterConfig) {
+    public List<RateLimiter> getOrCreateLimiters(K key, LimiterConfig<R, K> limiterConfig) {
         List<RateLimiter> value;
         if ((value = this.resourceIdToRateLimiters.get(key)) == null) {
             value = createLimiters(key, limiterConfig);

@@ -31,20 +31,32 @@ public class Rates {
         return of(operator, "", rates);
     }
 
+    public static Rates of(String rateCondition, Rate... rates) {
+        return of(Operator.NONE, rateCondition, rates);
+    }
+
     public static Rates of(Operator operator, String rateCondition, Rate... rates) {
-        return of(operator, rateCondition,
-                rates == null ? Collections.emptyList() : Arrays.asList(rates));
+        List<Rate> list = rates == null ? Collections.emptyList() : Arrays.asList(rates);
+        return of(operator, rateCondition, list);
+    }
+
+    public static Rates of(List<Rate> rates) {
+        return of( "", rates);
     }
 
     public static Rates of(Operator operator, List<Rate> rates) {
-        return new Rates(operator, "", rates);
+        return of(operator, "", rates);
+    }
+
+    public static Rates of(String rateCondition, List<Rate> rates) {
+        return of(Operator.NONE, rateCondition, rates);
     }
 
     public static Rates of(Operator operator, String rateCondition, List<Rate> rates) {
         return new Rates(operator, rateCondition, rates);
     }
 
-    private Operator operator = Operator.DEFAULT;
+    private Operator operator = Operator.NONE;
 
     /**
      * Multiple limits. Either set this or {@link #limit} but not both.
@@ -81,6 +93,16 @@ public class Rates {
         this.rateCondition = Objects.requireNonNull(rateCondition);
         this.limits = limits == null ? Collections.emptyList() : limits.stream()
                 .map(Rate::new).collect(Collectors.toList());
+    }
+
+    public boolean hasChildConditions() {
+        for(Rate rate : getLimits()) {
+            String condition = rate.getRateCondition();
+            if (condition != null && !condition.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public boolean hasLimits() {

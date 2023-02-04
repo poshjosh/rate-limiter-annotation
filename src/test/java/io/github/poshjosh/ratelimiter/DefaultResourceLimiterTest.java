@@ -22,16 +22,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DefaultResourceLimiterTest {
 
-    static final String key = "one";
-
-    @Rate(permits = 1, name = key)
+    @Rate(permits = 1, name = "resource-0")
     static class RateLimitedClass0{ }
 
     @Test
     void testRateLimitedClass() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass0.class);
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        assertTrue(limiter.tryConsume("resource-0"));
+        assertFalse(limiter.tryConsume("resource-0"));
     }
 
     static class RateLimitedClass1{
@@ -165,18 +163,20 @@ class DefaultResourceLimiterTest {
     @Test
     void givenRateConditionFalse_shouldNotBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass6.class);
-        assertTrue(limiter.tryConsume(key));
-        assertTrue(limiter.tryConsume(key));
+        final String id = ElementId.of(RateLimitedClass6.class);
+        assertTrue(limiter.tryConsume(id));
+        assertTrue(limiter.tryConsume(id));
     }
 
-    @Rate(permits=1, when="sys.memory.free<1")
+    @Rate(permits=1, when="sys.memory.free<0")
     public class RateLimitedClass6b{ }
 
     @Test
     void givenRateWhenResolvesToFalse_shouldNotBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass6b.class);
-        assertTrue(limiter.tryConsume(key));
-        assertTrue(limiter.tryConsume(key));
+        final String id = ElementId.of(RateLimitedClass6b.class);
+        assertTrue(limiter.tryConsume(id));
+        assertTrue(limiter.tryConsume(id));
     }
 
     @Rate(1)
@@ -186,8 +186,9 @@ class DefaultResourceLimiterTest {
     @Test
     void givenRateConditionTrue_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass7.class);
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        final String id = ElementId.of(RateLimitedClass7.class);
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
     }
 
     @Rate(permits=1, when="sys.time.elapsed>PT0S")
@@ -208,18 +209,19 @@ class DefaultResourceLimiterTest {
     @Test
     void givenRateConditionTrue_andHavingSpaces_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass8.class);
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        final String id = ElementId.of(RateLimitedClass8.class);
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
     }
 
-    @Rate(name = key, permits=1, when=" sys.time.elapsed > PT0S ")
+    @Rate(name = "resource-8b", permits=1, when=" sys.time.elapsed > PT0S ")
     public class RateLimitedClass8b{ }
 
     @Test
     void givenRateWhenResolvesToTrue_andHavingSpaces_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass8b.class);
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        assertTrue(limiter.tryConsume("resource-8b"));
+        assertFalse(limiter.tryConsume("resource-8b"));
     }
 
     @Rate(1)
@@ -229,8 +231,9 @@ class DefaultResourceLimiterTest {
     @Test
     void givenRateConditionFalse_afterNegation_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass9.class);
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        final String id = ElementId.of(RateLimitedClass9.class);
+        assertTrue(limiter.tryConsume(id));
+        assertFalse(limiter.tryConsume(id));
     }
 
     @Rate(permits=1, when="sys.time.elapsed!<=PT0S")

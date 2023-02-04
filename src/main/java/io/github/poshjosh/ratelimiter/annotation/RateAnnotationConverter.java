@@ -40,13 +40,14 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
     }
 
     private void validate(GenericDeclaration source, Operator operator, Rate[] rates) {
-        if (Operator.DEFAULT.equals(operator)) {
+        if (Operator.NONE.equals(operator)) {
             return;
         }
+        // Tag:Rule:Operator-may-not-be-specified-when-multiple-rate-conditions-are-specified
         for (Rate rate : rates) {
             if (!rate.when().isEmpty()) {
                 throw new AnnotationProcessingException(
-                        "@Rate may not have when() specified, if @RateGroup has operator() specified; at: " + source);
+                        "Operator may not be specified, when multiple rate conditions are specified; at: " + source);
             }
         }
     }
@@ -63,7 +64,7 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
     }
 
     private Operator operator(RateGroup rateGroup) {
-        return rateGroup == null ? Operator.DEFAULT : rateGroup.operator();
+        return rateGroup == null ? Operator.NONE : rateGroup.operator();
     }
 
     protected io.github.poshjosh.ratelimiter.util.Rate convert(Rate rate) {

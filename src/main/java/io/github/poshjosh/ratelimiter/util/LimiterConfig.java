@@ -10,6 +10,11 @@ import java.util.*;
 
 public final class LimiterConfig<R, K> {
 
+    public static LimiterConfig<Object, String> ofDefaults(Node<RateConfig> node) {
+        return of(node, RateToBandwidthConverter.ofDefaults(),
+                MatcherProvider.ofDefaults(), SleepingTicker.zeroOffset());
+    }
+
     public static <R, K> LimiterConfig<R, K> of(
             Node<RateConfig> node,
             RateToBandwidthConverter rateToBandwidthConverter,
@@ -17,7 +22,7 @@ public final class LimiterConfig<R, K> {
             SleepingTicker sleepingTicker) {
         RateConfig rateConfig = Objects.requireNonNull(node.getValueOrDefault(null));
         Rates rates = rateConfig.getRates();
-        Bandwidths bandwidths = rateToBandwidthConverter
+        Bandwidth[] bandwidths = rateToBandwidthConverter
                 .convert(node.getName(), rates, sleepingTicker.elapsedMicros());
         Matcher<R, K> matcher = matcherProvider.createMatcher(node);
         List<Matcher<R, K>> matchers = matcherProvider.createMatchers(node);
@@ -28,8 +33,6 @@ public final class LimiterConfig<R, K> {
     private final SourceType sourceType;
 
     private final Rates rates;
-
-    private final boolean hasChildConditions;
 
     private final Bandwidth [] bandwidths;
 
@@ -46,31 +49,14 @@ public final class LimiterConfig<R, K> {
 
     private final SleepingTicker sleepingTicker;
 
-    private LimiterConfig(SourceType sourceType, Rates rates, Bandwidths bandwidths,
+    private LimiterConfig(SourceType sourceType, Rates rates, Bandwidth[] bandwidths,
             Matcher<R, K> matcher, List<Matcher<R, K>> matchers, SleepingTicker sleepingTicker) {
         this.sourceType = Objects.requireNonNull(sourceType);
         this.rates = Rates.of(rates);
-        this.hasChildConditions = hasChildConditions(rates);
-        if (hasChildConditions) {
-            this.bandwidths = Arrays.copyOf(
-                    bandwidths.getBandwidths(), bandwidths.getBandwidths().length);
-        } else {
-            this.bandwidths = new Bandwidth[]{bandwidths};
-        }
+        this.bandwidths = Arrays.copyOf(bandwidths, bandwidths.length);
         this.matcher = Objects.requireNonNull(matcher);
         this.matchers = Collections.unmodifiableList(new ArrayList<>(matchers));
         this.sleepingTicker = Objects.requireNonNull(sleepingTicker);
-    }
-    
-    public boolean hasChildConditions() {
-        return hasChildConditions;
-    }
-
-    private boolean hasChildConditions(Rates rates) {
-        final List<Rate> limits = rates.getLimits();
-        return limits.size() > 1 && limits.stream()
-                .map(Rate::getRateCondition)
-                .anyMatch(condition -> condition != null && !condition.isEmpty());
     }
 
     public SourceType getSourceType() { return sourceType; }

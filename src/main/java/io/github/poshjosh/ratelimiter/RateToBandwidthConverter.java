@@ -18,15 +18,23 @@ public interface RateToBandwidthConverter{
 
     Bandwidth convert(Rate rate, long nowMicros);
 
-    default Bandwidths convert(String id, Rates rates, long nowMicros) {
+    default Bandwidth[] convert(String id, Rates rates, long nowMicros) {
+        if (!rates.hasLimits()) {
+            return new Bandwidth[0];
+        }
         final List<Rate> limits = rates.getLimits();
-        if (limits == null || limits.isEmpty()) {
-            return (Bandwidths)Bandwidths.empty(rates.getOperator());
+        final Bandwidth[] bandwidths = new Bandwidth[limits.size()];
+        for (int i = 0; i < bandwidths.length; i++) {
+            Rate rate = limits.get(i);
+            bandwidths[i] = convert(rate, nowMicros);
         }
-        Bandwidth[] members = new Bandwidth[limits.size()];
-        for (int i = 0; i < members.length; i++) {
-            members[i] = convert(limits.get(i), nowMicros);
+        if (bandwidths.length == 1 || rates.hasChildConditions()) {
+            // We ignore the operator
+            // see Tag:Rule:Operator-may-not-be-specified-when-multiple-rate-conditions-are-specified
+            return bandwidths;
         }
-        return (Bandwidths)Bandwidths.of(id, rates.getOperator(), members);
+        final Operator operator =
+                Operator.NONE.equals(rates.getOperator()) ? Operator.OR : rates.getOperator();
+        return new Bandwidth[]{Bandwidths.of(id, operator, bandwidths)};
     }
 }

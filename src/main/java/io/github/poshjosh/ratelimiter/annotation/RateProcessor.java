@@ -49,7 +49,7 @@ public interface RateProcessor<S> {
     }
 
     default Node<RateConfig> processAll(Set<S> sources) {
-        return processAll(Node.of("root"), (src, node) -> {}, sources).getRoot();
+        return processAll(Node.ofDefaultRoot(), (src, node) -> {}, sources).getRoot();
     }
 
     default Node<RateConfig> processAll(Node<RateConfig> root, NodeConsumer consumer, S... sources) {
@@ -64,7 +64,7 @@ public interface RateProcessor<S> {
     }
 
     default Node<RateConfig> process(S source) {
-        return process(Node.of("root"), (src, node) -> { }, source).getRoot();
+        return process(Node.ofDefaultRoot(), (src, node) -> { }, source).getRoot();
     }
 
     /**

@@ -156,7 +156,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
         if (rates.hasLimits()) {
             return;
         }
-        if (!Operator.DEFAULT.equals(operator)) {
+        if (!Operator.NONE.equals(operator)) {
             throw Checks.exception(
                     "The operator field may not be specified for a RateGroup when no Rates are co-located with the RateGroup");
         }

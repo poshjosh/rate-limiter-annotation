@@ -134,15 +134,21 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
             return previousResult;
         }
 
-        Object match = matchOrNull(request, node);
+        final LimiterConfig<R, Object> config = requireLimiterConfig(node);
+
+        final Matcher<R, Object> matcher = config.getMatcher();
+
+        Object match = matcher.matchOrNull(request);
+
+        if (LOG.isTraceEnabled()) {
+            LOG.trace("Match: {}, node: {}, matcher: {}", match != null, node.getName(), matcher);
+        }
 
         if (match == null && node.isLeaf()) {
             return VisitResult.NO_MATCH;
         }
 
         final Node<LimiterConfig<R, Object>> parent = node.getParentOrDefault(null);
-
-        final LimiterConfig<R, Object> config = requireLimiterConfig(node);
 
         final Bandwidth [] bandwidths = config.getBandwidths();
 
@@ -153,7 +159,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         match = resolveMatch(match, node);
 
         final VisitResult result;
-        if (!config.hasChildConditions()) {
+        if (!config.getRates().hasChildConditions()) {
             if (match == null) {
                 result = node.isLeaf() ? VisitResult.NO_MATCH : previousResult;
             } else {
@@ -179,16 +185,6 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         final VisitResult parentResult = visit(request, permits, timeout, unit, parent, result);
 
         return resolve(result, parentResult);
-    }
-
-    private Object matchOrNull(R request, Node<LimiterConfig<R, Object>> node) {
-        final LimiterConfig<R, Object> config = requireLimiterConfig(node);
-        final Matcher<R, Object> matcher = config.getMatcher();
-        final Object match = matcher.matchOrNull(request);
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Match: {}, node: {}, matcher: {}", match != null, node.getName(), matcher);
-        }
-        return match;
     }
 
     private Object resolveMatch(Object match, Node<LimiterConfig<R, Object>> node) {
@@ -228,7 +224,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
             Object resourceId, int permits, long timeout, TimeUnit unit,
             Node<LimiterConfig<R, Object>> node) {
         LimiterConfig<R, Object> config = requireLimiterConfig(node);
-        RateLimiter limiter = limiterProvider.getLimiters(resourceId, node.getName(), config).get(0);
+        RateLimiter limiter = limiterProvider.getOrCreateLimiters(resourceId, config).get(0);
         return tryAcquire(resourceId, limiter, permits, timeout, unit);
     }
 
@@ -238,7 +234,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         LimiterConfig<R, Object> config = requireLimiterConfig(node);
         final List<Matcher<R, Object>> matchers = config.getMatchers();
 
-        final List<RateLimiter> limiters = limiterProvider.getLimiters(resourceId, node.getName(), config);
+        final List<RateLimiter> limiters = limiterProvider.getOrCreateLimiters(resourceId, config);
 
         int matchCount = 0;
         int successCount = 0;
@@ -246,6 +242,10 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         for (int i = 0; i < matchers.size(); i++) {
 
             final Object match = matchers.get(i).matchOrNull(request);
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Match: {}, node: [{}]{}, matcher: {}",
+                        match != null, i, node.getName(), matchers.get(i));
+            }
 
             if (match == null) {
                 continue;
@@ -253,7 +253,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
             ++matchCount;
 
-            if (tryAcquire(resourceId, limiters.get(i), permits, timeout, unit)) {
+            if (tryAcquire(resourceId + "_" + match, limiters.get(i), permits, timeout, unit)) {
                 ++successCount;
             }
         }

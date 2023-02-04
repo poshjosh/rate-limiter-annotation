@@ -160,6 +160,6 @@ abstract class AbstractResourceLimiterTest {
     }
 
     protected Rate getRate(long permits, long durationMillis, Class<? extends BandwidthFactory> factoryClass) {
-        return Rate.of(permits, Duration.ofMillis(durationMillis), factoryClass);
+        return Rate.of(permits, Duration.ofMillis(durationMillis), "", factoryClass);
     }
 }
