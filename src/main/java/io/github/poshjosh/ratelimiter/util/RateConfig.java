@@ -1,53 +1,32 @@
 package io.github.poshjosh.ratelimiter.util;
 
-import io.github.poshjosh.ratelimiter.annotation.Element;
+import io.github.poshjosh.ratelimiter.annotation.RateSource;
 
 import java.util.Objects;
 
 public final class RateConfig {
 
     public static RateConfig of(Rates value) {
-        return new RateConfig(value, value);
+        return new RateConfig(RateSource.NONE, value);
     }
 
-    public static RateConfig of(Object source, Rates value) {
+    public static RateConfig of(RateSource source, Rates value) {
         return new RateConfig(source, value);
     }
 
-    private final SourceType sourceType;
-    private final Object source;
+    private final RateSource source;
     private final Rates rates;
 
-    private RateConfig(Object source, Rates rates) {
-        this.sourceType = getType(source);
+    private RateConfig(RateSource source, Rates rates) {
         this.source = Objects.requireNonNull(source);
         this.rates = Objects.requireNonNull(rates);
     }
-    private SourceType getType(Object source) {
-        if (!(source instanceof Element)) {
-            return SourceType.PROPERTY;
-        }
-        Element element = (Element)source;
-        if (element.isGroupType()) {
-            return SourceType.GROUP;
-        }
-        if (element.isOwnDeclarer()) {
-            return SourceType.CLASS;
-        }
-        return SourceType.METHOD;
-    }
 
-    public RateConfig withSource(Object source) {
+    public RateConfig withSource(RateSource source) {
         return RateConfig.of(source, rates);
     }
 
-    public RateConfig withRates(Rates value) {
-        return RateConfig.of(source, value);
-    }
-
-    public SourceType getSourceType() { return sourceType; }
-
-    public Object getSource() {
+    public RateSource getSource() {
         return source;
     }
 
@@ -61,15 +40,14 @@ public final class RateConfig {
         if (o == null || getClass() != o.getClass())
             return false;
         RateConfig that = (RateConfig) o;
-        return sourceType == that.sourceType && source.equals(that.source) && rates.equals(that.rates);
+        return source.equals(that.source) && rates.equals(that.rates);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(sourceType, source, rates);
+        return Objects.hash(source, rates);
     }
 
     @Override public String toString() {
-        return "RateConfig{type=" + sourceType + ", source=" +
-                source.getClass().getSimpleName() + ", rates=" + rates + '}';
+        return "RateConfig{source=" + source.getClass().getSimpleName() + ", rates=" + rates + '}';
     }
 }

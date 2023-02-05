@@ -37,14 +37,34 @@ final class DefaultExpressionMatcher<R, T> implements ExpressionMatcher<R, T> {
         Expression<T> typedExpression = expressionParser.parse(request, expression);
         boolean success = expressionResolver.resolve(typedExpression);
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Result: {}, expression typed: {}, text: {}",
+            LOG.trace("Result: {}, expression: typed {}, text {}",
                     success, typedExpression, expression);
         }
-        // We use the ID of the typed expression rather than the raw (i.e string) expression
-        // Expression: web.session.id!= results to typed expression: <SESSION_ID_VALUE>!=
-        // The typed expression is a more suitable identifier because it contains the actual
-        // value of the session ID
-        return success ? typedExpression.getId() : Matcher.NO_MATCH;
+        return success ? resolveId(expression, typedExpression) : Matcher.NO_MATCH;
+    }
+
+    /**
+     * In certain cases, the ID of the typed expression, rather than the ID of the raw
+     * (i.e string) expression, could be used as an identifier. For example:
+     * <p>
+     * Expression: web.session.id!= results to typed expression: <SESSION_ID_VALUE>!=
+     * </p>
+     * Here, the typed expression is a more suitable identifier because it contains the actual
+     * value of the session ID.
+     * <br/><br/>
+     * However, there are cases when the typed expression changes with time. For example:
+     * <p>
+     * Expression: sys.time.elapsed>100, results to typed expression: <TIME_ELAPSED_MILLIS>!=100
+     * </p>
+     * Here, the time elapsed in millis changes with time, hence it is not a suitable identifier.
+     *
+     * @param expression The expression
+     * @param typedExpression The typed expression resolved from the expression
+     * @return A suitable ID
+     */
+    private String resolveId(Expression<String> expression, Expression<T> typedExpression) {
+        return expression.getRightOrDefault("").isEmpty() ?
+                typedExpression.getId() : expression.getId();
     }
 
     @Override

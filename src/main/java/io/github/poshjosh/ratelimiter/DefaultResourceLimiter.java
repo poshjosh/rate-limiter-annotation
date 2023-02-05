@@ -1,14 +1,13 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.LimiterConfig;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.Rates;
-import io.github.poshjosh.ratelimiter.util.SourceType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.GenericDeclaration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -150,32 +149,32 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
         final Node<LimiterConfig<R>> parent = node.getParentOrDefault(null);
 
-        final Bandwidth [] bandwidths = config.getBandwidths();
-
         if (!hasLimits(node)) {
             return visit(request, permits, timeout, unit, parent, VisitResult.LIMIT_NOT_SET);
         }
 
         match = resolveMatch(match, node);
 
+        final boolean matched = isMatch(match);
+
         final VisitResult result;
         if (!config.getRates().hasChildConditions()) {
-            if (!isMatch(match)) {
+            if (!matched) {
                 result = node.isLeaf() ? VisitResult.NO_MATCH : previousResult;
             } else {
                 result = tryAcquire(match, permits, timeout, unit, node)
                         ? VisitResult.SUCCESS : VisitResult.FAILURE;
             }
         } else {
-            if (!isMatch(match)) {
+            if (!matched) {
                 result = node.isLeaf() ? VisitResult.NO_MATCH : previousResult;
             } else {
                 result = visitMulti(request, match, permits, timeout, unit, node);
             }
         }
 
-        if (isMatch(match)) {
-            onVisit(match, permits, bandwidths, result);
+        if (matched) {
+            onVisit(config.getSource().getSource(), permits, config.getRates(), result);
         }
 
         if (parent == null || parent.isRoot()) {
@@ -189,14 +188,18 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
     private String resolveMatch(String match, Node<LimiterConfig<R>> node) {
         final LimiterConfig<R> config = requireLimiterConfig(node);
-        final SourceType sourceType = config.getSourceType();
-        if (SourceType.GROUP.equals(config.getSourceType())) {
+        if (config.getSource().isGroupType()) {
             return node.getName();
         }
-        if (!isMatch(match) && SourceType.PROPERTY.equals(sourceType) && !node.isLeaf()) {
+        if (!isMatch(match) && !isGenericDeclarationSource(config) && !node.isLeaf()) {
             return node.getName();
         }
         return match;
+    }
+
+    private boolean isGenericDeclarationSource(LimiterConfig<R> config) {
+        final Object source = config.getSource().getSource();
+        return source instanceof GenericDeclaration;
     }
 
     private VisitResult resolve(VisitResult result, VisitResult parentResult) {
@@ -212,12 +215,12 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         return VisitResult.FAILURE;
     }
 
-    private void onVisit(Object id, int permits, Bandwidth[] bandwidths, VisitResult result) {
-        listener.onConsumed(id, permits, bandwidths);
+    private void onVisit(Object source, int permits, Object limits, VisitResult result) {
+        listener.onConsumed(source, permits, limits);
         if (!VisitResult.FAILURE.equals(result)) {
             return;
         }
-        listener.onRejected(id, permits, bandwidths);
+        listener.onRejected(source, permits, limits);
     }
 
     private boolean tryAcquire(

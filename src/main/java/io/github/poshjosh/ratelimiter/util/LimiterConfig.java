@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.util;
 
 import io.github.poshjosh.ratelimiter.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.SleepingTicker;
+import io.github.poshjosh.ratelimiter.annotation.RateSource;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.node.Node;
 
@@ -26,10 +27,10 @@ public final class LimiterConfig<R> {
         Matcher<R> matcher = matcherProvider.createMatcher(node);
         List<Matcher<R>> matchers = matcherProvider.createMatchers(node);
         return new LimiterConfig<>(
-                rateConfig.getSourceType(), rates, bandwidths, matcher, matchers, sleepingTicker);
+                rateConfig.getSource(), rates, bandwidths, matcher, matchers, sleepingTicker);
     }
 
-    private final SourceType sourceType;
+    private final RateSource source;
 
     private final Rates rates;
 
@@ -48,9 +49,9 @@ public final class LimiterConfig<R> {
 
     private final SleepingTicker sleepingTicker;
 
-    private LimiterConfig(SourceType sourceType, Rates rates, Bandwidth[] bandwidths,
+    private LimiterConfig(RateSource source, Rates rates, Bandwidth[] bandwidths,
             Matcher<R> matcher, List<Matcher<R>> matchers, SleepingTicker sleepingTicker) {
-        this.sourceType = Objects.requireNonNull(sourceType);
+        this.source = Objects.requireNonNull(source);
         this.rates = Rates.of(rates);
         this.bandwidths = Arrays.copyOf(bandwidths, bandwidths.length);
         this.matcher = Objects.requireNonNull(matcher);
@@ -58,7 +59,7 @@ public final class LimiterConfig<R> {
         this.sleepingTicker = Objects.requireNonNull(sleepingTicker);
     }
 
-    public SourceType getSourceType() { return sourceType; }
+    public RateSource getSource() { return source; }
 
     public Rates getRates() {
         return rates;
@@ -80,19 +81,16 @@ public final class LimiterConfig<R> {
         if (o == null || getClass() != o.getClass())
             return false;
         LimiterConfig<?> that = (LimiterConfig<?>) o;
-        return rates.equals(that.rates) && Arrays.equals(bandwidths, that.bandwidths) && matcher
-                .equals(that.matcher) && matchers.equals(that.matchers) && sleepingTicker
-                .equals(that.sleepingTicker);
+        return rates.equals(that.rates) && matcher.equals(that.matcher) && matchers
+                .equals(that.matchers) && sleepingTicker.equals(that.sleepingTicker);
     }
 
     @Override public int hashCode() {
-        int result = Objects.hash(rates, matcher, matchers, sleepingTicker);
-        result = 31 * result + Arrays.hashCode(bandwidths);
-        return result;
+        return Objects.hash(rates, matcher, matchers, sleepingTicker);
     }
 
     @Override public String toString() {
-        return "LimiterConfig{type=" + sourceType + ", rates=" + rates + ", matcher=" + matcher +
+        return "LimiterConfig{source=" + source + ", rates=" + rates + ", matcher=" + matcher +
                 ", matchers=" + matchers + ", sleepingTicker=" + sleepingTicker + '}';
     }
 }

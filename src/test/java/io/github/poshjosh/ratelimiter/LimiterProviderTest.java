@@ -39,13 +39,13 @@ class LimiterProviderTest {
 
     private Node createNode(String nodeName) {
       Rates rates = Rates.of(Rate.ofSeconds(1));
-      RateConfig rateConfig = RateConfig.of(this, rates);
+      RateConfig rateConfig = RateConfig.of(rates);
       return Node.ofDefaultParent(nodeName, rateConfig);
     }
 
     private Node createNodeThatHasNoLimits(String nodeName) {
         Rates rates = Rates.of();
-        RateConfig rateConfig = RateConfig.of(this, rates);
+        RateConfig rateConfig = RateConfig.of(rates);
         return Node.ofDefaultParent(nodeName, rateConfig);
     }
 }

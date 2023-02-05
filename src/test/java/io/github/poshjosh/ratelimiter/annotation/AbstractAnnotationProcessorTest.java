@@ -17,10 +17,6 @@ public abstract class AbstractAnnotationProcessorTest<S extends GenericDeclarati
         parent.getChildren().stream().filter(node -> acceptNodeNames(node, names)).findFirst();
     }
 
-    boolean acceptNodeNames(Node<RateConfig> node, S... classes) {
-        return acceptNodeNames(node, toNames(classes));
-    }
-
     String [] toNames(S... classes) {
         return Arrays.stream(classes).map(clazz -> getId(clazz)).collect(Collectors.toList()).toArray(new String[0]);
     }

@@ -38,7 +38,7 @@ public interface UsageListener {
                 after.onRejected(resource, hits, limit);
             }
             @Override public String toString() {
-                return "UsageListener$andThen{1=" + this + ", 2=" + after + "}";
+                return "UsageListener$andThen{0=" + this + ", 1=" + after + "}";
             }
         };
     }

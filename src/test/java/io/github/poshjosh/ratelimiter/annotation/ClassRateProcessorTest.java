@@ -5,12 +5,8 @@ import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.Operator;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
-import io.github.poshjosh.ratelimiter.util.Rates;
 import org.junit.jupiter.api.Test;
-
 import java.lang.annotation.*;
-import java.lang.reflect.Method;
-import java.util.Optional;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -56,56 +52,11 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
     }
 
     RateProcessor<Class<?>> getInstance() {
-        RateProcessor.SourceFilter sourceTest = RateProcessor.SourceFilter.ofRateLimited();
-        AnnotationConverter<Rate, Rates> converter = AnnotationConverter.ofRate();
-        RateProcessor<Method> methodProcessor = new MethodRateAnnotationProcessor(sourceTest, converter) {
-            @Override protected Element toElement(Method element) {
-                return ClassRateProcessorTest.this.toElement(element);
-            }
-        };
-        return new ClassRateAnnotationProcessor(sourceTest, converter, methodProcessor) {
-            @Override protected Element toElement(Class<?> element) {
-                return ClassRateProcessorTest.this.toElement(element);
-            }
-        };
+        return RateProcessor.ofDefaults();
     }
 
-    private Element toElement(Method element) {
-        return new Element() {
-            @Override public boolean isRateLimited() {
-                return RateProcessor.SourceFilter.ofRateLimited().test(element);
-            }
-            @Override public Element getDeclarer() {
-                return ClassRateProcessorTest.this.toElement(element.getDeclaringClass());
-            }
-            @Override public String getId() {
-                return getDeclarer().getId() + '#' + element.getName();
-            }
-            @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annClass) {
-                return Optional.ofNullable(element.getAnnotation(annClass));
-            }
-        };
-    }
-
-    private Element toElement(Class<?> element) {
-        return new Element() {
-            @Override public boolean isRateLimited() {
-                return RateProcessor.SourceFilter.ofRateLimited().test(element);
-            }
-            @Override public Element getDeclarer() {
-                return this;
-            }
-            @Override public String getId() {
-                return ClassRateProcessorTest.this.getId(element);
-            }
-            @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annClass) {
-                return Optional.ofNullable(element.getAnnotation(annClass));
-            }
-        };
-    }
-
-    String getId(Class<?> element) {
-        return element.getSimpleName();
+    @Override String getId(Class<?> element) {
+        return ElementId.of(element);
     }
 
     @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)

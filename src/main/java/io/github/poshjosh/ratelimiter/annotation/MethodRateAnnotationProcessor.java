@@ -21,8 +21,8 @@ class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Meth
         super(sourceTest, annotationConverter);
     }
 
-    @Override protected Element toElement(Method element) {
-        return Element.of(element);
+    @Override protected RateSource toRateSource(Method element) {
+        return RateSource.of(element);
     }
 
     @Override protected Node<RateConfig> getParent(
@@ -58,7 +58,7 @@ class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Meth
             if (rateConfig == null) {
                 return false;
             }
-            return declaringClassId.equals(((Element)rateConfig.getSource()).getId());
+            return declaringClassId.equals(((RateSource)rateConfig.getSource()).getId());
         };
         return root.findFirstChild(testForDeclaringClass);
     }

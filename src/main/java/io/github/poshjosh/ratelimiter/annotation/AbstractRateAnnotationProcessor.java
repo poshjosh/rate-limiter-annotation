@@ -31,7 +31,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
         this.annotationConverter = Objects.requireNonNull(annotationConverter);
     }
 
-    protected abstract Element toElement(S element);
+    protected abstract RateSource toRateSource(S element);
 
     /**
      * @param root the root node
@@ -112,7 +112,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
                 source, annotationConverter.getAnnotationType());
         if (rateAnnotations.length > 0 && metaAnnotationType.isPresent()) {
             throw new AnnotationProcessingException(
-                    "Element may not be annotated with @Rate both directly and indirectly (via meta annotation): " + source);
+                    "RateSource may not be annotated with @Rate both directly and indirectly (via meta annotation): " + source);
         }
         return metaAnnotationType;
     }
@@ -125,10 +125,10 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
     private Node<RateConfig> createNodeForGroup(
             Node<RateConfig> root, GenericDeclaration groupSource) {
         final String groupName = groupName(root, groupSource);
-        Element element = Element.of(groupName);
+        RateSource rateSource = RateSource.of(groupName, groupSource);
         R rates = annotationConverter.convert(groupSource);
         checkRateGroupOperator(rates.getOperator(), rates);
-        return Node.of(groupName, RateConfig.of(element, rates), root);
+        return Node.of(groupName, RateConfig.of(rateSource, rates), root);
     }
     private String groupName(Node<RateConfig> root, GenericDeclaration groupSource) {
         return ElementId.of((Class)groupSource);
@@ -136,10 +136,10 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
 
     private Node<RateConfig> createNodeForElement(
             Node<RateConfig> root, Node<RateConfig> parentNode, S source) {
-        final Element element = toElement(source);
-        requireUniqueName(root, source, element.getId());
+        final RateSource rateSource = toRateSource(source);
+        requireUniqueName(root, source, rateSource.getId());
         final R rates = annotationConverter.convert(source);
-        return Node.of(element.getId(), RateConfig.of(element, rates), parentNode);
+        return Node.of(rateSource.getId(), RateConfig.of(rateSource, rates), parentNode);
     }
 
     private String requireUniqueName(Node<RateConfig> root, Object source, String name) {

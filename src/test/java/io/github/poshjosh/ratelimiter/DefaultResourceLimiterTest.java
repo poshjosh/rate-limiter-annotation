@@ -229,7 +229,7 @@ class DefaultResourceLimiterTest {
     public class RateLimitedClass9{ }
 
     @Test
-    void givenRateConditionFalse_afterNegation_shouldBeRateLimited() {
+    void givenRateConditionHavingNegationResolvesToTrue_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass9.class);
         final String id = ElementId.of(RateLimitedClass9.class);
         assertTrue(limiter.tryConsume(id));
@@ -240,7 +240,7 @@ class DefaultResourceLimiterTest {
     public class RateLimitedClass9b{ }
 
     @Test
-    void givenRateWhenResolvesToFalse_afterNegation_shouldBeRateLimited() {
+    void givenWhenHavingNegationResolvesToTrue_shouldBeRateLimited() {
         ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass9b.class);
         final String id = ElementId.of(RateLimitedClass9b.class);
         assertTrue(limiter.tryConsume(id));
