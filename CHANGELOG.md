@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.3.4](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.4) ] - 2023-02-05
+
+### Changed
+
+- Permit expressions (for rate conditions) having `null` right-hand side
+- Improved expression splitting
+- Renamed `web.session.cookie` to `web.request.cookie`
+- Renamed `web.session.user.role` to `web.request.user.role`
+- Renamed `web.session.user.principal` to `web.request.user.principal`
+- Renamed `Element` to `RateSource` and add `PropertyRateSource`
+- Renamed `Matcher#matchOrNull` to `Matcher#match`
+- Use String return type for `Matcher#match`
+
 ## [ [0.3.3](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.3) ] - 2023-02-04
 
 ### Added
