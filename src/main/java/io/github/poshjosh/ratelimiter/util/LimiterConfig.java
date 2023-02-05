@@ -3,29 +3,28 @@ package io.github.poshjosh.ratelimiter.util;
 import io.github.poshjosh.ratelimiter.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.SleepingTicker;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.node.Node;
 
 import java.util.*;
 
-public final class LimiterConfig<R, K> {
+public final class LimiterConfig<R> {
 
-    public static LimiterConfig<Object, String> ofDefaults(Node<RateConfig> node) {
+    public static LimiterConfig<Object> ofDefaults(Node<RateConfig> node) {
         return of(node, RateToBandwidthConverter.ofDefaults(),
                 MatcherProvider.ofDefaults(), SleepingTicker.zeroOffset());
     }
 
-    public static <R, K> LimiterConfig<R, K> of(
+    public static <R> LimiterConfig<R> of(
             Node<RateConfig> node,
             RateToBandwidthConverter rateToBandwidthConverter,
-            MatcherProvider<R, K> matcherProvider,
+            MatcherProvider<R> matcherProvider,
             SleepingTicker sleepingTicker) {
         RateConfig rateConfig = Objects.requireNonNull(node.getValueOrDefault(null));
         Rates rates = rateConfig.getRates();
         Bandwidth[] bandwidths = rateToBandwidthConverter
                 .convert(node.getName(), rates, sleepingTicker.elapsedMicros());
-        Matcher<R, K> matcher = matcherProvider.createMatcher(node);
-        List<Matcher<R, K>> matchers = matcherProvider.createMatchers(node);
+        Matcher<R> matcher = matcherProvider.createMatcher(node);
+        List<Matcher<R>> matchers = matcherProvider.createMatchers(node);
         return new LimiterConfig<>(
                 rateConfig.getSourceType(), rates, bandwidths, matcher, matchers, sleepingTicker);
     }
@@ -40,17 +39,17 @@ public final class LimiterConfig<R, K> {
      * The matcher to apply before applying individual matchers. This is usually
      * the path pattern matcher (and then) any matchers for general rate conditions.
      */
-    private final Matcher<R, K> matcher;
+    private final Matcher<R> matcher;
 
     /**
      * Matchers for rate conditions specific to each rate.
      */
-    private final List<Matcher<R, K>> matchers;
+    private final List<Matcher<R>> matchers;
 
     private final SleepingTicker sleepingTicker;
 
     private LimiterConfig(SourceType sourceType, Rates rates, Bandwidth[] bandwidths,
-            Matcher<R, K> matcher, List<Matcher<R, K>> matchers, SleepingTicker sleepingTicker) {
+            Matcher<R> matcher, List<Matcher<R>> matchers, SleepingTicker sleepingTicker) {
         this.sourceType = Objects.requireNonNull(sourceType);
         this.rates = Rates.of(rates);
         this.bandwidths = Arrays.copyOf(bandwidths, bandwidths.length);
@@ -67,9 +66,9 @@ public final class LimiterConfig<R, K> {
 
     public Bandwidth [] getBandwidths() { return bandwidths; }
 
-    public Matcher<R, K> getMatcher() { return matcher; }
+    public Matcher<R> getMatcher() { return matcher; }
 
-    public List<Matcher<R, K>> getMatchers() {
+    public List<Matcher<R>> getMatchers() {
         return matchers;
     }
 
@@ -80,7 +79,7 @@ public final class LimiterConfig<R, K> {
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        LimiterConfig<?, ?> that = (LimiterConfig<?, ?>) o;
+        LimiterConfig<?> that = (LimiterConfig<?>) o;
         return rates.equals(that.rates) && Arrays.equals(bandwidths, that.bandwidths) && matcher
                 .equals(that.matcher) && matchers.equals(that.matchers) && sleepingTicker
                 .equals(that.sleepingTicker);

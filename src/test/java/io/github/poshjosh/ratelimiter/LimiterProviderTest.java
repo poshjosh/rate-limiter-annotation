@@ -14,7 +14,7 @@ class LimiterProviderTest {
 
     @Test
     void getLimiters_shouldReturnValidRateLimiter() {
-        LimiterConfig<Object, String> config = getConfig("test-node-name");
+        LimiterConfig<Object> config = getConfig("test-node-name");
         List<RateLimiter> limiters = limiterProvider.getOrCreateLimiters("test-id", config);
         assertEquals(1, limiters.size());
         RateLimiter limiter = limiters.get(0);
@@ -24,16 +24,16 @@ class LimiterProviderTest {
 
     @Test
     void getLimiters_givenNoLimitsDefined_shouldNotBeRateLimited() {
-        LimiterConfig<Object, String> config = getConfigThatHasNoLimits("test-node-name");
+        LimiterConfig<Object> config = getConfigThatHasNoLimits("test-node-name");
         List<RateLimiter> limiters = limiterProvider.getOrCreateLimiters("test-id", config);
         assertTrue(limiters.isEmpty());
     }
 
-    private LimiterConfig<Object, String> getConfigThatHasNoLimits(String name) {
+    private LimiterConfig<Object> getConfigThatHasNoLimits(String name) {
         return LimiterConfig.ofDefaults(createNodeThatHasNoLimits(name));
     }
 
-    private LimiterConfig<Object, String> getConfig(String name) {
+    private LimiterConfig<Object> getConfig(String name) {
         return LimiterConfig.ofDefaults(createNode(name));
     }
 

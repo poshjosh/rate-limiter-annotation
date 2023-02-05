@@ -4,18 +4,17 @@ import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.node.Node;
 
 import java.util.*;
-import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
-final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
+final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
 
-    private static final class NodeNameMatcher<T> implements Matcher<T, String> {
+    private static final class NodeNameMatcher<T> implements Matcher<T> {
         private final String name;
         private NodeNameMatcher(String name) {
             this.name = name;
         }
-        @Override public String matchOrNull(T target) {
-            return Objects.equals(name, target) ? name : null;
+        @Override public String match(T target) {
+            return Objects.equals(name, target) ? name : Matcher.NO_MATCH;
         }
         @Override public String toString() {
             return "NodeNameMatcher{" + "name='" + name + '\'' + '}';
@@ -28,12 +27,12 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
         expressionMatcher = ExpressionMatcher.ofDefault();
     }
 
-    @Override public Matcher<R, String> createMatcher(Node<RateConfig> node) {
+    @Override public Matcher<R> createMatcher(Node<RateConfig> node) {
         final String expression = requireRateConfig(node).getRates().getRateCondition();
         return createMatcher(node.getName(), expression);
     }
 
-    @Override public List<Matcher<R, String>> createMatchers(Node<RateConfig> node) {
+    @Override public List<Matcher<R>> createMatchers(Node<RateConfig> node) {
         return createMatchers(requireRateConfig(node).getRates());
     }
 
@@ -41,21 +40,19 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
         return node.getValueOptional().orElseThrow(RuntimeException::new);
     }
 
-    private Matcher<R, String> createMatcher(String node, String expression) {
-        Matcher<R, String> matcher = new NodeNameMatcher<>(node);
-        return createMatcher(expression)
-                .map(matcherN -> Matcher.compose(matcher, matcherN))
-                .orElse(matcher);
+    private Matcher<R> createMatcher(String node, String expression) {
+        Matcher<R> matcher = new NodeNameMatcher<>(node);
+        return createMatcher(expression).map(matcher::andThen).orElse(matcher);
     }
 
-    private List<Matcher<R, String>> createMatchers(Rates rates) {
+    private List<Matcher<R>> createMatchers(Rates rates) {
         return rates.getLimits().stream()
                 .map(rate -> createMatcher(rate.getRateCondition()).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
     }
 
-    private Optional<Matcher<R, String>> createMatcher(String expression) {
+    private Optional<Matcher<R>> createMatcher(String expression) {
         if (expression == null || expression.isEmpty()) {
             return Optional.empty();
         }

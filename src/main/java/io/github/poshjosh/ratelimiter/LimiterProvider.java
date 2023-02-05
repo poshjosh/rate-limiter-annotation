@@ -27,5 +27,5 @@ interface LimiterProvider<R, K> {
         return new DefaultLimiterProvider<>(store);
     }
 
-    List<RateLimiter> getOrCreateLimiters(K key, LimiterConfig<R, K> rateConfig);
+    List<RateLimiter> getOrCreateLimiters(K key, LimiterConfig<R> rateConfig);
 }

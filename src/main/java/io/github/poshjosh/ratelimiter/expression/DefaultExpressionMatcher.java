@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.expression;
 
+import io.github.poshjosh.ratelimiter.util.Matcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,7 @@ final class DefaultExpressionMatcher<R, T> implements ExpressionMatcher<R, T> {
     }
 
     @Override
-    public String matchOrNull(R request) {
+    public String match(R request) {
         Expression<T> typedExpression = expressionParser.parse(request, expression);
         boolean success = expressionResolver.resolve(typedExpression);
         if (LOG.isTraceEnabled()) {
@@ -43,7 +44,7 @@ final class DefaultExpressionMatcher<R, T> implements ExpressionMatcher<R, T> {
         // Expression: web.session.id!= results to typed expression: <SESSION_ID_VALUE>!=
         // The typed expression is a more suitable identifier because it contains the actual
         // value of the session ID
-        return success ? typedExpression.getId() : null;
+        return success ? typedExpression.getId() : Matcher.NO_MATCH;
     }
 
     @Override

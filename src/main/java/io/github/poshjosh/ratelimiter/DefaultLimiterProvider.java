@@ -23,7 +23,7 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
     }
 
     @Override
-    public List<RateLimiter> getOrCreateLimiters(K key, LimiterConfig<R, K> limiterConfig) {
+    public List<RateLimiter> getOrCreateLimiters(K key, LimiterConfig<R> limiterConfig) {
         List<RateLimiter> value;
         if ((value = this.resourceIdToRateLimiters.get(key)) == null) {
             value = createLimiters(key, limiterConfig);
@@ -32,7 +32,7 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
         return value;
     }
 
-    private List<RateLimiter> createLimiters(K key, LimiterConfig<R, K> config) {
+    private List<RateLimiter> createLimiters(K key, LimiterConfig<R> config) {
         Bandwidth [] bandwidths = getOrCreateBandwidths(key, config);
         RateLimiter [] limiters = new RateLimiter[bandwidths.length];
         for(int i = 0; i < bandwidths.length; i++) {
@@ -41,12 +41,12 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
         return Arrays.asList(limiters);
     }
 
-    private Bandwidth [] getOrCreateBandwidths(K key, LimiterConfig<R, K> config) {
+    private Bandwidth [] getOrCreateBandwidths(K key, LimiterConfig<R> config) {
         final Bandwidth [] existing = getBandwidthFromStore(key);
         return existing == null ? createBandwidths(key, config) : existing;
     }
 
-    private Bandwidth[] createBandwidths(K key, LimiterConfig<R, K> config) {
+    private Bandwidth[] createBandwidths(K key, LimiterConfig<R> config) {
         SleepingTicker ticker = config.getSleepingTicker();
         Bandwidth [] bandwidths = config.getBandwidths();
         Bandwidth [] result = new Bandwidth[bandwidths.length];

@@ -1,62 +1,63 @@
 package io.github.poshjosh.ratelimiter.util;
 
 import java.util.Objects;
-import java.util.function.BinaryOperator;
 
 @FunctionalInterface
-public interface Matcher<I, O> {
+public interface Matcher<I> {
 
-    Matcher<Object, Object> MATCH_NONE = new Matcher<Object, Object>() {
-        @Override public Object matchOrNull(Object target) { return null; }
+    String NO_MATCH = "";
+
+    Matcher<Object> MATCH_NONE = new Matcher<Object>() {
+        @Override public String match(Object target) { return Matcher.NO_MATCH; }
         @Override public String toString() { return Matcher.class.getSimpleName() + "$MATCH_NONE"; }
     };
 
     @SuppressWarnings("unchecked")
-    static <T, K> Matcher<T, K> matchNone() {
-        return (Matcher<T, K>)MATCH_NONE;
+    static <T> Matcher<T> matchNone() {
+        return (Matcher<T>)MATCH_NONE;
     }
+
+    static String composeResults(String first, String second) {
+        return first + '_' + second;
+    }
+    static boolean isMatch(String matchResult) { return matchResult.length() > 0; }
+
+    default boolean matches(I target) { return match(target).length() > 0; }
 
     /**
-     * Calls {@code first.andThen(second)} using a result composer that adds the 2 string results.
-     * @see #andThen(Matcher, BinaryOperator)
+     * Match the input. Return a match, or empty text, if there is not match.
+     * @param target The input to match
+     * @return A matching string, or empty text, if none.
      */
-    static <T> Matcher<T, String> compose(Matcher<T, String> first, Matcher<T, String> second) {
-        BinaryOperator<String> resultComposer = (s0, s1) -> s0 + "_" + s1;
-        return first.andThen(second, resultComposer);
-    }
-
-    default boolean matches(I target) {
-        return matchOrNull(target) != null;
-    }
-
-    O matchOrNull(I target);
-
-
+    String match(I target);
 
     /**
      * Returns a composed {@code Matcher} that returns a composed match result
-     * only if both matchers succeed, otherwise it return's <code>null</code>.
+     * only if both matchers succeed.
      *
-     * <p>Compose a {@code Matcher} that performs, in sequence, this operation followed by the {@code
-     * after} operation. If performing either operation throws an exception, it is relayed to the
-     * caller of the composed operation. If performing this operation throws an exception, the {@code
-     * after} operation will not be performed.
+     * <p>Compose a {@code Matcher} that performs, in sequence, this operation followed by the
+     * {@code after} operation. If performing either operation throws an exception, it is relayed
+     * to the caller of the composed operation. If performing this operation throws an exception,
+     * the {@code after} operation will not be performed. Likewise, if this operation does not
+     * match, the {@code after} operation will not be performed.
      *
      * @param after the after operation to perform
-     * @param resultComposer Used to compose a result
      * @return a composed {@code Matcher}
-     * @throws NullPointerException if {@code after} or {@code resultComposer} is null
+     * @throws NullPointerException if {@code after} is null
      */
-    default Matcher<I, O> andThen(Matcher<? super I, ? super O> after, BinaryOperator<O> resultComposer) {
+    default Matcher<I> andThen(Matcher<? super I> after) {
         Objects.requireNonNull(after);
         return (I t) -> {
-            final O result = matchOrNull(t);
+            final String result = match(t);
             // If there was no match, do not continue
-            if(result == null) {
-                return null;
+            if(!Matcher.isMatch(result)) {
+                return result;
             }
-            final O afterResult = (O)after.matchOrNull(t);
-            return afterResult == null ? null : resultComposer.apply(result, afterResult);
+            final String afterResult = after.match(t);
+            if(!Matcher.isMatch(afterResult)) {
+                return afterResult;
+            }
+            return composeResults(result, afterResult);
         };
     }
 }

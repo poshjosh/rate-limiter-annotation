@@ -11,13 +11,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class MatcherProviderTest {
 
-    private final MatcherProvider<String, String> matcherProvider = MatcherProvider.ofDefaults();
+    private final MatcherProvider<String> matcherProvider = MatcherProvider.ofDefaults();
 
     @Test
     void createMatcher_givenNoRateCondition_shouldCreateANodeNameMatcher() {
         String nodeName = "test-node-name";
         Node<RateConfig> node = createNode(nodeName);
-        Matcher<String, String> matcher = matcherProvider.createMatcher(node);
+        Matcher<String> matcher = matcherProvider.createMatcher(node);
         assertTrue(matcher.matches(nodeName));
         assertFalse(matcher.matches(nodeName + "1"));
     }
@@ -28,7 +28,7 @@ class MatcherProviderTest {
         LocalDateTime time = LocalDateTime.now().plus(millis, ChronoUnit.MILLIS);
         String nodeName = "test-node-name";
         Node<RateConfig> node = createNode(nodeName, "sys.time>"+time, "");
-        Matcher<String, String> matcher = matcherProvider.createMatcher(node);
+        Matcher<String> matcher = matcherProvider.createMatcher(node);
         assertFalse(matcher.matches(nodeName));
         Thread.sleep(millis);
         assertTrue(matcher.matches(nodeName));
@@ -38,7 +38,7 @@ class MatcherProviderTest {
     void createMatchers_givenNoRateCondition_shouldReturnEmpty() {
         String nodeName = "test-node-name";
         Node<RateConfig> node = createNode(nodeName);
-        List<Matcher<String, String>> matchers = matcherProvider.createMatchers(node);
+        List<Matcher<String>> matchers = matcherProvider.createMatchers(node);
         assertTrue(matchers.isEmpty());
     }
 
@@ -46,7 +46,7 @@ class MatcherProviderTest {
     void createMatchers_givenOnlyGlobalRateCondition_shouldReturnEmpty() {
         String nodeName = "test-node-name";
         Node<RateConfig> node = createNode(nodeName, "sys.time.elapsed>PT0S", "");
-        List<Matcher<String, String>> matchers = matcherProvider.createMatchers(node);
+        List<Matcher<String>> matchers = matcherProvider.createMatchers(node);
         assertTrue(matchers.isEmpty());
     }
 
@@ -54,7 +54,7 @@ class MatcherProviderTest {
     void createMatchers_givenOneNonGlobalRateConditions_shouldReturnOne() {
         String nodeName = "test-node-name";
         Node<RateConfig> node = createNode(nodeName, "", "sys.time.elapsed>PT0S");
-        List<Matcher<String, String>> matchers = matcherProvider.createMatchers(node);
+        List<Matcher<String>> matchers = matcherProvider.createMatchers(node);
         assertEquals(1, matchers.size());
     }
 

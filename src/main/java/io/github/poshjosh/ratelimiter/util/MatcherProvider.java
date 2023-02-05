@@ -4,10 +4,10 @@ import io.github.poshjosh.ratelimiter.node.Node;
 
 import java.util.List;
 
-public interface MatcherProvider<R, K> {
-    static <R> MatcherProvider<R, String> ofDefaults() {
+public interface MatcherProvider<R> {
+    static <R> MatcherProvider<R> ofDefaults() {
         return new DefaultMatcherProvider<>();
     }
-    Matcher<R, K> createMatcher(Node<RateConfig> node);
-    List<Matcher<R, K>> createMatchers(Node<RateConfig> node);
+    Matcher<R> createMatcher(Node<RateConfig> node);
+    List<Matcher<R>> createMatchers(Node<RateConfig> node);
 }

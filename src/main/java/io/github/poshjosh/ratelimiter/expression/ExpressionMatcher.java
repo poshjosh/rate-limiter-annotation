@@ -4,12 +4,10 @@ import io.github.poshjosh.ratelimiter.util.Matcher;
 
 import java.time.LocalDateTime;
 
-public interface ExpressionMatcher<R, T> extends Matcher<R, String> {
+public interface ExpressionMatcher<R, T> extends Matcher<R> {
 
     ExpressionMatcher<Object, Object> MATCH_NONE = new ExpressionMatcher<Object, Object>() {
-        @Override public String matchOrNull(Object request) {
-            return null;
-        }
+        @Override public String match(Object request) { return Matcher.NO_MATCH; }
         @Override public ExpressionMatcher<Object, Object> with(Expression<String> expression) {
             return this;
         }
@@ -69,7 +67,7 @@ public interface ExpressionMatcher<R, T> extends Matcher<R, String> {
         return new DefaultExpressionMatcher<>(expressionParser, expressionResolver, sampleExpression);
     }
 
-    @Override String matchOrNull(R request);
+    @Override String match(R request);
 
     default ExpressionMatcher<R, T> with(String expression) {
         return with(Expression.of(expression));

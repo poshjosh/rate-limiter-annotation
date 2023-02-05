@@ -1,5 +1,7 @@
 package io.github.poshjosh.ratelimiter.expression;
 
+import io.github.poshjosh.ratelimiter.util.Matcher;
+
 final class ExpressionMatcherComposite<R> implements ExpressionMatcher<R, Object>{
 
     private ExpressionMatcher<R, ?> [] expressionMatchers;
@@ -10,14 +12,19 @@ final class ExpressionMatcherComposite<R> implements ExpressionMatcher<R, Object
     }
 
     @Override
-    public String matchOrNull(R request) {
+    public String match(R request) {
+        StringBuilder result = new StringBuilder(32 * expressionMatchers.length);
         for (ExpressionMatcher<R, ?> expressionMatcher : expressionMatchers) {
-            String result = expressionMatcher.matchOrNull(request);
-            if (result != null) {
-                return result;
+            final String match = expressionMatcher.match(request);
+            if (!Matcher.isMatch(match)) {
+                return match;
             }
+            if (result.length() > 0) {
+                result.append('_');
+            }
+            result.append(match);
         }
-        return null;
+        return result.toString();
     }
 
     @Override

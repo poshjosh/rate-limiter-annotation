@@ -50,7 +50,7 @@ public interface ResourceLimiter<K> {
     static <R> ResourceLimiter<R> of(
             UsageListener listener,
             BandwidthsStore<String> store,
-            MatcherProvider<R, String> matcherProvider,
+            MatcherProvider<R> matcherProvider,
             Node<RateConfig> rootNode) {
         return of(listener, SleepingTicker.zeroOffset(), store, matcherProvider, rootNode);
     }
@@ -59,10 +59,10 @@ public interface ResourceLimiter<K> {
             UsageListener listener,
             SleepingTicker ticker,
             BandwidthsStore<String> store,
-            MatcherProvider<R, String> matcherProvider,
+            MatcherProvider<R> matcherProvider,
             Node<RateConfig> node) {
         RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
-        Function<Node<RateConfig>, LimiterConfig<R, String>> transformer = n -> {
+        Function<Node<RateConfig>, LimiterConfig<R>> transformer = n -> {
              RateConfig rateConfig = n.getValueOrDefault(null);
              if (rateConfig == null) {
                  return null;
