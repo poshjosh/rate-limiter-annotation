@@ -14,15 +14,17 @@ class StringExpressionResolver implements ExpressionResolver<String>{
     }
 
     private boolean resolvePositive(Expression<String> expression) {
-        switch (expression.getOperator().getValue()) {
+        switch (expression.getOperator().getSymbol()) {
             case "=":
-                return Objects.equals(expression.getLeft(), expression.getRight());
+                final String left = expression.getLeftOrDefault(null);
+                final String right = expression.getRightOrDefault(null);
+                return Objects.equals(left, right);
             case "^":
-                return expression.getLeft().startsWith(expression.getRight());
+                return expression.requireLeft().startsWith(expression.requireRight());
             case "$":
-                return expression.getLeft().endsWith(expression.getRight());
+                return expression.requireLeft().endsWith(expression.requireRight());
             case "%":
-                return expression.getLeft().contains(expression.getRight());
+                return expression.requireLeft().contains(expression.requireRight());
             default:
                 throw Checks.notSupported(this, expression.getOperator());
         }

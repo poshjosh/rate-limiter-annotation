@@ -14,17 +14,19 @@ final class DecimalExpressionResolver implements ExpressionResolver<Double> {
 
     private boolean resolvePositive(Expression<Double> expression) {
         final Operator operator = expression.getOperator();
-        switch (operator.getValue()) {
+        switch (operator.getSymbol()) {
             case "=":
-                return Objects.equals(expression.getLeft(), expression.getRight());
+                final Double left = expression.getLeftOrDefault(null);
+                final Double right = expression.getRightOrDefault(null);
+                return Objects.equals(left, right);
             case ">":
-                return expression.getLeft() > expression.getRight();
+                return expression.requireLeft() > expression.requireRight();
             case ">=":
-                return expression.getLeft() >= expression.getRight();
+                return expression.requireLeft() >= expression.requireRight();
             case "<":
-                return expression.getLeft() < expression.getRight();
+                return expression.requireLeft() < expression.requireRight();
             case "<=":
-                return expression.getLeft() <= expression.getRight();
+                return expression.requireLeft() <= expression.requireRight();
             default:
                 throw Checks.notSupported(this, operator);
         }

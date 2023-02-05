@@ -16,10 +16,12 @@ final class JvmThreadExpressionResolver implements ExpressionResolver<Object> {
     }
 
     private boolean resolvePositive(Expression<?> expression) {
-        if (expression.getLeft() instanceof Long) {
+        if (expression.requireLeft() instanceof Long) {
             return longExpressionResolver.resolve((Expression<Long>)expression);
         } else {
-            return Objects.equals(expression.getLeft(), expression.getRight());
+            return Objects.equals(
+                    expression.getLeftOrDefault(null),
+                    expression.getRightOrDefault(null));
         }
     }
 

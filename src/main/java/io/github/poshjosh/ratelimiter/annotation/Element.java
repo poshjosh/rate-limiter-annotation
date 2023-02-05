@@ -72,15 +72,15 @@ public abstract class Element {
         @Override public boolean isGroupType() { return true; }
     }
 
-    static Element of(Class<?> clazz) {
+    public static Element of(Class<?> clazz) {
         return new ClassElement(clazz);
     }
 
-    static Element of(Method method) {
+    public static Element of(Method method) {
         return new MethodElement(method);
     }
 
-    static Element of(String id) {
+    public static Element of(String id) {
         return new GroupElement(id);
     }
 

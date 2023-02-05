@@ -59,7 +59,7 @@ public interface ExpressionMatcher<R, T> extends Matcher<R, String> {
             ExpressionParser<R, T> expressionParser,
             ExpressionResolver<T> expressionResolver,
             String sampleExpression) {
-        return of(expressionParser, expressionResolver, Expression.ofLenient(sampleExpression));
+        return of(expressionParser, expressionResolver, Expression.of(sampleExpression));
     }
 
     static <R, T> ExpressionMatcher<R, T> of(
@@ -78,7 +78,7 @@ public interface ExpressionMatcher<R, T> extends Matcher<R, String> {
     ExpressionMatcher<R, T> with(Expression<String> expression);
 
     default boolean isSupported(String expression) {
-        return isSupported(Expression.ofLenient(expression));
+        return isSupported(Expression.of(expression));
     }
 
     boolean isSupported(Expression<String> expression);

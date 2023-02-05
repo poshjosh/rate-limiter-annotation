@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.node.Node;
 
 import java.util.*;
+import java.util.function.BinaryOperator;
 import java.util.stream.Collectors;
 
 final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
@@ -42,7 +43,9 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R, String> {
 
     private Matcher<R, String> createMatcher(String node, String expression) {
         Matcher<R, String> matcher = new NodeNameMatcher<>(node);
-        return createMatcher(expression).map(matcherN -> matcher.andThen(matcherN)).orElse(matcher);
+        return createMatcher(expression)
+                .map(matcherN -> Matcher.compose(matcher, matcherN))
+                .orElse(matcher);
     }
 
     private List<Matcher<R, String>> createMatchers(Rates rates) {

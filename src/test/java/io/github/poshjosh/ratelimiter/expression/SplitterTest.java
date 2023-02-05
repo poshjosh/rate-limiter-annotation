@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SplitterTest {
 
+    private final Splitter splitter = Splitter.ofExpression();
+
     @ParameterizedTest
     @CsvSource({
             "web.invalid.uri,=,/abc?key1=val1",
@@ -17,7 +19,7 @@ class SplitterTest {
     })
     void testValidExpressions(String lhs, String operator, String rhs) {
         String expression = lhs + operator + rhs;
-        String [] parts = Splitter.ofExpression().split(expression);
+        String [] parts = splitter.split(expression);
         assertEquals(parts.length, 3);
         assertEquals(lhs, parts[0]);
         assertEquals(operator, parts[1]);
@@ -26,11 +28,11 @@ class SplitterTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "sys.invalid.free>",
-            ">1_000"
+            "lhs>>>rhs",
+            "lhs|",
+            "1_000"
     })
     void testInValidExpressions(String expression) {
-        assertThrows(RuntimeException.class,
-                () -> Splitter.ofExpression().split(expression));
+        assertThrows(RuntimeException.class, () -> Splitter.ofExpression().split(expression));
     }
 }

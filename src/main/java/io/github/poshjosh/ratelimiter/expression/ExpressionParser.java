@@ -31,7 +31,7 @@ public interface ExpressionParser<S, T> {
      * @see #isSupported(Expression)
      */
     default boolean isSupported(String expression) {
-        return isSupported(Expression.ofLenient(expression));
+        return isSupported(Expression.of(expression));
     }
 
     /**

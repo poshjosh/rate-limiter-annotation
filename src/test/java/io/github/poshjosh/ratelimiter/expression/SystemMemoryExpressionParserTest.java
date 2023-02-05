@@ -36,7 +36,7 @@ class SystemMemoryExpressionParserTest {
     void shouldSucceed_givenValidExpression(String value, String power) {
         final long expected = (long)Math.pow(1000, Long.parseLong(power));
         Expression<Long> result = ExpressionParser.ofSystemMemory().parse(this, Expression.of(value));
-        assertEquals(expected, result.getRight());
+        assertEquals(expected, result.requireRight());
     }
 
     @ParameterizedTest

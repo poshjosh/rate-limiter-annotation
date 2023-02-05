@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.util;
 
 import java.util.Objects;
+import java.util.function.BinaryOperator;
 
 @FunctionalInterface
 public interface Matcher<I, O> {
@@ -15,27 +16,38 @@ public interface Matcher<I, O> {
         return (Matcher<T, K>)MATCH_NONE;
     }
 
+    /**
+     * Calls {@code first.andThen(second)} using a result composer that adds the 2 string results.
+     * @see #andThen(Matcher, BinaryOperator)
+     */
+    static <T> Matcher<T, String> compose(Matcher<T, String> first, Matcher<T, String> second) {
+        BinaryOperator<String> resultComposer = (s0, s1) -> s0 + "_" + s1;
+        return first.andThen(second, resultComposer);
+    }
+
     default boolean matches(I target) {
         return matchOrNull(target) != null;
     }
 
     O matchOrNull(I target);
 
-  /**
-   * Returns a composed {@code Matcher} that returns the result of the first match,
-   * only if both matchers succeed, otherwise it return's <code>null</code>.
-   *
-   * <p>Compose a {@code Matcher} that performs, in sequence, this operation followed by the {@code
-   * after} operation. If performing either operation throws an exception, it is relayed to the
-   * caller of the composed operation. If performing this operation throws an exception, the {@code
-   * after} operation will not be performed.
-   *
-   * @param after the after operation to perform
-   * @return a composed {@code Matcher} that the result of the first match, only if both matchers
-   * succeed otherwise it return's <code>null</code>.
-   * @throws NullPointerException if {@code lhs} or {@code rhs} is null
-   */
-  default Matcher<I, O> andThen(Matcher<? super I, ? super O> after) {
+
+
+    /**
+     * Returns a composed {@code Matcher} that returns a composed match result
+     * only if both matchers succeed, otherwise it return's <code>null</code>.
+     *
+     * <p>Compose a {@code Matcher} that performs, in sequence, this operation followed by the {@code
+     * after} operation. If performing either operation throws an exception, it is relayed to the
+     * caller of the composed operation. If performing this operation throws an exception, the {@code
+     * after} operation will not be performed.
+     *
+     * @param after the after operation to perform
+     * @param resultComposer Used to compose a result
+     * @return a composed {@code Matcher}
+     * @throws NullPointerException if {@code after} or {@code resultComposer} is null
+     */
+    default Matcher<I, O> andThen(Matcher<? super I, ? super O> after, BinaryOperator<O> resultComposer) {
         Objects.requireNonNull(after);
         return (I t) -> {
             final O result = matchOrNull(t);
@@ -43,7 +55,8 @@ public interface Matcher<I, O> {
             if(result == null) {
                 return null;
             }
-            return after.matchOrNull(t) == null ? null : result; // Result of first match
+            final O afterResult = (O)after.matchOrNull(t);
+            return afterResult == null ? null : resultComposer.apply(result, afterResult);
         };
     }
 }

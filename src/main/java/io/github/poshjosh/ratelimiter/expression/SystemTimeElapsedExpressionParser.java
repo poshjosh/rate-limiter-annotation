@@ -12,7 +12,7 @@ final class SystemTimeElapsedExpressionParser<S> implements ExpressionParser<S, 
 
     @Override
     public boolean isSupported(Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         if (TIME_ELAPSED.equals(lhs)) {
             return Operator.Type.COMPARISON.equals(expression.getOperator().getType());
         }
@@ -21,7 +21,7 @@ final class SystemTimeElapsedExpressionParser<S> implements ExpressionParser<S, 
 
     @Override
     public Expression<Long> parse(S source, Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         if (TIME_ELAPSED.equals(lhs)) {
             return expression.with(System.currentTimeMillis() - TIME_AT_STARTUP, right(expression));
         }
@@ -29,9 +29,9 @@ final class SystemTimeElapsedExpressionParser<S> implements ExpressionParser<S, 
     }
 
     private Long right(Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         if (TIME_ELAPSED.equals(lhs)) {
-            return Duration.parse(expression.getRight()).toMillis();
+            return Duration.parse(expression.requireRight()).toMillis();
         }
         throw Checks.notSupported(this, lhs);
     }

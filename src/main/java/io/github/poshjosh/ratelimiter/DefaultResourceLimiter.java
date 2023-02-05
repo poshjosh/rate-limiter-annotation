@@ -58,26 +58,26 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     private enum VisitResult {NO_MATCH, LIMIT_NOT_SET, SUCCESS, FAILURE}
 
     private final UsageListener listener;
-    private final LimiterProvider<R, Object> limiterProvider;
-    private final Collection<Node<LimiterConfig<R, Object>>> leafNodes;
+    private final LimiterProvider<R, String> limiterProvider;
+    private final Collection<Node<LimiterConfig<R, String>>> leafNodes;
 
     DefaultResourceLimiter(
             UsageListener listener,
-            LimiterProvider<R, Object> limiterProvider,
-            Node<LimiterConfig<R, Object>> node) {
+            LimiterProvider<R, String> limiterProvider,
+            Node<LimiterConfig<R, String>> node) {
         this(listener, limiterProvider, collectLeafs(node));
     }
-    private static <R> Collection<Node<LimiterConfig<R, Object>>> collectLeafs(Node<LimiterConfig<R, Object>> node) {
-        Set<Node<LimiterConfig<R, Object>>> leafNodes = new LinkedHashSet<>();
-        Predicate<Node<LimiterConfig<R, Object>>> test = n -> n.isLeaf() && !n.isRoot();
+    private static <R> Collection<Node<LimiterConfig<R, String>>> collectLeafs(Node<LimiterConfig<R, String>> node) {
+        Set<Node<LimiterConfig<R, String>>> leafNodes = new LinkedHashSet<>();
+        Predicate<Node<LimiterConfig<R, String>>> test = n -> n.isLeaf() && !n.isRoot();
         node.getRoot().visitAll(test, leafNodes::add);
         return leafNodes;
     }
 
     private DefaultResourceLimiter(
             UsageListener listener,
-            LimiterProvider<R, Object> limiterProvider,
-            Collection<Node<LimiterConfig<R, Object>>> leafNodes) {
+            LimiterProvider<R, String> limiterProvider,
+            Collection<Node<LimiterConfig<R, String>>> leafNodes) {
         this.listener = Objects.requireNonNull(listener);
         this.limiterProvider = Objects.requireNonNull(limiterProvider);
         this.leafNodes = Collections.unmodifiableCollection(leafNodes);
@@ -93,14 +93,14 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
     @Override
     public boolean tryConsume(R key, int permits, long timeout, TimeUnit unit) {
-        Function<Node<LimiterConfig<R, Object>>, VisitResult> consumePermits =
+        Function<Node<LimiterConfig<R, String>>, VisitResult> consumePermits =
                 node -> startVisit(key, permits, timeout, unit, node);
         return visitNodes(consumePermits);
     }
 
-    private boolean visitNodes(Function<Node<LimiterConfig<R, Object>>, VisitResult> visitor) {
+    private boolean visitNodes(Function<Node<LimiterConfig<R, String>>, VisitResult> visitor) {
 
-        for(Node<LimiterConfig<R, Object>> node : leafNodes) {
+        for(Node<LimiterConfig<R, String>> node : leafNodes) {
 
             final VisitResult result = visitor.apply(node);
 
@@ -119,7 +119,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     }
 
     private VisitResult startVisit(
-            R request, int permits, long timeout, TimeUnit unit, Node<LimiterConfig<R, Object>> node) {
+            R request, int permits, long timeout, TimeUnit unit, Node<LimiterConfig<R, String>> node) {
         if (!node.isLeaf()) {
             throw new AssertionError("Visiting must start with leaf nodes");
         }
@@ -128,17 +128,17 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
     private VisitResult visit(
             R request, int permits, long timeout, TimeUnit unit,
-            Node<LimiterConfig<R, Object>> node, VisitResult previousResult) {
+            Node<LimiterConfig<R, String>> node, VisitResult previousResult) {
 
         if (node == null || node.isRoot()) {
             return previousResult;
         }
 
-        final LimiterConfig<R, Object> config = requireLimiterConfig(node);
+        final LimiterConfig<R, String> config = requireLimiterConfig(node);
 
-        final Matcher<R, Object> matcher = config.getMatcher();
+        final Matcher<R, String> matcher = config.getMatcher();
 
-        Object match = matcher.matchOrNull(request);
+        String match = matcher.matchOrNull(request);
 
         if (LOG.isTraceEnabled()) {
             LOG.trace("Match: {}, node: {}, matcher: {}", match != null, node.getName(), matcher);
@@ -148,7 +148,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
             return VisitResult.NO_MATCH;
         }
 
-        final Node<LimiterConfig<R, Object>> parent = node.getParentOrDefault(null);
+        final Node<LimiterConfig<R, String>> parent = node.getParentOrDefault(null);
 
         final Bandwidth [] bandwidths = config.getBandwidths();
 
@@ -187,8 +187,8 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         return resolve(result, parentResult);
     }
 
-    private Object resolveMatch(Object match, Node<LimiterConfig<R, Object>> node) {
-        final LimiterConfig<R, Object> config = requireLimiterConfig(node);
+    private String resolveMatch(String match, Node<LimiterConfig<R, String>> node) {
+        final LimiterConfig<R, String> config = requireLimiterConfig(node);
         final SourceType sourceType = config.getSourceType();
         if (SourceType.GROUP.equals(config.getSourceType())) {
             return node.getName();
@@ -221,18 +221,18 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     }
 
     private boolean tryAcquire(
-            Object resourceId, int permits, long timeout, TimeUnit unit,
-            Node<LimiterConfig<R, Object>> node) {
-        LimiterConfig<R, Object> config = requireLimiterConfig(node);
+            String resourceId, int permits, long timeout, TimeUnit unit,
+            Node<LimiterConfig<R, String>> node) {
+        LimiterConfig<R, String> config = requireLimiterConfig(node);
         RateLimiter limiter = limiterProvider.getOrCreateLimiters(resourceId, config).get(0);
         return tryAcquire(resourceId, limiter, permits, timeout, unit);
     }
 
     private VisitResult visitMulti(
-            R request, Object resourceId, int permits, long timeout, TimeUnit unit,
-            Node<LimiterConfig<R, Object>> node) {
-        LimiterConfig<R, Object> config = requireLimiterConfig(node);
-        final List<Matcher<R, Object>> matchers = config.getMatchers();
+            R request, String resourceId, int permits, long timeout, TimeUnit unit,
+            Node<LimiterConfig<R, String>> node) {
+        LimiterConfig<R, String> config = requireLimiterConfig(node);
+        final List<Matcher<R, String>> matchers = config.getMatchers();
 
         final List<RateLimiter> limiters = limiterProvider.getOrCreateLimiters(resourceId, config);
 
@@ -277,15 +277,15 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         return acquired;
     }
 
-    private boolean hasLimits(Node<LimiterConfig<R, Object>> node) {
+    private boolean hasLimits(Node<LimiterConfig<R, String>> node) {
         return getRates(node).hasLimits();
     }
 
-    private Rates getRates(Node<LimiterConfig<R, Object>> node) {
+    private Rates getRates(Node<LimiterConfig<R, String>> node) {
         return requireLimiterConfig(node).getRates();
     }
 
-    private LimiterConfig<R, Object> requireLimiterConfig(Node<LimiterConfig<R, Object>> node) {
+    private LimiterConfig<R, String> requireLimiterConfig(Node<LimiterConfig<R, String>> node) {
         return Objects.requireNonNull(node.getValueOrDefault(null));
     }
 

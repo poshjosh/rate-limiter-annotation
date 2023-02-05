@@ -14,19 +14,27 @@ class DateTimeExpressionResolver implements ExpressionResolver<LocalDateTime>{
     }
 
     private boolean resolvePositive(Expression<LocalDateTime> expression) {
-        switch (expression.getOperator().getValue()) {
+        switch (expression.getOperator().getSymbol()) {
             case "=":
-                return expression.getLeft().isEqual(expression.getRight());
+                final LocalDateTime left = expression.getLeftOrDefault(null);
+                final LocalDateTime right = expression.getRightOrDefault(null);
+                if (left == null && right == null) {
+                    return true;
+                }
+                if (left == null || right == null) {
+                    return false;
+                }
+                return left.isEqual(right);
             case ">":
-                return expression.getLeft().isAfter(expression.getRight());
+                return expression.requireLeft().isAfter(expression.requireRight());
             case ">=":
-                return expression.getLeft().isAfter(expression.getRight())
-                        || expression.getLeft().isEqual(expression.getRight());
+                return expression.requireLeft().isAfter(expression.requireRight())
+                        || expression.requireLeft().isEqual(expression.requireRight());
             case "<":
-                return expression.getLeft().isBefore(expression.getRight());
+                return expression.requireLeft().isBefore(expression.requireRight());
             case "<=":
-                return expression.getLeft().isBefore(expression.getRight())
-                        || expression.getLeft().isEqual(expression.getRight());
+                return expression.requireLeft().isBefore(expression.requireRight())
+                        || expression.requireLeft().isEqual(expression.requireRight());
             default:
                 throw Checks.notSupported(this, expression.getOperator());
         }

@@ -28,7 +28,7 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
 
     @Override
     public boolean isSupported(Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         switch (lhs) {
             case COUNT:
             case COUNT_DAEMON:
@@ -53,7 +53,7 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
 
     @Override
     public Expression<Object> parse(S source, Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         final Object right = right(expression);
         switch (lhs) {
             case COUNT:
@@ -98,7 +98,7 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
     }
 
     private Object right(Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         switch (lhs) {
             case COUNT:
             case COUNT_DAEMON:
@@ -108,16 +108,16 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
             case COUNT_STARTED:
             case CURRENT_COUNT_BLOCKED:
             case CURRENT_COUNT_WAITED:
-                return Long.parseLong(expression.getRight());
+                return Long.parseLong(expression.requireRight());
             case CURRENT_STATE:
-                return Thread.State.valueOf(expression.getRight());
+                return Thread.State.valueOf(expression.requireRight());
             case CURRENT_SUSPENDED:
-                return Boolean.parseBoolean(expression.getRight());
+                return Boolean.parseBoolean(expression.requireRight());
             case CURRENT_TIME_BLOCKED:
             case CURRENT_TIME_CPU:
             case CURRENT_TIME_USER:
             case CURRENT_TIME_WAITED:
-                return Duration.parse(expression.getRight()).toMillis();
+                return Duration.parse(expression.requireRight()).toMillis();
             default:
                 throw Checks.notSupported(this, lhs);
         }

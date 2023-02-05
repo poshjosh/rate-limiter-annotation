@@ -12,7 +12,7 @@ import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 
 // 5 permits per second for users in role GUEST
 @Rate(5)  
-@RateCondition("web.session.user.role=GUEST")
+@RateCondition("web.request.user.role=GUEST")
 @interface MyRateGroup { }
 ``` 
 You could then use the above annotation for as many classes/methods that apply.

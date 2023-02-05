@@ -19,7 +19,7 @@ final class SystemMemoryExpressionParser<S> implements ExpressionParser<S, Long>
 
     @Override
     public boolean isSupported(Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         switch (lhs) {
             case MEMORY_AVAILABLE:
             case MEMORY_FREE:
@@ -34,7 +34,7 @@ final class SystemMemoryExpressionParser<S> implements ExpressionParser<S, Long>
 
     @Override
     public Expression<Long> parse(S source, Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         switch (lhs) {
             case MEMORY_AVAILABLE:
                 return expression.with(MemoryUtil.availableMemory(), right(expression));
@@ -53,7 +53,7 @@ final class SystemMemoryExpressionParser<S> implements ExpressionParser<S, Long>
 
     private Long right(Expression<String> expression) {
         // This .replace('_', '\u0000') did not yield the desired result in some cases
-        final String rhs = expression.getRight().replace("_", "").toLowerCase(Locale.ROOT);
+        final String rhs = expression.requireRight().replace("_", "").toLowerCase(Locale.ROOT);
         for (int i = 0; i < SUFFIXES.length; i++) {
             final int factor = SUFFIXES.length - i - 1;
             if (rhs.endsWith(SUFFIXES[i])) {

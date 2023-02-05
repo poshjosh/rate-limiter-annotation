@@ -36,9 +36,14 @@ final class DefaultExpressionMatcher<R, T> implements ExpressionMatcher<R, T> {
         Expression<T> typedExpression = expressionParser.parse(request, expression);
         boolean success = expressionResolver.resolve(typedExpression);
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Result: {}, expr typed: {}, text: {}", success, typedExpression, expression);
+            LOG.trace("Result: {}, expression typed: {}, text: {}",
+                    success, typedExpression, expression);
         }
-        return success ? expression.getId() : null;
+        // We use the ID of the typed expression rather than the raw (i.e string) expression
+        // Expression: web.session.id!= results to typed expression: <SESSION_ID_VALUE>!=
+        // The typed expression is a more suitable identifier because it contains the actual
+        // value of the session ID
+        return success ? typedExpression.getId() : null;
     }
 
     @Override

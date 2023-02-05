@@ -10,7 +10,7 @@ final class SystemTimeExpressionParser<S> implements ExpressionParser<S, LocalDa
 
     @Override
     public boolean isSupported(Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         if (TIME.equals(lhs)) {
             return Operator.Type.COMPARISON.equals(expression.getOperator().getType());
         }
@@ -19,7 +19,7 @@ final class SystemTimeExpressionParser<S> implements ExpressionParser<S, LocalDa
 
     @Override
     public Expression<LocalDateTime> parse(S source, Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         if (TIME.equals(lhs)) {
             return expression.with(LocalDateTime.now(), right(expression));
         }
@@ -27,9 +27,9 @@ final class SystemTimeExpressionParser<S> implements ExpressionParser<S, LocalDa
     }
 
     private LocalDateTime right(Expression<String> expression) {
-        final String lhs = expression.getLeft();
+        final String lhs = expression.requireLeft();
         if (TIME.equals(lhs)) {
-            return LocalDateTime.parse(expression.getRight());
+            return LocalDateTime.parse(expression.requireRight());
         }
         throw Checks.notSupported(this, lhs);
     }
