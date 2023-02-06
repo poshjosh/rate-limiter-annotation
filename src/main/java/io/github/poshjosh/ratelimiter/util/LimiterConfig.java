@@ -10,7 +10,7 @@ import java.util.*;
 
 public final class LimiterConfig<R> {
 
-    public static LimiterConfig<Object> ofDefaults(Node<RateConfig> node) {
+    public static LimiterConfig<Object> of(Node<RateConfig> node) {
         return of(node, RateToBandwidthConverter.ofDefaults(),
                 MatcherProvider.ofDefaults(), SleepingTicker.zeroOffset());
     }

@@ -30,11 +30,11 @@ class LimiterProviderTest {
     }
 
     private LimiterConfig<Object> getConfigThatHasNoLimits(String name) {
-        return LimiterConfig.ofDefaults(createNodeThatHasNoLimits(name));
+        return LimiterConfig.of(createNodeThatHasNoLimits(name));
     }
 
     private LimiterConfig<Object> getConfig(String name) {
-        return LimiterConfig.ofDefaults(createNode(name));
+        return LimiterConfig.of(createNode(name));
     }
 
     private Node createNode(String nodeName) {
