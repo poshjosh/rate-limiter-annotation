@@ -98,7 +98,7 @@ public class Rates {
     public boolean hasChildConditions() {
         for(Rate rate : getLimits()) {
             String condition = rate.getRateCondition();
-            if (condition != null && !condition.isEmpty()) {
+            if (StringUtils.hasText(condition)) {
                 return true;
             }
         }

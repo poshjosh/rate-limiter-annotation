@@ -59,13 +59,21 @@ public final class LimiterConfig<R> {
         this.sleepingTicker = Objects.requireNonNull(sleepingTicker);
     }
 
+    public boolean hasLimits() {
+        return rates.hasLimits();
+    }
+
+    public boolean hasChildConditions() {
+        return rates.hasChildConditions();
+    }
+
     public RateSource getSource() { return source; }
 
     public Rates getRates() {
-        return rates;
+        return Rates.of(rates);
     }
 
-    public Bandwidth [] getBandwidths() { return bandwidths; }
+    public Bandwidth [] getBandwidths() { return Arrays.copyOf(bandwidths, bandwidths.length); }
 
     public Matcher<R> getMatcher() { return matcher; }
 

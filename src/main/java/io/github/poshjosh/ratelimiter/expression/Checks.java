@@ -1,5 +1,7 @@
 package io.github.poshjosh.ratelimiter.expression;
 
+import io.github.poshjosh.ratelimiter.util.StringUtils;
+
 final class Checks {
     private Checks() { }
     static RuntimeException notSupported(Object complainer, Object unsupported) {
@@ -10,7 +12,7 @@ final class Checks {
                 complainer.getSimpleName() + " does not support: " + unsupported);
     }
     static String requireContent(String s) {
-        if (s == null || s.isEmpty()) {
+        if (!StringUtils.hasText(s)) {
             throw new IllegalArgumentException("May not be null or empty: " + s);
         }
         return s;

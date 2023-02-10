@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.expression;
 
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +64,7 @@ final class DefaultExpressionMatcher<R, T> implements ExpressionMatcher<R, T> {
      * @return A suitable ID
      */
     private String resolveId(Expression<String> expression, Expression<T> typedExpression) {
-        return expression.getRightOrDefault("").isEmpty() ?
+        return !StringUtils.hasText(expression.getRightOrDefault("")) ?
                 typedExpression.getId() : expression.getId();
     }
 

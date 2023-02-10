@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
+import io.github.poshjosh.ratelimiter.util.StringUtils;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
@@ -22,7 +23,7 @@ public final class ElementId {
      */
     public static String of(Class<?> clazz) {
         final String specifiedId = getSpecifiedId(clazz);
-        if (specifiedId != null && !specifiedId.isEmpty()) {
+        if ( StringUtils.hasText(specifiedId)) {
             return specifiedId;
         }
         return clazz.getName();
@@ -57,7 +58,7 @@ public final class ElementId {
      */
     public static String of(Method method) {
         final String specifiedId = getSpecifiedId(method);
-        if (specifiedId != null && !specifiedId.isEmpty()) {
+        if (StringUtils.hasText(specifiedId)) {
             return specifiedId;
         }
         final String methodString = method.toString();
@@ -75,7 +76,7 @@ public final class ElementId {
         //
         final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
         final String nameFromGroup = getSpecifiedId(rateGroup);
-        if (!nameFromGroup.isEmpty()) {
+        if (StringUtils.hasText(nameFromGroup)) {
             return nameFromGroup;
         }
         final Rate[] rates = source.getAnnotationsByType(Rate.class);
@@ -87,7 +88,7 @@ public final class ElementId {
             return "";
         }
         return Arrays.stream(new String[]{rateGroup.value(), rateGroup.name()})
-                .filter(id -> id != null && !id.isEmpty())
+                .filter(StringUtils::hasText)
                 .findAny().orElse("");
     }
 

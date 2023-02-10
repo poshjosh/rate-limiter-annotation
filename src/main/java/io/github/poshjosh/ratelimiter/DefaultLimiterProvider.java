@@ -15,58 +15,60 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
 
     private final ReadWriteLock storeLock = new ReentrantReadWriteLock();
 
-    private final Map<Object, List<RateLimiter>> resourceIdToRateLimiters;
+    private final Map<Object, RateLimiter> resourceIdToRateLimiter;
 
     DefaultLimiterProvider(BandwidthsStore<K> store) {
         this.store = Objects.requireNonNull(store);
-        this.resourceIdToRateLimiters = new ConcurrentHashMap<>();
+        this.resourceIdToRateLimiter = new ConcurrentHashMap<>();
     }
 
-    @Override
-    public List<RateLimiter> getOrCreateLimiters(K key, LimiterConfig<R> limiterConfig) {
-        List<RateLimiter> value;
-        if ((value = this.resourceIdToRateLimiters.get(key)) == null) {
-            value = createLimiters(key, limiterConfig);
-            this.resourceIdToRateLimiters.put(key, value);
+    public RateLimiter getOrCreateLimiter(K key, LimiterConfig<R> limiterConfig, int index) {
+        RateLimiter value;
+        if ((value = this.resourceIdToRateLimiter.get(key)) == null) {
+            value = createLimiter(key, limiterConfig, index);
+            this.resourceIdToRateLimiter.put(key, value);
         }
         return value;
     }
 
-    private List<RateLimiter> createLimiters(K key, LimiterConfig<R> config) {
-        Bandwidth [] bandwidths = getOrCreateBandwidths(key, config);
-        RateLimiter [] limiters = new RateLimiter[bandwidths.length];
-        for(int i = 0; i < bandwidths.length; i++) {
-            limiters[i] = RateLimiter.of(bandwidths[i], config.getSleepingTicker());
-        }
-        return Arrays.asList(limiters);
+    private RateLimiter createLimiter(K key, LimiterConfig<R> config, int index) {
+        Bandwidth bandwidth = getOrCreateBandwidth(key, config, index);
+        bandwidth = withAutoSave(key, bandwidth);
+        return RateLimiter.of(bandwidth, config.getSleepingTicker());
     }
 
-    private Bandwidth [] getOrCreateBandwidths(K key, LimiterConfig<R> config) {
-        final Bandwidth [] existing = getBandwidthFromStore(key);
-        return existing == null ? createBandwidths(key, config) : existing;
+    private Bandwidth getOrCreateBandwidth(K key, LimiterConfig<R> config, int index) {
+        final Bandwidth existing = getBandwidthFromStore(key);
+        return existing == null ? createBandwidth(config, index) : existing;
     }
 
-    private Bandwidth[] createBandwidths(K key, LimiterConfig<R> config) {
-        SleepingTicker ticker = config.getSleepingTicker();
+    private Bandwidth createBandwidth(LimiterConfig<R> config, int index) {
         Bandwidth [] bandwidths = config.getBandwidths();
-        Bandwidth [] result = new Bandwidth[bandwidths.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = withAutoSave(key, bandwidths[i].with(ticker.elapsedMicros()), result);
+        if (bandwidths.length == 0) {
+            if (index == 0) {
+                return Bandwidth.ALWAYS_AVAILABLE;
+            }
+            throw noLimitAtIndex(config, index);
         }
-        return result;
+        return bandwidths[index].with(config.getSleepingTicker().elapsedMicros());
     }
 
-    private Bandwidth withAutoSave(K key, Bandwidth bandwidth, Bandwidth[] group) {
+    private IndexOutOfBoundsException noLimitAtIndex(LimiterConfig<R> config, int index) {
+        return new IndexOutOfBoundsException("Index: " + index +
+                ", exceeds number of rate limits defined at: " + config.getSource().getSource());
+    }
+
+    private Bandwidth withAutoSave(K key, Bandwidth bandwidth) {
         return new BandwidthWrapper(bandwidth) {
             @Override public long reserveEarliestAvailable(int permits, long nowMicros) {
                 final long result = super.reserveEarliestAvailable(permits, nowMicros);
-                DefaultLimiterProvider.this.saveBandwidthToStore(key, group);
+                DefaultLimiterProvider.this.saveBandwidthToStore(key, bandwidth);
                 return result;
             }
         };
     }
 
-    private Bandwidth[] getBandwidthFromStore(K key) {
+    private Bandwidth getBandwidthFromStore(K key) {
         try{
             storeLock.readLock().lock();
             return store.get(key);
@@ -75,10 +77,10 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
         }
     }
 
-    private void saveBandwidthToStore(K key, Bandwidth [] bandwidths) {
+    private void saveBandwidthToStore(K key, Bandwidth bandwidth) {
         try {
             storeLock.writeLock().lock();
-            store.put(key, bandwidths);
+            store.put(key, bandwidth);
         }finally {
             storeLock.writeLock().unlock();
         }

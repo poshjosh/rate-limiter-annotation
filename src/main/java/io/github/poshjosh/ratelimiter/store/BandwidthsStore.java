@@ -11,14 +11,14 @@ public interface BandwidthsStore<K> {
         return ofMap(new ConcurrentHashMap<>());
     }
 
-    static <K> BandwidthsStore<K> ofCache(Cache<K, Bandwidth[]> cache) {
+    static <K> BandwidthsStore<K> ofCache(Cache<K, Bandwidth> cache) {
         return new BandwidthsStoreOfCache<>(cache);
     }
 
-    static <K> BandwidthsStore<K> ofMap(Map<K, Bandwidth[]> map) {
+    static <K> BandwidthsStore<K> ofMap(Map<K, Bandwidth> map) {
         return new BandwidthsStoreOfMap<>(map);
     }
 
-    Bandwidth[] get(K key);
-    void put(K key, Bandwidth[] bandwidths);
+    Bandwidth get(K key);
+    void put(K key, Bandwidth bandwidths);
 }

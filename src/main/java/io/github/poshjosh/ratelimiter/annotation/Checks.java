@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter.annotation;
 import io.github.poshjosh.ratelimiter.annotation.exceptions.AnnotationProcessingException;
 import io.github.poshjosh.ratelimiter.annotation.exceptions.MisMatchedRateNameException;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
+import io.github.poshjosh.ratelimiter.util.StringUtils;
 
 import java.util.Arrays;
 import java.util.Set;
@@ -15,7 +16,7 @@ final class Checks {
     }
     static String requireOneContent(Object source, String what, String... values) {
         return Arrays.stream(values)
-                .filter(value -> value != null && !value.isEmpty())
+                .filter(StringUtils::hasText)
                 .findAny().orElseThrow(() ->
                         new AnnotationProcessingException(what + " required at: " + source));
     }

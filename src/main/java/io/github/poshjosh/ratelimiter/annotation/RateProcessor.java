@@ -6,6 +6,7 @@ import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.util.Rates;
 
 import java.lang.reflect.GenericDeclaration;
+import java.lang.reflect.Method;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -31,17 +32,35 @@ public interface RateProcessor<S> {
     }
 
     static RateProcessor<Class<?>> ofDefaults() {
-        return of(RateProcessor.SourceFilter.ofRateLimited());
+        return ofClass();
     }
 
-    static RateProcessor<Class<?>> of(SourceFilter sourceTest) {
-        return of(sourceTest, AnnotationConverter.ofRate());
+    static RateProcessor<Class<?>> ofClass() {
+        return ofClass(RateProcessor.SourceFilter.ofRateLimited());
     }
-    
-    static RateProcessor<Class<?>> of(
+
+    static RateProcessor<Method> ofMethod() {
+        return ofMethod(RateProcessor.SourceFilter.ofRateLimited());
+    }
+
+    static RateProcessor<Class<?>> ofClass(SourceFilter sourceTest) {
+        return ofClass(sourceTest, AnnotationConverter.ofRate());
+    }
+
+    static RateProcessor<Method> ofMethod(SourceFilter sourceTest) {
+        return ofMethod(sourceTest, AnnotationConverter.ofRate());
+    }
+
+    static RateProcessor<Class<?>> ofClass(
             SourceFilter sourceTest, 
             AnnotationConverter<Rate, Rates> annotationConverter) {
         return new ClassRateAnnotationProcessor(sourceTest, annotationConverter);
+    }
+
+    static RateProcessor<Method> ofMethod(
+            SourceFilter sourceTest,
+            AnnotationConverter<Rate, Rates> annotationConverter) {
+        return new MethodRateAnnotationProcessor(sourceTest, annotationConverter);
     }
 
     default Node<RateConfig> processAll(S... sources) {

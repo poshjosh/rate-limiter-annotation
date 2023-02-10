@@ -6,6 +6,8 @@ import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.Operator;
 import io.github.poshjosh.ratelimiter.util.Rates;
+import io.github.poshjosh.ratelimiter.util.StringUtils;
+
 import java.lang.reflect.GenericDeclaration;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
@@ -45,7 +47,7 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
         }
         // Tag:Rule:Operator-may-not-be-specified-when-multiple-rate-conditions-are-specified
         for (Rate rate : rates) {
-            if (!rate.when().isEmpty()) {
+            if (StringUtils.hasText(rate.when())) {
                 throw new AnnotationProcessingException(
                         "Operator may not be specified, when multiple rate conditions are specified; at: " + source);
             }

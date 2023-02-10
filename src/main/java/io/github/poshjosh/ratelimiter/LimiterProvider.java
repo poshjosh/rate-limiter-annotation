@@ -5,7 +5,6 @@ import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.LimiterConfig;
 
 import javax.cache.Cache;
-import java.util.List;
 import java.util.Map;
 
 // This is an internal interface
@@ -15,11 +14,11 @@ interface LimiterProvider<R, K> {
         return of(BandwidthsStore.ofDefaults());
     }
 
-    static <R, K> LimiterProvider<R, K> ofCache(Cache<K, Bandwidth[]> cache) {
+    static <R, K> LimiterProvider<R, K> ofCache(Cache<K, Bandwidth> cache) {
         return of(BandwidthsStore.ofCache(cache));
     }
 
-    static <R, K> LimiterProvider<R, K> ofMap(Map<K, Bandwidth[]> map) {
+    static <R, K> LimiterProvider<R, K> ofMap(Map<K, Bandwidth> map) {
         return of(BandwidthsStore.ofMap(map));
     }
 
@@ -27,5 +26,9 @@ interface LimiterProvider<R, K> {
         return new DefaultLimiterProvider<>(store);
     }
 
-    List<RateLimiter> getOrCreateLimiters(K key, LimiterConfig<R> rateConfig);
+    default RateLimiter getOrCreateLimiter(K key, LimiterConfig<R> limiterConfig) {
+        return getOrCreateLimiter(key, limiterConfig, 0);
+    }
+
+    RateLimiter getOrCreateLimiter(K key, LimiterConfig<R> limiterConfig, int index);
 }

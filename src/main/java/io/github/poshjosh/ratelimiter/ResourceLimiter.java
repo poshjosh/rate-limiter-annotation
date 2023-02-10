@@ -23,23 +23,23 @@ public interface ResourceLimiter<K> {
     };
 
     @SuppressWarnings("unchecked")
-    static <R> ResourceLimiter<R> noop() {
-        return (ResourceLimiter<R>) NO_OP;
+    static <K> ResourceLimiter<K> noop() {
+        return (ResourceLimiter<K>) NO_OP;
     }
 
-    static <R> ResourceLimiter<R> of(Class<?>... sourceOfRateLimitInfo) {
+    static <K> ResourceLimiter<K> of(Class<?>... sourceOfRateLimitInfo) {
         return of(RateProcessor.ofDefaults().processAll(sourceOfRateLimitInfo));
     }
 
-    static <R> ResourceLimiter<R> of(String resourceId, Rate... limits) {
+    static <K> ResourceLimiter<K> of(String resourceId, Rate... limits) {
         return of(resourceId, RateConfig.of(Rates.of(limits)));
     }
 
-    static <R> ResourceLimiter<R> of(String resourceId, RateConfig rateConfig) {
+    static <K> ResourceLimiter<K> of(String resourceId, RateConfig rateConfig) {
         return of(Node.of(resourceId, rateConfig, Node.of("root")));
     }
 
-    static <R> ResourceLimiter<R> of(Node<RateConfig> node) {
+    static <K> ResourceLimiter<K> of(Node<RateConfig> node) {
         return of(
                 UsageListener.NO_OP, SleepingTicker.zeroOffset(),
                 BandwidthsStore.ofDefaults(), MatcherProvider.ofDefaults(),
@@ -47,22 +47,22 @@ public interface ResourceLimiter<K> {
         );
     }
 
-    static <R> ResourceLimiter<R> of(
+    static <K> ResourceLimiter<K> of(
             UsageListener listener,
             BandwidthsStore<String> store,
-            MatcherProvider<R> matcherProvider,
+            MatcherProvider<K> matcherProvider,
             Node<RateConfig> rootNode) {
         return of(listener, SleepingTicker.zeroOffset(), store, matcherProvider, rootNode);
     }
 
-    static <R> ResourceLimiter<R> of(
+    static <K> ResourceLimiter<K> of(
             UsageListener listener,
             SleepingTicker ticker,
             BandwidthsStore<String> store,
-            MatcherProvider<R> matcherProvider,
+            MatcherProvider<K> matcherProvider,
             Node<RateConfig> node) {
         RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
-        Function<Node<RateConfig>, LimiterConfig<R>> transformer = n -> {
+        Function<Node<RateConfig>, LimiterConfig<K>> transformer = n -> {
              RateConfig rateConfig = n.getValueOrDefault(null);
              if (rateConfig == null) {
                  return null;

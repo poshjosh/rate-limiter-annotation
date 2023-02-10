@@ -53,7 +53,7 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
     }
 
     private Optional<Matcher<R>> createMatcher(String expression) {
-        if (expression == null || expression.isEmpty()) {
+        if (!StringUtils.hasText(expression)) {
             return Optional.empty();
         }
         if (expressionMatcher.isSupported(expression)) {

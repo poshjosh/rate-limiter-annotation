@@ -29,10 +29,12 @@ public final class Expression<T> {
     private final T left;
     private final Operator operator;
     private final T right;
+    private final String id;
     private Expression(T left, Operator operator, T right) {
         this.left = left;
         this.operator = Objects.requireNonNull(operator);
         this.right = right; // Nullable
+        this.id = "{" + left + operator.getSymbol() + right + "}";
     }
     public <U> Expression<U> with(U left, U right) {
         return Expression.of(left, operator, right);
@@ -62,12 +64,10 @@ public final class Expression<T> {
         return Objects.hash(left, operator, right);
     }
 
-    public String getId() {
-        return left + operator.getSymbol() + right;
-    }
+    public String getId() { return id; }
 
     @Override
     public String toString() {
-        return "{" + left + operator.getSymbol() + right + '}';
+        return getId();
     }
 }
