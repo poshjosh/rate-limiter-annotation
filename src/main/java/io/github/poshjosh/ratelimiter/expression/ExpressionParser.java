@@ -9,6 +9,8 @@ import java.time.LocalDateTime;
  */
 public interface ExpressionParser<S, T> {
 
+    long TIME_AT_STARTUP = System.currentTimeMillis();
+
     static <S> ExpressionParser<S, Long> ofSystemMemory() {
         return new SystemMemoryExpressionParser<>();
     }

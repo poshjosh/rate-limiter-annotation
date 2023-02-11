@@ -4,8 +4,6 @@ import java.time.Duration;
 
 final class SystemTimeElapsedExpressionParser<S> implements ExpressionParser<S, Long> {
 
-    private static final long TIME_AT_STARTUP = System.currentTimeMillis();
-
     public static final String TIME_ELAPSED = "sys.time.elapsed";
 
     SystemTimeElapsedExpressionParser() {}
