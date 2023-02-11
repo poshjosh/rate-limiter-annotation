@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
-## [ [0.4.0](https://github.com/poshjosh/rate-limiter-annotation/tree/0.4.0) ] - 2023-02-11
+## [ [0.4.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.4.0) ] - 2023-02-11
 
 ### Changed
 
@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed handling of multiple methods with same path but different http method.
 - Rewrote BandwidthStore to accept Bandwidth, rather than Bandwidth[].
 
-## [ [0.3.4](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.4) ] - 2023-02-05
+## [ [0.3.4](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.3.4) ] - 2023-02-05
 
 ### Changed
 
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Renamed `Matcher#matchOrNull` to `Matcher#match`
 - Use String return type for `Matcher#match`
 
-## [ [0.3.3](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.3) ] - 2023-02-04
+## [ [0.3.3](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.3.3) ] - 2023-02-04
 
 ### Added
 
@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Renamed `Operator#DEFAULT` to `Operator#NONE`
 
-## [ [0.3.2](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.2) ] - 2023-01-29
+## [ [0.3.2](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.3.2) ] - 2023-01-29
 
 ### Added
 
@@ -55,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Removed `ResourceLimiters.of`. Rather use: `ResourceLimiter.of`
 
-## [ [0.3.1](https://github.com/poshjosh/rate-limiter-annotation/tree/0.3.1) ] - 2023-01-24
+## [ [0.3.1](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.3.1) ] - 2023-01-24
 
 ### Added
 
