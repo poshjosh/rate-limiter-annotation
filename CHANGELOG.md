@@ -9,6 +9,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.4.1](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.4.1) ] - 2023-02-19
+
+### Added
+
+- Added expression handling for `sys.property` and `sys.environment`
+- Added `UnmodifiableRegistries`
+- Added methods `ResourceLimiterRegistry#register` taking either `Class` or `Method` argument. This enables the manual registration of resources for rate limting.
+
+### Changed
+
+- Modified `ResourceLimiterRegisry#getRateConfig` to `getLimiterConfig`
+- Updated README. Note that resource packages/classes must be specified for automatic rate limiting to work.
+
+### Removed
+
+- Removed dependency on `javax.cache.Cache`
+
 ## [ [0.4.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.4.0) ] - 2023-02-11
 
 ### Changed
