@@ -1,10 +1,11 @@
 package io.github.poshjosh.ratelimiter.expression;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 public final class Operator {
     enum Type {COMPARISON, STRING}
-    public static final Operator EQUALS = new Operator("=", Type.COMPARISON);
+    public static final Operator EQUALS = new Operator("=", Type.COMPARISON, Type.STRING);
     public static final Operator GREATER = new Operator(">", Type.COMPARISON);
     public static final Operator GREATER_OR_EQUALS = new Operator(">=", Type.COMPARISON);
     public static final Operator LESS = new Operator("<", Type.COMPARISON);
@@ -45,10 +46,14 @@ public final class Operator {
         }
     }
     private final String symbol;
-    private final Type type;
-    private Operator(String symbol, Type type) {
+    private final Type [] types;
+    private Operator(String symbol, Type... types) {
         this.symbol = Checks.requireContent(symbol);
-        this.type = Objects.requireNonNull(type);
+        this.types = Arrays.copyOf(types, types.length);
+        Arrays.sort(this.types);
+    }
+    public boolean equalsIgnoreNegation(Operator operator) {
+        return isNegation() ? equals(operator.negative()) : equals(operator.positive());
     }
     public boolean isNegation() {
         return symbol.startsWith("!");
@@ -60,10 +65,21 @@ public final class Operator {
         return isNegation() ? this : flip();
     }
     public Operator flip() {
-        return new Operator((isNegation() ? symbol.substring(1) : "!" + symbol), type);
+        return new Operator((isNegation() ? symbol.substring(1) : "!" + symbol), types);
     }
-    public Type getType() {
-        return type;
+    public boolean isType(Type... types) {
+        Arrays.sort(types);
+        for(Type t0 : this.types) {
+            for (Type t1 : types) {
+                if (t0.equals(t1)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+    public Type [] getTypes() {
+        return Arrays.copyOf(types, types.length);
     }
     public String getSymbol() {
         return symbol;
@@ -76,16 +92,14 @@ public final class Operator {
         if (o == null || getClass() != o.getClass())
             return false;
         Operator operator = (Operator) o;
-        return symbol.equals(operator.symbol) && type == operator.type;
+        return symbol.equals(operator.symbol);// && Arrays.equals(types, operator.types);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(symbol, type);
+        return Objects.hash(symbol/**, Arrays.hashCode(types)*/);
     }
 
     @Override
-    public String toString() {
-        return symbol;
-    }
+    public String toString() { return symbol; }
 }

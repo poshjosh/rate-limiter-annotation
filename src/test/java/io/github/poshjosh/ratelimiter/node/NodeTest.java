@@ -62,4 +62,11 @@ class NodeTest {
         assertTrue(found.findFirstChild(test).isPresent());
         assertFalse(found.findFirstChild(test.negate()).isPresent());
     }
+
+    @Test
+    void nodeCreatedWithAParent_shouldAddCreatedNodeToTheTreeOfThatParent() {
+        Node<Integer> root = TestNode.breadthFirst().getRoot();
+        Node<Integer> node = Node.of("OneHundred", 100, root);
+        assertEquals(root, node.getRoot());
+    }
 }

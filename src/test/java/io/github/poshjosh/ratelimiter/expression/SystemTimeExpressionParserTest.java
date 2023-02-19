@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.expression;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -30,11 +31,7 @@ class SystemTimeExpressionParserTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "sys.time=<2023-01-18T20:14:32.846",
-            "sys.,memory,<1,1",
-            "sys.memory=<1"
-    })
+    @ArgumentsSource(InvalidExpressionArgumentsProvider.class)
     void shouldFail_givenInvalidExpression(String value) {
       assertThrows(RuntimeException.class, () -> 
               ExpressionParser.ofSystemTime().parse(this, Expression.of(value)));

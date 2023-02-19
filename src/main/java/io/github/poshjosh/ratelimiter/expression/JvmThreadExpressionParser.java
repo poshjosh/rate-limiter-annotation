@@ -42,10 +42,10 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
             case CURRENT_TIME_CPU:
             case CURRENT_TIME_USER:
             case CURRENT_TIME_WAITED:
-                return Operator.Type.COMPARISON.equals(expression.getOperator().getType());
+                return expression.getOperator().isType(Operator.Type.COMPARISON);
             case CURRENT_STATE:
             case CURRENT_SUSPENDED:
-                return Operator.EQUALS.equals(expression.getOperator().positive());
+                return expression.getOperator().equalsIgnoreNegation(Operator.EQUALS);
             default:
                 return false;
         }

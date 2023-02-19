@@ -6,8 +6,10 @@ import java.util.Objects;
 
 public final class RateConfig {
 
+    private static final RateSource NO_SOURCE = RateSource.of("");
+
     public static RateConfig of(Rates value) {
-        return new RateConfig(RateSource.NONE, value);
+        return new RateConfig(NO_SOURCE, value);
     }
 
     public static RateConfig of(RateSource source, Rates value) {
@@ -26,6 +28,10 @@ public final class RateConfig {
         return RateConfig.of(source, rates);
     }
 
+    public String getId() {
+        return getSource().getId();
+    }
+
     public RateSource getSource() {
         return source;
     }
@@ -37,8 +43,9 @@ public final class RateConfig {
     @Override public boolean equals(Object o) {
         if (this == o)
             return true;
-        if (o == null || getClass() != o.getClass())
+        if (!(o instanceof RateConfig)) {
             return false;
+        }
         RateConfig that = (RateConfig) o;
         return source.equals(that.source) && rates.equals(that.rates);
     }

@@ -1,15 +1,18 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.node.Node;
+import io.github.poshjosh.ratelimiter.annotation.RateSource;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.util.*;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class LimiterProviderTest {
 
+    final RateToBandwidthConverter rateToBandwidthConverter = RateToBandwidthConverter.ofDefaults();
+    final SleepingTicker ticker = SleepingTicker.ofDefaults();
     final LimiterProvider<Object, String> limiterProvider = LimiterProvider.ofDefaults();
 
     @Test
@@ -33,22 +36,16 @@ class LimiterProviderTest {
     }
 
     private LimiterConfig<Object> getConfigThatHasNoLimits(String name) {
-        return LimiterConfig.of(createNodeThatHasNoLimits(name));
+        return getConfig(name, Rates.of());
     }
 
     private LimiterConfig<Object> getConfig(String name) {
-        return LimiterConfig.of(createNode(name));
+      return getConfig(name, Rates.of(Rate.ofSeconds(1)));
     }
 
-    private Node createNode(String nodeName) {
-      Rates rates = Rates.of(Rate.ofSeconds(1));
-      RateConfig rateConfig = RateConfig.of(rates);
-      return Node.ofDefaultParent(nodeName, rateConfig);
-    }
-
-    private Node createNodeThatHasNoLimits(String nodeName) {
-        Rates rates = Rates.of();
-        RateConfig rateConfig = RateConfig.of(rates);
-        return Node.ofDefaultParent(nodeName, rateConfig);
+    private LimiterConfig<Object> getConfig(String name, Rates rates) {
+        Bandwidth[] bandwidths = rateToBandwidthConverter.convert(name, rates, ticker.elapsedMicros());
+        return LimiterConfig.of(RateSource.of(name), rates, bandwidths,
+                Matcher.matchNone(), Collections.emptyList(), ticker);
     }
 }

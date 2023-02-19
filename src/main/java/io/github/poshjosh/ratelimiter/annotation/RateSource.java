@@ -11,16 +11,6 @@ import java.util.Optional;
  */
 public abstract class RateSource {
 
-    public static final RateSource NONE = new RateSource() {
-        @Override public Object getSource() { return this; }
-        @Override public String getId() { return ""; }
-        @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> cls) {
-            return Optional.empty();
-        }
-        @Override public boolean isRateLimited() { return false; }
-        @Override public String toString() { return "RateSource$NONE"; }
-    };
-
     private static final RateProcessor.SourceFilter isRateLimited = RateProcessor.SourceFilter.ofRateLimited();
 
     private static final class ClassRateSource extends RateSource {
@@ -85,6 +75,19 @@ public abstract class RateSource {
         @Override public boolean isGroupType() { return true; }
     }
 
+    private static final class None extends RateSource{
+        private final String id;
+        private None(String id) {
+            this.id = Objects.requireNonNull(id);
+        }
+        @Override public Object getSource() { return this; }
+        @Override public String getId() { return id; }
+        @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> cls) {
+            return Optional.empty();
+        }
+        @Override public boolean isRateLimited() { return false; }
+    }
+
     public static RateSource of(Class<?> clazz) {
         return new ClassRateSource(clazz);
     }
@@ -95,6 +98,10 @@ public abstract class RateSource {
 
     public static RateSource of(String id, GenericDeclaration source) {
         return new GroupRateSource(id, source);
+    }
+
+    public static RateSource of(String id) {
+        return new None(id);
     }
 
     public abstract Object getSource();
@@ -111,7 +118,9 @@ public abstract class RateSource {
     @Override public int hashCode() { return Objects.hashCode(getId()); }
     @Override public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof RateSource)) {
+            return false;
+        }
         return getId().equals(((RateSource)o).getId());
     }
     @Override public String toString() {

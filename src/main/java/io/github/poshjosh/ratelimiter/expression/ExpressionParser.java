@@ -23,6 +23,15 @@ public interface ExpressionParser<S, T> {
         return new SystemTimeElapsedExpressionParser<>();
     }
 
+    static <S> ExpressionParser<S, String> ofSystemProperty() {
+        return new SystemPropertyExpressionParser<>();
+    }
+
+
+    static <S> ExpressionParser<S, String> ofSystemEnvironment() {
+        return new SystemEnvironmentExpressionParser<>();
+    }
+
     static <S> ExpressionParser<S, Object> ofJvmThread() {
         return new JvmThreadExpressionParser<>();
     }
@@ -30,7 +39,7 @@ public interface ExpressionParser<S, T> {
     /**
      * @param expression the expression to check if supported
      * @return true if the provided expression is supported
-     * @see #isSupported(Expression)
+     * @see #isSupported(Expression <String>)
      */
     default boolean isSupported(String expression) {
         return isSupported(Expression.of(expression));

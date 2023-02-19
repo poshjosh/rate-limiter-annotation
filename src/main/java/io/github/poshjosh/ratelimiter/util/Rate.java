@@ -198,7 +198,7 @@ public final class Rate {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (!(o instanceof Rate)) return false;
         Rate that = (Rate) o;
         return permits == that.permits && duration.equals(that.duration)
                 && rateCondition.equals(that.rateCondition) && factoryClass.equals(that.factoryClass);

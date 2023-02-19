@@ -117,11 +117,6 @@ final class NodeImpl<V> implements Node<V> {
     }
 
     @Override
-    public boolean isLeaf() {
-        return children.isEmpty();
-    }
-
-    @Override
     public String getName() {
         return name;
     }
@@ -135,6 +130,10 @@ final class NodeImpl<V> implements Node<V> {
     @Override
     public Node<V> getParentOrDefault(Node<V> outputIfNone) {
         return parent == null ? outputIfNone : parent;
+    }
+
+    public boolean hasChildren() {
+        return !children.isEmpty();
     }
 
     @Override

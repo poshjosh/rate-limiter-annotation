@@ -1,14 +1,11 @@
 package io.github.poshjosh.ratelimiter.expression;
 
-import java.util.Objects;
-
-public final class Expression<T> {
-
-    public static final Expression<Object> TRUE = new Expression<>(null, Operator.EQUALS, null);
-    public static final Expression<Object> FALSE = TRUE.flipOperator();
+public interface Expression<T> {
+    Expression<Object> TRUE = of(null, Operator.EQUALS, null);
+    Expression<Object> FALSE = TRUE.flipOperator();
 
     @SuppressWarnings("unchecked")
-    public static <T> Expression<T> ofTrue() {
+    static <T> Expression<T> ofTrue() {
         return (Expression<T>)TRUE;
     }
     public @SuppressWarnings("unchecked")
@@ -16,58 +13,26 @@ public final class Expression<T> {
         return (Expression<T>)FALSE;
     }
 
-    public static Expression<String> of(String expression) {
+    static Expression<String> of(String expression) {
         final String [] parts = Splitter.ofExpression().split(expression);
         return of(parts[0], parts[1], parts[2]);
     }
-    public static <T> Expression<T> of(T left, String operator, T right) {
+    static <T> Expression<T> of(T left, String operator, T right) {
         return of(left, Operator.of(operator), right);
     }
-    public static <T> Expression<T> of(T left, Operator operator, T right) {
-        return new Expression<>(left, operator, right);
+    static <T> Expression<T> of(T left, Operator operator, T right) {
+        return new DefaultExpression<>(left, operator, right);
     }
-    private final T left;
-    private final Operator operator;
-    private final T right;
-    private final String id;
-    private Expression(T left, Operator operator, T right) {
-        this.left = left;
-        this.operator = Objects.requireNonNull(operator);
-        this.right = right; // Nullable
-        this.id = "{" + left + operator.getSymbol() + right + "}";
+    default Expression<String> requireRightAsExpression() {
+        final String rhs = requireRight().toString();
+        return Expression.of(StringUtil.without(rhs, "{", "}"));
     }
-    public <U> Expression<U> with(U left, U right) {
-        return Expression.of(left, operator, right);
-    }
-    public Expression<T> flipOperator() {
-        return Expression.of(left, operator.flip(), right);
-    }
-    public T requireLeft() { return Objects.requireNonNull(left); }
-    public T getLeftOrDefault(T resultIfNone) { return left == null ? resultIfNone: left; }
-    public Operator getOperator() {
-        return operator;
-    }
-    public T requireRight() { return Objects.requireNonNull(right); }
-    public T getRightOrDefault(T resultIfNone) { return right == null ? resultIfNone: right; }
-
-    @Override public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
-        Expression<?> that = (Expression<?>) o;
-        return Objects.equals(left, that.left) && operator.equals(that.operator) && Objects
-                .equals(right, that.right);
-    }
-
-    @Override public int hashCode() {
-        return Objects.hash(left, operator, right);
-    }
-
-    public String getId() { return id; }
-
-    @Override
-    public String toString() {
-        return getId();
-    }
+    <U> Expression<U> with(U left, U right);
+    Expression<T> flipOperator();
+    T requireLeft();
+    T getLeftOrDefault(T resultIfNone);
+    Operator getOperator();
+    T requireRight();
+    T getRightOrDefault(T resultIfNone);
+    String getId();
 }

@@ -1,21 +1,12 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.ElementId;
-import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
-import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
-import io.github.poshjosh.ratelimiter.node.Node;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.*;
-import java.time.Duration;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,7 +18,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void testRateLimitedClass() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass0.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass0.class);
         assertTrue(limiter.tryConsume("resource-0"));
         assertFalse(limiter.tryConsume("resource-0"));
     }
@@ -39,7 +30,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void testClassWithSingleRateLimitedMethod() throws Exception {
-        ResourceLimiter<Object> limiter = buildRateLimiter(2, RateLimitedClass1.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass1.class);
         final String resourceId = ElementId.of(RateLimitedClass1.class.getDeclaredMethod("hi"));
         assertTrue(limiter.tryConsume(resourceId));
         assertFalse(limiter.tryConsume(resourceId));
@@ -53,7 +44,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void testRateLimitedClassWithSingleRateLimitedMethod() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(2, RateLimitedClass2.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass2.class);
         assertTrue(limiter.tryConsume("method"));
         assertFalse(limiter.tryConsume("method"));
     }
@@ -70,7 +61,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void testRateLimitedClassWithOrLimits() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(2, RateLimitedClass3.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass3.class);
         final String id = ElementId.of(RateLimitedClass3.class);
         assertTrue(limiter.tryConsume(id));
         assertFalse(limiter.tryConsume(id));
@@ -88,7 +79,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void testRateLimitedClassWithAndLimits() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(2, RateLimitedClass4.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass4.class);
         final String id = ElementId.of(RateLimitedClass4.class);
         assertTrue(limiter.tryConsume(id));
         assertTrue(limiter.tryConsume(id));
@@ -105,7 +96,7 @@ class DefaultResourceLimiterTest {
     @Test
     void testAndThen() {
         final String key = "one";
-        ResourceLimiter<Object> a = buildRateLimiter(2, RateLimitedClass5.class);
+        ResourceLimiter<Object> a = buildRateLimiter(RateLimitedClass5.class);
         ResourceLimiter<Object> b =
             ResourceLimiter.of(key, io.github.poshjosh.ratelimiter.util.Rate.ofSeconds(1));
         ResourceLimiter<Object> c = a.andThen(b);
@@ -152,8 +143,7 @@ class DefaultResourceLimiterTest {
 
     private ResourceLimiter<Object> testGroupLimiter() {
         // The classes should be not be in order, as is expected in real situations
-        return buildRateLimiter(4,
-                MyRateGroupMember0.class, MyRateGroup.class, MyRateGroupMember1.class);
+        return buildRateLimiter(MyRateGroupMember0.class, MyRateGroup.class, MyRateGroupMember1.class);
     }
 
     @Rate(1)
@@ -162,7 +152,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenRateConditionFalse_shouldNotBeRateLimited() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass6.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass6.class);
         final String id = ElementId.of(RateLimitedClass6.class);
         assertTrue(limiter.tryConsume(id));
         assertTrue(limiter.tryConsume(id));
@@ -173,7 +163,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenRateWhenResolvesToFalse_shouldNotBeRateLimited() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass6b.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass6b.class);
         final String id = ElementId.of(RateLimitedClass6b.class);
         assertTrue(limiter.tryConsume(id));
         assertTrue(limiter.tryConsume(id));
@@ -185,7 +175,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenRateConditionTrue_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass7.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass7.class);
         final String id = ElementId.of(RateLimitedClass7.class);
         assertTrue(limiter.tryConsume(id));
         assertFalse(limiter.tryConsume(id));
@@ -196,7 +186,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenRateWhenResolvesToTrue_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass7b.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass7b.class);
         final String id = ElementId.of(RateLimitedClass7b.class);
         assertTrue(limiter.tryConsume(id));
         assertFalse(limiter.tryConsume(id));
@@ -208,7 +198,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenRateConditionTrue_andHavingSpaces_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass8.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass8.class);
         final String id = ElementId.of(RateLimitedClass8.class);
         assertTrue(limiter.tryConsume(id));
         assertFalse(limiter.tryConsume(id));
@@ -219,7 +209,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenRateWhenResolvesToTrue_andHavingSpaces_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass8b.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass8b.class);
         assertTrue(limiter.tryConsume("resource-8b"));
         assertFalse(limiter.tryConsume("resource-8b"));
     }
@@ -230,7 +220,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenRateConditionHavingNegationResolvesToTrue_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass9.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass9.class);
         final String id = ElementId.of(RateLimitedClass9.class);
         assertTrue(limiter.tryConsume(id));
         assertFalse(limiter.tryConsume(id));
@@ -241,7 +231,7 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenWhenHavingNegationResolvesToTrue_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass9b.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass9b.class);
         final String id = ElementId.of(RateLimitedClass9b.class);
         assertTrue(limiter.tryConsume(id));
         assertFalse(limiter.tryConsume(id));
@@ -253,30 +243,14 @@ class DefaultResourceLimiterTest {
 
     @Test
     void givenNonComposedRates() {
-        ResourceLimiter<Object> limiter = buildRateLimiter(1, RateLimitedClass10.class);
+        ResourceLimiter<Object> limiter = buildRateLimiter(RateLimitedClass10.class);
         final String id = ElementId.of(RateLimitedClass10.class);
         assertTrue(limiter.tryConsume(id));
         assertTrue(limiter.tryConsume(id));
         assertFalse(limiter.tryConsume(id));
     }
 
-    private ResourceLimiter<Object> buildRateLimiter(int expectedNodes, Class<?>... classes) {
-        return buildRateLimiter(expectedNodes, new HashSet<>(Arrays.asList(classes)));
-    }
-
-    private ResourceLimiter<Object> buildRateLimiter(int expectedNodes, Set<Class<?>> classes) {
-
-        Node<RateConfig> rootNode = RateProcessor.ofDefaults().processAll(classes);
-        System.out.println(rootNode);
-
-        assertEquals(expectedNodes, numberOfNodes(rootNode));
-
-        return ResourceLimiter.of(rootNode);
-    }
-
-    private int numberOfNodes(Node node) {
-        final AtomicInteger count = new AtomicInteger();
-        node.visitAll(currentNode -> count.incrementAndGet());
-        return count.decrementAndGet(); // We subtract the root node
+    private ResourceLimiter<Object> buildRateLimiter(Class<?>... classes) {
+        return ResourceLimiter.of(classes);
     }
 }

@@ -27,6 +27,8 @@ final class EmptyNode<V> implements Node<V>{
         return Optional.empty();
     }
 
+    public boolean hasChildren() { return false; }
+
     @Override
     public Node<V> getChild(int index) {
         throw new IndexOutOfBoundsException("Index: " + index + ", size: 0");

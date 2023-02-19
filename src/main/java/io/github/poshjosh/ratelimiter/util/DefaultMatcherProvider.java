@@ -1,7 +1,6 @@
 package io.github.poshjosh.ratelimiter.util;
 
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
-import io.github.poshjosh.ratelimiter.node.Node;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -27,17 +26,13 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
         expressionMatcher = ExpressionMatcher.ofDefault();
     }
 
-    @Override public Matcher<R> createMatcher(Node<RateConfig> node) {
-        final String expression = requireRateConfig(node).getRates().getRateCondition();
-        return createMatcher(node.getName(), expression);
+    @Override public Matcher<R> createMatcher(RateConfig rateConfig) {
+        final String expression = rateConfig.getRates().getRateCondition();
+        return createMatcher(rateConfig.getId(), expression);
     }
 
-    @Override public List<Matcher<R>> createMatchers(Node<RateConfig> node) {
-        return createMatchers(requireRateConfig(node).getRates());
-    }
-
-    private RateConfig requireRateConfig(Node<RateConfig> node) {
-        return node.getValueOptional().orElseThrow(RuntimeException::new);
+    @Override public List<Matcher<R>> createMatchers(RateConfig rateConfig) {
+        return createMatchers(rateConfig.getRates());
     }
 
     private Matcher<R> createMatcher(String node, String expression) {

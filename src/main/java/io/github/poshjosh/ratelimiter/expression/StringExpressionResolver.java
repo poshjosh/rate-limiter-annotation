@@ -2,7 +2,8 @@ package io.github.poshjosh.ratelimiter.expression;
 
 import java.util.Objects;
 
-class StringExpressionResolver implements ExpressionResolver<String>{
+final class StringExpressionResolver implements ExpressionResolver<String>{
+
     StringExpressionResolver() {}
 
     @Override
@@ -32,6 +33,6 @@ class StringExpressionResolver implements ExpressionResolver<String>{
 
     @Override
     public boolean isSupported(Operator operator) {
-        return Operator.Type.STRING.equals(operator.getType());
+        return operator.isType(Operator.Type.STRING);
     }
 }

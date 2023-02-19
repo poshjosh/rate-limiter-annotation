@@ -1,6 +1,6 @@
 # rate limiter - annotation
 
-__Rate limiting simplified using annotations__
+__Distributed rate limiting simplified using annotations__
 
 We believe rate limiting should as easy as:
 

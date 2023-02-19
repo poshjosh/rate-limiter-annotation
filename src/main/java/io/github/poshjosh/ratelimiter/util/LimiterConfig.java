@@ -1,33 +1,59 @@
 package io.github.poshjosh.ratelimiter.util;
 
-import io.github.poshjosh.ratelimiter.RateToBandwidthConverter;
-import io.github.poshjosh.ratelimiter.SleepingTicker;
+import io.github.poshjosh.ratelimiter.*;
 import io.github.poshjosh.ratelimiter.annotation.RateSource;
+import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.node.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 public final class LimiterConfig<R> {
 
-    public static LimiterConfig<Object> of(Node<RateConfig> node) {
-        return of(node, RateToBandwidthConverter.ofDefaults(),
-                MatcherProvider.ofDefaults(), SleepingTicker.zeroOffset());
+    private static final Logger LOG = LoggerFactory.getLogger(LimiterConfig.class);
+
+    public static <K> LimiterConfig<K> of(
+            RateToBandwidthConverter converter,
+            MatcherProvider<K> matcherProvider,
+            SleepingTicker ticker,
+            Node<RateConfig> node) {
+        RateConfig rateConfig = node.getValueOrDefault(null);
+        if (rateConfig == null) {
+            return null;
+        }
+        Rates rates = rateConfig.getRates();
+        Bandwidth[] bandwidths = converter.convert(node.getName(), rates, ticker.elapsedMicros());
+        Matcher<K> matcher;
+        List<Matcher<K>> matchers;
+        if(!hasLimitsInTree(node)) {
+            LOG.debug("No limits specified for group, so no matcher will be created for: {}",
+                    node.getName());
+            matcher = Matcher.matchNone();
+            matchers = Collections.emptyList();
+        } else {
+            matcher = matcherProvider.createMatcher(rateConfig);
+            matchers = matcherProvider.createMatchers(rateConfig);
+        }
+        return of(rateConfig.getSource(), rates, bandwidths, matcher, matchers, ticker);
+    }
+    private static boolean hasLimitsInTree(Node<RateConfig> node) {
+        return hasLimits(node) || parentHasLimits(node);
+    }
+    private static boolean parentHasLimits(Node<RateConfig> node) {
+        return node.getParentOptional()
+                .filter(parent -> parent.hasValue() && hasLimitsInTree(parent))
+                .isPresent();
+    }
+    private static boolean hasLimits(Node<RateConfig> node) {
+        return node.getValueOptional().orElseThrow(() -> new NodeValueAbsentException(node))
+                .getRates().hasLimits();
     }
 
-    public static <R> LimiterConfig<R> of(
-            Node<RateConfig> node,
-            RateToBandwidthConverter rateToBandwidthConverter,
-            MatcherProvider<R> matcherProvider,
-            SleepingTicker sleepingTicker) {
-        RateConfig rateConfig = Objects.requireNonNull(node.getValueOrDefault(null));
-        Rates rates = rateConfig.getRates();
-        Bandwidth[] bandwidths = rateToBandwidthConverter
-                .convert(node.getName(), rates, sleepingTicker.elapsedMicros());
-        Matcher<R> matcher = matcherProvider.createMatcher(node);
-        List<Matcher<R>> matchers = matcherProvider.createMatchers(node);
-        return new LimiterConfig<>(
-                rateConfig.getSource(), rates, bandwidths, matcher, matchers, sleepingTicker);
+    public static <R> LimiterConfig<R> of(RateSource source, Rates rates, Bandwidth[] bandwidths,
+            Matcher<R> matcher, List<Matcher<R>> matchers, SleepingTicker sleepingTicker) {
+        return new LimiterConfig<>(source, rates, bandwidths, matcher, matchers, sleepingTicker);
     }
 
     private final RateSource source;
@@ -57,6 +83,10 @@ public final class LimiterConfig<R> {
         this.matcher = Objects.requireNonNull(matcher);
         this.matchers = Collections.unmodifiableList(new ArrayList<>(matchers));
         this.sleepingTicker = Objects.requireNonNull(sleepingTicker);
+    }
+
+    public String getId() {
+        return source.getId();
     }
 
     public boolean hasLimits() {

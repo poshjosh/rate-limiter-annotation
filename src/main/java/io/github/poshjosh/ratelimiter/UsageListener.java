@@ -30,9 +30,9 @@ public interface UsageListener {
         Objects.requireNonNull(after);
         return new UsageListener() {
             @Override
-            public void onConsumed(Object request, String resourceId, int hits, LimiterConfig<?> config) {
-                UsageListener.this.onConsumed(request, resourceId, hits, config);
-                after.onConsumed(request, resourceId, hits, config);
+            public void onConsumed(Object request, String resourceId, int permits, LimiterConfig<?> config) {
+                UsageListener.this.onConsumed(request, resourceId, permits, config);
+                after.onConsumed(request, resourceId, permits, config);
             }
             @Override
             public void onRejected(Object request, String resourceId, int permits, LimiterConfig<?> config) {

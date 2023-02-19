@@ -1,9 +1,6 @@
 package io.github.poshjosh.ratelimiter.performance;
 
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
-import io.github.poshjosh.ratelimiter.util.RateConfig;
-import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import org.junit.jupiter.api.Test;
 
@@ -26,15 +23,10 @@ class AnnotationProcessingPerformanceIT {
                 .findClasses(Collections.singletonList(packageName), clazz -> true);
         assertFalse(classList.isEmpty());
 
-        Node<RateConfig> rootNode = RateProcessor.ofDefaults().processAll(new HashSet<>(classList));
-
-        ResourceLimiter.of(rootNode);
+        ResourceLimiter.of(classList.toArray(new Class[0]));
 
         final int size = classList.size();
 
         bookmark.assertUsageLessThan(Usage.of(size * 4, size * 350_000));
-
-        // This should come after recording usage
-        //System.out.println(rootNode);
     }
 }

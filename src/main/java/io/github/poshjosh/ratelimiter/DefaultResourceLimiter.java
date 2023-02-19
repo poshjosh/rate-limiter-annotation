@@ -67,7 +67,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     }
     private static <R> Collection<Node<LimiterConfig<R>>> collectLeafs(Node<LimiterConfig<R>> node) {
         Set<Node<LimiterConfig<R>>> leafNodes = new LinkedHashSet<>();
-        Predicate<Node<LimiterConfig<R>>> test = n -> n.isLeaf() && !n.isRoot();
+        Predicate<Node<LimiterConfig<R>>> test = n -> n.isLeaf() && n.hasValue();
         node.getRoot().visitAll(test, leafNodes::add);
         return leafNodes;
     }
@@ -224,7 +224,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     private VisitResult visitSingle(
             String resourceId, int permits, long timeout, TimeUnit unit, LimiterConfig<R> config) {
         RateLimiter limiter = limiterProvider.getOrCreateLimiter(resourceId, config);
-        return tryAcquire(resourceId, limiter, permits, timeout, unit)
+        return tryAcquire(resourceId, limiter, permits, timeout, unit, config)
                 ? VisitResult.SUCCESS : VisitResult.FAILURE;
     }
 
@@ -255,7 +255,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
             RateLimiter limiter = limiterProvider.getOrCreateLimiter(id, config, i);
 
-            if (tryAcquire(id, limiter, permits, timeout, unit)) {
+            if (tryAcquire(id, limiter, permits, timeout, unit, config)) {
                 ++successCount;
             }
         }
@@ -272,12 +272,13 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     }
 
     private boolean tryAcquire(
-            Object resourceId, RateLimiter rateLimiter, int permits, long timeout, TimeUnit unit) {
+            Object resourceId, RateLimiter rateLimiter,
+            int permits, long timeout, TimeUnit unit, LimiterConfig<?> config) {
 
         final boolean acquired = rateLimiter.tryAcquire(permits, timeout, unit);
 
         if(LOG.isTraceEnabled()) {
-            LOG.trace("Limit exceeded: {}, for: {}", !acquired, resourceId);
+            LOG.trace("Limit exceeded: {}, for: {}, limits: {}", !acquired, resourceId, config.getRates());
         }
 
         return acquired;

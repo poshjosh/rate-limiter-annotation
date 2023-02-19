@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.util;
 
-import io.github.poshjosh.ratelimiter.node.Node;
+import io.github.poshjosh.ratelimiter.annotation.RateSource;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDateTime;
@@ -16,8 +16,8 @@ class MatcherProviderTest {
     @Test
     void createMatcher_givenNoRateCondition_shouldCreateANodeNameMatcher() {
         String nodeName = "test-node-name";
-        Node<RateConfig> node = createNode(nodeName);
-        Matcher<String> matcher = matcherProvider.createMatcher(node);
+        RateConfig rateConfig = createRateConfig(nodeName);
+        Matcher<String> matcher = matcherProvider.createMatcher(rateConfig);
         assertTrue(matcher.matches(nodeName));
         assertFalse(matcher.matches(nodeName + "1"));
     }
@@ -27,8 +27,8 @@ class MatcherProviderTest {
         final int millis = 700;
         LocalDateTime time = LocalDateTime.now().plus(millis, ChronoUnit.MILLIS);
         String nodeName = "test-node-name";
-        Node<RateConfig> node = createNode(nodeName, "sys.time>"+time, "");
-        Matcher<String> matcher = matcherProvider.createMatcher(node);
+        RateConfig rateConfig = createRateConfig(nodeName, "sys.time>"+time, "");
+        Matcher<String> matcher = matcherProvider.createMatcher(rateConfig);
         assertFalse(matcher.matches(nodeName));
         Thread.sleep(millis);
         assertTrue(matcher.matches(nodeName));
@@ -37,34 +37,33 @@ class MatcherProviderTest {
     @Test
     void createMatchers_givenNoRateCondition_shouldReturnEmpty() {
         String nodeName = "test-node-name";
-        Node<RateConfig> node = createNode(nodeName);
-        List<Matcher<String>> matchers = matcherProvider.createMatchers(node);
+        RateConfig rateConfig = createRateConfig(nodeName);
+        List<Matcher<String>> matchers = matcherProvider.createMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
     }
 
     @Test
     void createMatchers_givenOnlyGlobalRateCondition_shouldReturnEmpty() {
         String nodeName = "test-node-name";
-        Node<RateConfig> node = createNode(nodeName, "sys.time.elapsed>PT0S", "");
-        List<Matcher<String>> matchers = matcherProvider.createMatchers(node);
+        RateConfig rateConfig = createRateConfig(nodeName, "sys.time.elapsed>PT0S", "");
+        List<Matcher<String>> matchers = matcherProvider.createMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
     }
 
     @Test
     void createMatchers_givenOneNonGlobalRateConditions_shouldReturnOne() {
         String nodeName = "test-node-name";
-        Node<RateConfig> node = createNode(nodeName, "", "sys.time.elapsed>PT0S");
-        List<Matcher<String>> matchers = matcherProvider.createMatchers(node);
+        RateConfig rateConfig = createRateConfig(nodeName, "", "sys.time.elapsed>PT0S");
+        List<Matcher<String>> matchers = matcherProvider.createMatchers(rateConfig);
         assertEquals(1, matchers.size());
     }
 
-    private Node createNode(String nodeName) {
-        return createNode(nodeName, "", "");
+    private RateConfig createRateConfig(String nodeName) {
+        return createRateConfig(nodeName, "", "");
     }
 
-    private Node createNode(String nodeName, String globalCondition, String condition) {
+    private RateConfig createRateConfig(String nodeName, String globalCondition, String condition) {
         Rates rates = Rates.of(globalCondition, Rate.of(1, condition));
-        RateConfig rateConfig = RateConfig.of(rates);
-        return Node.ofDefaultParent(nodeName, rateConfig);
+        return RateConfig.of(RateSource.of(nodeName), rates);
     }
 }

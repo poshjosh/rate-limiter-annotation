@@ -85,8 +85,8 @@ public interface Node<V> {
     /**
      * Copy this node and it's children onto the specified parent.
      *
-     * The value of this node is not deep copied. To achieve deep copy use the transform method. Use that method's
-     * value converter to create a deep copy of the node's value.
+     * The value of this node is not deep copied. To achieve deep copy use the transform method.
+     * Use that method's value converter to create a deep copy of the node's value.
      *
      * @param parent The parent to copy this node and it's children to
      * @return The copy version of this node
@@ -189,7 +189,7 @@ public interface Node<V> {
     }
 
     default boolean isLeaf() {
-        return getChildren().isEmpty();
+        return !hasChildren();
     }
         
     /**
@@ -240,6 +240,8 @@ public interface Node<V> {
 
     Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest);
 
+    boolean hasChildren();
+
     Node<V> getChild(int index);
 
     /**
@@ -249,7 +251,7 @@ public interface Node<V> {
 
     String getName();
 
-    default boolean hasNodeValue() {
+    default boolean hasValue() {
         return getValueOrDefault(null) != null;
     }
 
@@ -258,6 +260,10 @@ public interface Node<V> {
     }
 
     V getValueOrDefault(V outputIfNone);
+
+    default boolean hasParent() {
+        return getParentOrDefault(null) != null;
+    }
 
     default Optional<Node<V>> getParentOptional() {
         return Optional.ofNullable(this.getParentOrDefault(null));

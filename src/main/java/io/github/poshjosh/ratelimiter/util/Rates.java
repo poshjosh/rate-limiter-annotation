@@ -208,10 +208,12 @@ public class Rates {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
+        if (this == o) {
             return true;
-        if (o == null || getClass() != o.getClass())
+        }
+        if (!(o instanceof Rates)) {
             return false;
+        }
         Rates rates = (Rates) o;
         return operator == rates.operator && Objects.equals(getLimits(), rates.getLimits())
                 && Objects.equals(rateCondition, rates.rateCondition);

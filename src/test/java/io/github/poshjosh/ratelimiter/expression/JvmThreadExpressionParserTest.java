@@ -2,6 +2,8 @@ package io.github.poshjosh.ratelimiter.expression;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ArgumentsSource;
+import org.junit.jupiter.params.provider.ArgumentsSources;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -44,11 +46,7 @@ class JvmThreadExpressionParserTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {
-            "invalid=<0",
-            "invalid,<1,1",
-            "sys.memory=<1"
-    })
+    @ArgumentsSource(InvalidExpressionArgumentsProvider.class)
     void shouldFail_givenInvalidExpression(String value) {
       assertThrows(RuntimeException.class, () -> 
               ExpressionParser.ofJvmThread().parse("", Expression.of(value)));
