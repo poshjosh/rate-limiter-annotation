@@ -7,7 +7,7 @@
         </encoder>
     </appender>
 
-    <logger name="com.looseboxes.ratelimiter" level="debug"/>
+    <logger name="io.github.poshjosh.ratelimiter" level="debug"/>
 
     <root level="debug">
         <appender-ref ref="STDOUT"/>

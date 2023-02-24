@@ -3,6 +3,8 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.LimiterConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,6 +12,8 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
+
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultLimiterProvider.class);
 
     private final BandwidthsStore<K> store;
 
@@ -81,6 +85,7 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
         try {
             storeLock.writeLock().lock();
             store.put(key, bandwidth);
+            LOG.trace("Saved: {} = {}", key, bandwidth);
         }finally {
             storeLock.writeLock().unlock();
         }

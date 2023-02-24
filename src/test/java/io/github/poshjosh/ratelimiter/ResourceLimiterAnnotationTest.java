@@ -11,7 +11,7 @@ import java.lang.annotation.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
-class DefaultResourceLimiterTest {
+class ResourceLimiterAnnotationTest {
 
     @Rate(permits = 1, name = "resource-0")
     static class RateLimitedClass0{ }

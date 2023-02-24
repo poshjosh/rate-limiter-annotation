@@ -17,7 +17,7 @@ public final class LimiterConfig<R> {
     public static <K> LimiterConfig<K> of(
             RateToBandwidthConverter converter,
             MatcherProvider<K> matcherProvider,
-            SleepingTicker ticker,
+            Ticker ticker,
             Node<RateConfig> node) {
         RateConfig rateConfig = node.getValueOrDefault(null);
         if (rateConfig == null) {
@@ -52,8 +52,8 @@ public final class LimiterConfig<R> {
     }
 
     public static <R> LimiterConfig<R> of(RateSource source, Rates rates, Bandwidth[] bandwidths,
-            Matcher<R> matcher, List<Matcher<R>> matchers, SleepingTicker sleepingTicker) {
-        return new LimiterConfig<>(source, rates, bandwidths, matcher, matchers, sleepingTicker);
+            Matcher<R> matcher, List<Matcher<R>> matchers, Ticker ticker) {
+        return new LimiterConfig<>(source, rates, bandwidths, matcher, matchers, ticker);
     }
 
     private final RateSource source;
@@ -73,16 +73,16 @@ public final class LimiterConfig<R> {
      */
     private final List<Matcher<R>> matchers;
 
-    private final SleepingTicker sleepingTicker;
+    private final Ticker ticker;
 
     private LimiterConfig(RateSource source, Rates rates, Bandwidth[] bandwidths,
-            Matcher<R> matcher, List<Matcher<R>> matchers, SleepingTicker sleepingTicker) {
+            Matcher<R> matcher, List<Matcher<R>> matchers, Ticker ticker) {
         this.source = Objects.requireNonNull(source);
         this.rates = Rates.of(rates);
         this.bandwidths = Arrays.copyOf(bandwidths, bandwidths.length);
         this.matcher = Objects.requireNonNull(matcher);
         this.matchers = Collections.unmodifiableList(new ArrayList<>(matchers));
-        this.sleepingTicker = Objects.requireNonNull(sleepingTicker);
+        this.ticker = Objects.requireNonNull(ticker);
     }
 
     public String getId() {
@@ -111,7 +111,7 @@ public final class LimiterConfig<R> {
         return matchers;
     }
 
-    public SleepingTicker getSleepingTicker() { return sleepingTicker; }
+    public Ticker getSleepingTicker() { return ticker; }
 
     @Override public boolean equals(Object o) {
         if (this == o)
@@ -120,15 +120,15 @@ public final class LimiterConfig<R> {
             return false;
         LimiterConfig<?> that = (LimiterConfig<?>) o;
         return rates.equals(that.rates) && matcher.equals(that.matcher) && matchers
-                .equals(that.matchers) && sleepingTicker.equals(that.sleepingTicker);
+                .equals(that.matchers) && ticker.equals(that.ticker);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(rates, matcher, matchers, sleepingTicker);
+        return Objects.hash(rates, matcher, matchers, ticker);
     }
 
     @Override public String toString() {
         return "LimiterConfig{source=" + source + ", rates=" + rates + ", matcher=" + matcher +
-                ", matchers=" + matchers + ", sleepingTicker=" + sleepingTicker + '}';
+                ", matchers=" + matchers + ", ticker=" + ticker + '}';
     }
 }

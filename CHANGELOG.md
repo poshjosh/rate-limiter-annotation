@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.4.2](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.4.2) ] - 2023-02-24
+
+### Added
+
+- Use system epoch millis as Ticker time
+
 ## [ [0.4.1](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.4.1) ] - 2023-02-19
 
 ### Added

@@ -15,6 +15,11 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
 public interface ResourceLimiter<K> {
 
+    /**
+     * To maintain a synchronized time between distributed services. We use the time since epoch.
+     */
+    Ticker DEFAULT_TICKER = Ticker.SYSTEM_EPOCH_MILLIS;
+
     ResourceLimiter<Object> NO_OP = new ResourceLimiter<Object>() {
         @Override public ResourceLimiter<Object> listener(UsageListener listener) { return this; }
         @Override public UsageListener getListener() { return UsageListener.NO_OP; }
@@ -45,8 +50,7 @@ public interface ResourceLimiter<K> {
 
     static <K> ResourceLimiter<K> of(Node<RateConfig> node) {
         return of(UsageListener.NO_OP, BandwidthsStore.ofDefaults(),
-                RateToBandwidthConverter.ofDefaults(), MatcherProvider.ofDefaults(),
-                SleepingTicker.ofDefaults(), node);
+                RateToBandwidthConverter.ofDefaults(), MatcherProvider.ofDefaults(), DEFAULT_TICKER, node);
     }
 
     static <K> ResourceLimiter<K> of(
@@ -54,7 +58,7 @@ public interface ResourceLimiter<K> {
             BandwidthsStore<String> store,
             RateToBandwidthConverter converter,
             MatcherProvider<K> matcherProvider,
-            SleepingTicker ticker,
+            Ticker ticker,
             Node<RateConfig> node) {
         Function<Node<RateConfig>, LimiterConfig<K>> transformer = currentNode -> {
             return LimiterConfig.of(converter, matcherProvider, ticker, currentNode);

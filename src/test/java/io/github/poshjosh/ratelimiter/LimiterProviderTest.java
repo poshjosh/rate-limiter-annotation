@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class LimiterProviderTest {
 
     final RateToBandwidthConverter rateToBandwidthConverter = RateToBandwidthConverter.ofDefaults();
-    final SleepingTicker ticker = SleepingTicker.ofDefaults();
+    final Ticker ticker = Ticker.ofDefaults();
     final LimiterProvider<Object, String> limiterProvider = LimiterProvider.ofDefaults();
 
     @Test
