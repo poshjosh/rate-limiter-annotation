@@ -49,29 +49,36 @@ public interface ResourceLimiter<K> {
     }
 
     static <K> ResourceLimiter<K> of(Node<RateConfig> node) {
-        return of(UsageListener.NO_OP, BandwidthsStore.ofDefaults(),
-                RateToBandwidthConverter.ofDefaults(), MatcherProvider.ofDefaults(), DEFAULT_TICKER, node);
+        return of(UsageListener.NO_OP, RateLimiterProvider.ofDefaults(),
+                MatcherProvider.ofDefaults(), DEFAULT_TICKER, node);
     }
 
     static <K> ResourceLimiter<K> of(
             UsageListener listener,
-            BandwidthsStore<String> store,
-            RateToBandwidthConverter converter,
+            RateLimiterProvider<K, String> rateLimiterProvider,
             MatcherProvider<K> matcherProvider,
             Ticker ticker,
             Node<RateConfig> node) {
+        RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
         Function<Node<RateConfig>, LimiterConfig<K>> transformer = currentNode -> {
             return LimiterConfig.of(converter, matcherProvider, ticker, currentNode);
         };
         Node<LimiterConfig<K>> limiterNode = node.getRoot().transform(transformer);
-        return new DefaultResourceLimiter<>(listener, LimiterProvider.of(store), limiterNode);
+        return of(listener, rateLimiterProvider, limiterNode);
     }
 
     static <K> ResourceLimiter<K> of(
             UsageListener listener,
             BandwidthsStore<String> store,
             Node<LimiterConfig<K>> node) {
-        return new DefaultResourceLimiter<>(listener, LimiterProvider.of(store), node);
+        return of(listener, RateLimiterProvider.of(store), node);
+    }
+
+    static <K> ResourceLimiter<K> of(
+            UsageListener listener,
+            RateLimiterProvider<K, String> rateLimiterProvider,
+            Node<LimiterConfig<K>> node) {
+        return new DefaultResourceLimiter<>(listener, rateLimiterProvider, node);
     }
 
     ResourceLimiter<K> listener(UsageListener listener);
@@ -106,9 +113,9 @@ public interface ResourceLimiter<K> {
     }
 
     /**
-     * Acquires a permit from this {@code ResourceLimiter} if it can be obtained without exceeding the
-     * specified {@code timeout}, or returns {@code false} immediately (without waiting) if the permit
-     * would not have been granted before the timeout expired.
+     * Acquires a permit from this {@code ResourceLimiter} if it can be obtained without exceeding
+     * the specified {@code timeout}, or returns {@code false} immediately (without waiting) if
+     * the permit would not have been granted before the timeout expired.
      *
      * <p>This method is equivalent to {@code tryAcquire(1, timeout)}.
      *

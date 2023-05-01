@@ -11,9 +11,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
+final class DefaultRateLimiterProvider<R, K> implements RateLimiterProvider<R, K> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultLimiterProvider.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultRateLimiterProvider.class);
 
     private final BandwidthsStore<K> store;
 
@@ -21,12 +21,12 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
 
     private final Map<Object, RateLimiter> resourceIdToRateLimiter;
 
-    DefaultLimiterProvider(BandwidthsStore<K> store) {
+    DefaultRateLimiterProvider(BandwidthsStore<K> store) {
         this.store = Objects.requireNonNull(store);
         this.resourceIdToRateLimiter = new ConcurrentHashMap<>();
     }
 
-    public RateLimiter getOrCreateLimiter(K key, LimiterConfig<R> limiterConfig, int index) {
+    public RateLimiter getRateLimiter(K key, LimiterConfig<R> limiterConfig, int index) {
         RateLimiter value;
         if ((value = this.resourceIdToRateLimiter.get(key)) == null) {
             value = createLimiter(key, limiterConfig, index);
@@ -66,7 +66,7 @@ final class DefaultLimiterProvider<R, K> implements LimiterProvider<R, K> {
         return new BandwidthWrapper(bandwidth) {
             @Override public long reserveEarliestAvailable(int permits, long nowMicros) {
                 final long result = super.reserveEarliestAvailable(permits, nowMicros);
-                DefaultLimiterProvider.this.saveBandwidthToStore(key, bandwidth);
+                DefaultRateLimiterProvider.this.saveBandwidthToStore(key, bandwidth);
                 return result;
             }
         };

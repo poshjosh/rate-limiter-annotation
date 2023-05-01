@@ -9,16 +9,16 @@ import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class LimiterProviderTest {
+class RateLimiterProviderTest {
 
     final RateToBandwidthConverter rateToBandwidthConverter = RateToBandwidthConverter.ofDefaults();
     final Ticker ticker = Ticker.ofDefaults();
-    final LimiterProvider<Object, String> limiterProvider = LimiterProvider.ofDefaults();
+    final RateLimiterProvider<Object, String> rateLimiterProvider = RateLimiterProvider.ofDefaults();
 
     @Test
     void getLimiters_shouldReturnValidRateLimiter() {
         LimiterConfig<Object> config = getConfig("test-node-name");
-        RateLimiter limiter = limiterProvider.getOrCreateLimiter("test-id", config);
+        RateLimiter limiter = rateLimiterProvider.getRateLimiter("test-id", config);
         assertTrue(limiter.tryAcquire(1));
         assertFalse(limiter.tryAcquire(1));
     }
@@ -26,7 +26,7 @@ class LimiterProviderTest {
     @Test
     void getLimiters_givenNoLimitsDefined_shouldNotBeRateLimited() {
         LimiterConfig<Object> config = getConfigThatHasNoLimits("test-node-name");
-        RateLimiter limiter = limiterProvider.getOrCreateLimiter("test-id", config);
+        RateLimiter limiter = rateLimiterProvider.getRateLimiter("test-id", config);
         // Just asserting that this has no limit
         assertTrue(limiter.tryAcquire(Integer.MAX_VALUE));
         assertTrue(limiter.tryAcquire(Integer.MAX_VALUE));

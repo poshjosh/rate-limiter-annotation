@@ -26,8 +26,8 @@ class Resource{ }
 | `jvm.thread.count.deadlocked`         |             |
 | `jvm.thread.count.deadlocked.monitor` |             |
 | `jvm.thread.count.peak`               |             |
-| jvm.thread.count.started`             |             |
-| jvm.thread.current.count.blocked`     |             |
+| `jvm.thread.count.started`            |             |
+| `jvm.thread.current.count.blocked`    |             |
 |  `jvm.thread.current.count.waited`    |             |
 
 __jvm.thread(.current).count__ supported format `digits` e.g `128`, `9`

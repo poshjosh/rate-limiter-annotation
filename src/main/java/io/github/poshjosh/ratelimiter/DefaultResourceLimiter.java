@@ -56,14 +56,14 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     private enum VisitResult {NO_MATCH, LIMIT_NOT_SET, SUCCESS, FAILURE}
 
     private final UsageListener listener;
-    private final LimiterProvider<R, String> limiterProvider;
+    private final RateLimiterProvider<R, String> rateLimiterProvider;
     private final Collection<Node<LimiterConfig<R>>> leafNodes;
 
     DefaultResourceLimiter(
             UsageListener listener,
-            LimiterProvider<R, String> limiterProvider,
+            RateLimiterProvider<R, String> rateLimiterProvider,
             Node<LimiterConfig<R>> node) {
-        this(listener, limiterProvider, collectLeafs(node));
+        this(listener, rateLimiterProvider, collectLeafs(node));
     }
     private static <R> Collection<Node<LimiterConfig<R>>> collectLeafs(Node<LimiterConfig<R>> node) {
         Set<Node<LimiterConfig<R>>> leafNodes = new LinkedHashSet<>();
@@ -74,15 +74,15 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
     private DefaultResourceLimiter(
             UsageListener listener,
-            LimiterProvider<R, String> limiterProvider,
+            RateLimiterProvider<R, String> rateLimiterProvider,
             Collection<Node<LimiterConfig<R>>> leafNodes) {
         this.listener = Objects.requireNonNull(listener);
-        this.limiterProvider = Objects.requireNonNull(limiterProvider);
+        this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
         this.leafNodes = Collections.unmodifiableCollection(leafNodes);
     }
 
     @Override public DefaultResourceLimiter<R> listener(UsageListener listener) {
-        return new DefaultResourceLimiter<>(listener, limiterProvider, leafNodes);
+        return new DefaultResourceLimiter<>(listener, rateLimiterProvider, leafNodes);
     }
 
     @Override public UsageListener getListener() {
@@ -223,7 +223,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
     private VisitResult visitSingle(
             String resourceId, int permits, long timeout, TimeUnit unit, LimiterConfig<R> config) {
-        RateLimiter limiter = limiterProvider.getOrCreateLimiter(resourceId, config);
+        RateLimiter limiter = rateLimiterProvider.getRateLimiter(resourceId, config);
         return tryAcquire(resourceId, limiter, permits, timeout, unit, config)
                 ? VisitResult.SUCCESS : VisitResult.FAILURE;
     }
@@ -253,7 +253,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
             final String id = Matcher.composeResults(resourceId, match);
 
-            RateLimiter limiter = limiterProvider.getOrCreateLimiter(id, config, i);
+            RateLimiter limiter = rateLimiterProvider.getRateLimiter(id, config, i);
 
             if (tryAcquire(id, limiter, permits, timeout, unit, config)) {
                 ++successCount;

@@ -5,7 +5,6 @@ import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,11 +14,13 @@ class AnnotationProcessingPerformanceIT {
     @Test
     void annotationProcessShouldConsumeLimitedTimeAndMemory() {
 
+        // Do not use log level debug/trace, as tests may fail
+        Usage bookmark = Usage.bookmark();
+
         // This package contains 100 randomly rate limited classes
         final String packageName = "io.github.poshjosh.ratelimiter.performance.dummyclasses";
 
-        Usage bookmark = Usage.bookmark();
-        List<Class<?>> classList = ClassesInPackageFinder.ofDefaults()
+        final List<Class<?>> classList = ClassesInPackageFinder.ofDefaults()
                 .findClasses(Collections.singletonList(packageName), clazz -> true);
         assertFalse(classList.isEmpty());
 

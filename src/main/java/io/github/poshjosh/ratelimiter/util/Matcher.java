@@ -22,14 +22,14 @@ public interface Matcher<I> {
     }
     static boolean isMatch(String matchResult) { return matchResult.length() > 0; }
 
-    default boolean matches(I target) { return match(target).length() > 0; }
+    default boolean matches(I input) { return match(input).length() > 0; }
 
     /**
-     * Match the input. Return a match, or empty text, if there is not match.
-     * @param target The input to match
+     * Match the input. Return a match, or empty text, if there is no match.
+     * @param input The input to match
      * @return A matching string, or empty text, if none.
      */
-    String match(I target);
+    String match(I input);
 
     /**
      * Returns a composed {@code Matcher} that returns a composed match result
