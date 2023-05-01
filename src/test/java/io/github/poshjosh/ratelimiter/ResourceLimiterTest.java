@@ -24,7 +24,7 @@ class ResourceLimiterTest {
     @ValueSource(longs = {2_000, 100})
     void shouldNotBeAffectedByLongInitialDelay() throws InterruptedException {
         final long duration = 100;
-        ResourceLimiter<String> resourceLimiter = getRateLimiter(getRate(2, duration));
+        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(2, duration));
         Thread.sleep(duration + 1);
         assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire initial permit");
     }
@@ -32,7 +32,7 @@ class ResourceLimiterTest {
     @ParameterizedTest
     @ValueSource(longs = {2_000, 100})
     void shouldExceedLimitAfterLongInitialDelay(long duration) throws InterruptedException {
-        ResourceLimiter<String> resourceLimiter = getRateLimiter(getRate(1, duration));
+        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(1, duration));
         Thread.sleep(duration + 10);
         assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire initial permit");
         assertFalse(resourceLimiter.tryConsume(key), "Capable of acquiring additional permit");
@@ -41,7 +41,7 @@ class ResourceLimiterTest {
     @Test
     void veryLargeLimitShouldNotBeAffectedByDuration() {
         final long duration = 1;
-        ResourceLimiter<String> resourceLimiter = getRateLimiter(getRate(Long.MAX_VALUE, duration));
+        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(Long.MAX_VALUE, duration));
         for (int i = 0; i < 100; i++) {
             assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire permit " + i);
         }
@@ -63,20 +63,20 @@ class ResourceLimiterTest {
     }
 
     protected <T> ResourceLimiter<T> perSecondRateLimiter(long amount) {
-        return getRateLimiter(getRate(amount, durationMillis));
+        return getResourceLimiter(getRate(amount, durationMillis));
     }
 
     @Test
     void testNewInstanceParameterValidation() {
-        assertThrowsRuntimeException(() -> getRateLimiter(getRate(-1, 1)));
-        assertThrowsRuntimeException(() -> getRateLimiter(getRate(1, -1)));
+        assertThrowsRuntimeException(() -> getResourceLimiter(getRate(-1, 1)));
+        assertThrowsRuntimeException(() -> getResourceLimiter(getRate(1, -1)));
     }
 
     @ParameterizedTest
     @ValueSource(longs = {1, 2, 4})
     void shouldResetWhenLimitNotExceededWithinDuration(long limit) throws InterruptedException{
         final long duration = 2000;
-        ResourceLimiter<String> resourceLimiter = getRateLimiter(getRate(limit, duration));
+        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(limit, duration));
 
         //long startMillis = 0;
 
@@ -104,7 +104,7 @@ class ResourceLimiterTest {
 
     @Test
     void shouldResetWhenAtThreshold() throws Exception{
-        ResourceLimiter<String> resourceLimiter = getRateLimiter(getRate(1, 0));
+        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(1, 0));
         resourceLimiter.tryConsume(key);
 
         // Simulate some time before the next recording
@@ -116,7 +116,7 @@ class ResourceLimiterTest {
 
     @Test
     void shouldFailWhenLimitExceeded() {
-        ResourceLimiter<String> resourceLimiter = getRateLimiter(getRate(2, 1000));
+        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(2, 1000));
         assertThat(resourceLimiter.tryConsume(key)).isTrue();
         assertThat(resourceLimiter.tryConsume(key)).isTrue();
         assertThat(resourceLimiter.tryConsume(key)).isFalse();
@@ -124,9 +124,9 @@ class ResourceLimiterTest {
 
     @Test
     void testAndThen() {
-        ResourceLimiter<String> a = getRateLimiter(
+        ResourceLimiter<String> a = getResourceLimiter(
                 getRate(10, 1000, BandwidthFactory.AllOrNothing.class));
-        ResourceLimiter<String> b = getRateLimiter(
+        ResourceLimiter<String> b = getResourceLimiter(
                 getRate(1, 1000, BandwidthFactory.AllOrNothing.class));
         ResourceLimiter<String> c = a.andThen(b);
         assertTrue(c.tryConsume(key), "Unable to acquire initial permit");
@@ -145,7 +145,7 @@ class ResourceLimiterTest {
         assertThrows(RuntimeException.class, executable);
     }
 
-    public <T> ResourceLimiter<T> getRateLimiter(Rate... limits) {
+    public <T> ResourceLimiter<T> getResourceLimiter(Rate... limits) {
         return ResourceLimiter.of(key, limits);
     }
 

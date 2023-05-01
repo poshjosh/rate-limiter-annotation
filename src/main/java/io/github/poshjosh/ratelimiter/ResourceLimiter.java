@@ -13,6 +13,12 @@ import java.util.function.Function;
 
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 
+/**
+ * Uses multiple {@link RateLimiter}s to restrict consumption of multiple resources identified by IDs.
+ *
+ * @param <K> The type of the ID for each resource
+ * @see io.github.poshjosh.ratelimiter.RateLimiter
+ */
 public interface ResourceLimiter<K> {
 
     /**

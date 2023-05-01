@@ -13,6 +13,8 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
+ * Uses multiple {@link RateLimiter}s to restrict consumption of multiple resources identified by IDs.
+ *
  * A {@link io.github.poshjosh.ratelimiter.node.Node} is used to hold the data for either:
  *
  * <ul>
