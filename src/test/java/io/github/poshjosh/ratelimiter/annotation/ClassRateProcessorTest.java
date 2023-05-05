@@ -27,15 +27,15 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
     void nodeVisitingShouldBeAccurate() {
         final Class<?>[] classes = new Class[] {
                           GroupAnnotationsOnlyGroup.class,
-                          ClassWithClassAnnotationsGroup.class,
+                          GroupAnnotationWithoutName.class,
                           ClassWithClassAnnotations.class,
                           ClassWithClassAnnotations.ClassGroupOnlyAnon.class,
-                          ClassWithClassAnnotations.ClassGroupOnlyNamedFire.class,
+                          ClassWithClassAnnotations.ClassGroupOnly_GroupAnnotationWithoutName.class,
                           ClassWithClassAnnotations.ClassWithInternalClass.class,
                           ClassWithClassAnnotations.ClassWithInternalClass.InternalClass.class,
                           ClassWithClassAnnotations.PrivateClass.class,
                           ClassWithClassAnnotations.GroupAnnotationOnly.class,
-                          ClassWithClassAnnotations.SecondClassGroupOnlyNamedFire.class,
+                          ClassWithClassAnnotations.SecondClassGroupOnly_GroupAnnotationWithoutName.class,
                           ClassWithMethodAnnotations.class,
                           ClassWithMethodAnnotations.MethodGroupOnlyAnon.class
                 };
@@ -43,12 +43,12 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
         System.out.println(root);
         assertThat(root.findFirstChild(node -> node.getName().equals(root.getName())).isPresent()).isTrue();
         assertHasChildrenHavingNames(root, "ClassGroupOnlyAnon", "PrivateClass", "InternalClass");
-        assertHasChildrenHavingNames(root, "Fire");
-        Node<RateConfig> fire = root.findFirstChild(node -> "Fire".equals(node.getName()))
+        assertHasChildrenHavingNames(root, "GroupAnnotationWithoutName");
+        Node<RateConfig> fire = root.findFirstChild(node -> "GroupAnnotationWithoutName".equals(node.getName()))
                 .orElseThrow(NullPointerException::new);
         assertHasChildrenHavingNames(fire,
-                ClassWithClassAnnotations.ClassGroupOnlyNamedFire.class,
-                ClassWithClassAnnotations.SecondClassGroupOnlyNamedFire.class);
+                ClassWithClassAnnotations.ClassGroupOnly_GroupAnnotationWithoutName.class,
+                ClassWithClassAnnotations.SecondClassGroupOnly_GroupAnnotationWithoutName.class);
     }
 
     RateProcessor<Class<?>> getInstance() {
@@ -65,10 +65,10 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
     @Rate(permits = 10, timeUnit = MILLISECONDS)
     @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
     @Rate(permits = 10, timeUnit = MILLISECONDS)
-    @RateGroup(name = "Fire", operator = Operator.AND)
+    @RateGroup(operator = Operator.AND)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
-    public @interface ClassWithClassAnnotationsGroup { }
+    public @interface GroupAnnotationWithoutName { }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
@@ -81,8 +81,8 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
         @Rate(permits = 10, timeUnit = MILLISECONDS)
         public class ClassGroupOnlyAnon { }
 
-        @ClassWithClassAnnotationsGroup
-        public class ClassGroupOnlyNamedFire { }
+        @GroupAnnotationWithoutName
+        public class ClassGroupOnly_GroupAnnotationWithoutName { }
 
         public class ClassWithInternalClass {
             @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
@@ -94,8 +94,8 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
         @GroupAnnotationsOnlyGroup
         public class GroupAnnotationOnly { }
 
-        @ClassWithClassAnnotationsGroup
-        public class SecondClassGroupOnlyNamedFire { }
+        @GroupAnnotationWithoutName
+        public class SecondClassGroupOnly_GroupAnnotationWithoutName { }
 
         @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)
         @Rate(permits = 10, timeUnit = MILLISECONDS)
@@ -109,7 +109,7 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
             void anon() { }
         }
 
-        @ClassWithClassAnnotationsGroup
-        void fire() { }
+        @GroupAnnotationWithoutName
+        void methodGroupOnly_groupAnnotationWithoutName() { }
     }
 }

@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -75,7 +76,7 @@ public final class ElementId {
         // If the source contains a @RateGroup, then it is an annotation type
         //
         final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
-        final String nameFromGroup = getSpecifiedId(rateGroup);
+        final String nameFromGroup = getSpecifiedId(source, rateGroup);
         if (StringUtils.hasText(nameFromGroup)) {
             return nameFromGroup;
         }
@@ -83,13 +84,24 @@ public final class ElementId {
         return getSpecifiedId(source, rates);
     }
 
-    private static String getSpecifiedId(RateGroup rateGroup) {
+    private static String getSpecifiedId(AnnotatedElement source, RateGroup rateGroup) {
         if (rateGroup == null) {
             return "";
         }
         return Arrays.stream(new String[]{rateGroup.value(), rateGroup.name()})
                 .filter(StringUtils::hasText)
-                .findAny().orElse("");
+                .findAny().orElse(getName(source));
+    }
+
+    private static String getName(AnnotatedElement source) {
+        if (source instanceof Class) {
+            return ((Class)source).getSimpleName();
+        } else if (source instanceof Method) {
+            Method method = (Method)source;
+            return getName(method.getDeclaringClass()) + '#' + method.getName();
+        } else {
+            return "";
+        }
     }
 
     private static String getSpecifiedId(AnnotatedElement source, Rate [] rates) {
