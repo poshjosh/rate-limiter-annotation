@@ -1,13 +1,14 @@
 package io.github.poshjosh.ratelimiter.performance;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.Duration;
 import java.util.Objects;
-
-import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 public final class Usage {
 
     public static Usage bookmark() {
-        return of(System.currentTimeMillis(), MemoryUtil.availableMemory());
+        return of(System.currentTimeMillis(), availableMemory());
     }
     public static Usage of(long duration, long memory) {
         return new Usage(duration, memory);
@@ -16,17 +17,17 @@ public final class Usage {
     private final long duration;
     private final long memory;
 
-    public Usage(long duration, long memory) {
+    private Usage(long duration, long memory) {
         this.duration = duration;
         this.memory = memory;
     }
 
-    public void assertUsageLessThan(Usage limit) {
-        Usage usage = usage();
-        System.out.printf("Spent %s", DurationText.of(usage.getDuration()));
-        System.out.printf(", %s", ByteText.of(usage.getMemory()));
-        assertThat(usage.getDuration()).isLessThanOrEqualTo(limit.getDuration());
-        assertThat(usage.getMemory()).isLessThanOrEqualTo(limit.getMemory());
+    public Usage current() {
+        return new Usage(System.currentTimeMillis() - duration, usedMemory(memory));
+    }
+
+    public boolean isAnyUsageGreaterThan(Usage other) {
+        return duration > other.getDuration() || memory > other.getMemory();
     }
 
     public long getDuration() {
@@ -36,8 +37,18 @@ public final class Usage {
         return memory;
     }
 
-    public Usage usage() {
-        return new Usage(System.currentTimeMillis() - duration, MemoryUtil.usedMemory(memory));
+    private static final Runtime runtime = Runtime.getRuntime();
+    private static long usedMemory(long bookmarkMemory) {
+        return bookmarkMemory - availableMemory();
+    }
+    private static long availableMemory() {
+        final long max = runtime.maxMemory(); // Max heap VM can use e.g. Xmx setting
+        return max - usedMemory(); // available memory i.e. Maximum heap size minus the bookmark amount used
+    }
+    private static long usedMemory() {
+        final long total = runtime.totalMemory(); // bookmark heap allocated to the VM process
+        final long free = runtime.freeMemory(); // out of the bookmark heap, how much is free
+        return total - free; // how much of the bookmark heap the VM is using
     }
 
     @Override
@@ -57,48 +68,54 @@ public final class Usage {
 
     @Override
     public String toString() {
-        return "Usage{duration=" + duration + ", memory=" + memory + '}';
+        return "Usage{duration=" + Duration.ofMillis(duration) + ", memory=" + ByteText.of(memory) + '}';
     }
 
     private static final class ByteText {
         private ByteText() { }
         public static String of(long amount) {
-            final String sign = amount < 0 ? "-" : "";
+            return of(amount, 3);
+        }
+        public static String of(long amount, int scale) {
             amount = Math.abs(amount);
-            final int oneGB = 1_000_000_000;
-            if (amount >= oneGB) {
-                return sign + (amount / oneGB) + " GB";
+            int divisor = 1_000_000_000;
+            if (amount >= divisor) {
+                return print(amount, divisor, scale);
             }
-            final int oneMB = oneGB / 1000;
-            if (amount >= oneMB) {
-                return sign + (amount / oneMB) + " MB";
+            divisor = divisor / 1000;
+            if (amount >= divisor) {
+                return print(amount, divisor, scale);
             }
-            final int oneKB = oneMB / 1000;
-            if (amount >= oneKB) {
-                return sign + (amount / oneKB) + " KB";
+            divisor = divisor / 1000;
+            if (amount >= divisor) {
+                return print(amount, divisor, scale);
             }
-            return  sign + amount + " bytes";
+            return  print(amount, 1, scale);
         }
     }
 
-    private static final class DurationText {
-        private DurationText() { }
-        public static String of(long time) {
-            final String sign = time < 0 ? "-" : "";
-            time = Math.abs(time);
-            final int oneHr = 60 * 60 * 1000;
-            if (time >= oneHr) {
-                return sign + (time / oneHr) + " hr";
-            }
-            final int oneMin = oneHr / 60;
-            if (time >= oneMin) {
-                return sign + (time / oneMin) + " min";
-            }
-            final int oneSec = oneMin / 60;
-            if (time >= oneSec) {
-                return sign + (time / oneSec) + " sec";
-            }
-            return  sign + time + " millis";
+    private static String print(long dividend, int divisor, int scale) {
+        BigDecimal value = divide(dividend, divisor, scale);
+        return (dividend < 0 ? "-" : "") + value + getSymbol(scale);
+    }
+
+    private static BigDecimal divide(long dividend, int divisor, int scale) {
+        if (dividend == 0) {
+            return BigDecimal.ZERO;
+        }
+        if (divisor == 1) {
+            return BigDecimal.valueOf(dividend).setScale(scale, RoundingMode.CEILING);
+        }
+        return BigDecimal.valueOf(dividend).divide(BigDecimal.valueOf(divisor))
+                .setScale(scale, RoundingMode.CEILING);
+    }
+
+    private static String getSymbol(int scale) {
+        switch (scale) {
+        case 1_000_000_000: return "GB";
+        case 1_000_000: return "MB";
+        case 1_000: return "KB";
+        default: return "B";
         }
     }
 }

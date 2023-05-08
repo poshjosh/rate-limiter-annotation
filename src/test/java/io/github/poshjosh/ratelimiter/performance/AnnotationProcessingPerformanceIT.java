@@ -7,7 +7,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AnnotationProcessingPerformanceIT {
 
@@ -15,7 +17,7 @@ class AnnotationProcessingPerformanceIT {
     void annotationProcessShouldConsumeLimitedTimeAndMemory() {
 
         // Do not use log level debug/trace, as tests may fail
-        Usage bookmark = Usage.bookmark();
+        Usage usageBookmark = Usage.bookmark();
 
         // This package contains 100 randomly rate limited classes
         final String packageName = "io.github.poshjosh.ratelimiter.performance.dummyclasses";
@@ -28,6 +30,11 @@ class AnnotationProcessingPerformanceIT {
 
         final int size = classList.size();
 
-        bookmark.assertUsageLessThan(Usage.of(size * 4, size * 350_000));
+        Usage currentUsage = usageBookmark.current();
+        System.out.println(currentUsage);
+        Usage usageLimit = Usage.of(size * 4, size * 350_000);
+        assertFalse(currentUsage.isAnyUsageGreaterThan(usageLimit),
+                "Usage should be less or equal to limit, but was not.\nUsage: " +
+                        currentUsage + "\nLimit: " + usageLimit);
     }
 }

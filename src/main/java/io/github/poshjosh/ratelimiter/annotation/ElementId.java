@@ -4,7 +4,6 @@ import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -66,7 +65,8 @@ public final class ElementId {
         final int indexOfClassName = methodString.indexOf(method.getDeclaringClass().getName());
         if(indexOfClassName == -1) {
             // Should not happen
-            throw new AssertionError("Method#toString() does not contain the method's declaring class name as expected. Method: " + method);
+            throw new AssertionError(
+                    "Method#toString() does not contain the method's declaring class name as expected. Method: " + method);
         }
         return methodString.substring(indexOfClassName);
     }
