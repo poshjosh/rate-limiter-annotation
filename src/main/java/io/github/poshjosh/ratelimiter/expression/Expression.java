@@ -4,15 +4,6 @@ public interface Expression<T> {
     Expression<Object> TRUE = of(null, Operator.EQUALS, null);
     Expression<Object> FALSE = TRUE.flipOperator();
 
-    @SuppressWarnings("unchecked")
-    static <T> Expression<T> ofTrue() {
-        return (Expression<T>)TRUE;
-    }
-    public @SuppressWarnings("unchecked")
-    static <T> Expression<T> ofFalse() {
-        return (Expression<T>)FALSE;
-    }
-
     static Expression<String> of(String expression) {
         final String [] parts = Splitter.ofExpression().split(expression);
         return of(parts[0], parts[1], parts[2]);
