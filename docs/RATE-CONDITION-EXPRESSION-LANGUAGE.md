@@ -2,35 +2,49 @@
 
 A language for expressing the condition for rate limiting.
 
-An expression is of format `LHS` `OPERATOR` `RHS` e.g `jvm.thread.count>99`
+### Format
 
-`LHS` = `jvm.thread.count`,
-`OPERATOR` = `>`,
-`RHS` = `99`
+An expression is of format `LHS` `OPERATOR` `RHS` e.g `jvm.thread.count.started>99`
 
-Examples:
+`LHS` = `jvm.thread.count`,  `OPERATOR` = `>`,  `RHS` = `99`
+
+| format          | example                                   | description                                             |  
+|-----------------|-------------------------------------------|---------------------------------------------------------|
+| LHS=RHS         | web.request.header=X-RateLimit-Limit      | true, when the X-RateLimit-Limit header exists          |  
+| LHS={key=val}   | web.request.parameter={limited=true}      | true, when request parameter limited equals true        |  
+| LHS=[A!B]       | web.request.user.role=[GUEST!RESTRICTED]  | true, when the user role is either GUEST or RESTRICTED  |
+| LHS=[A&B]       | web.request.user.role=[GUEST&RESTRICTED]  | true, when the user role is either GUEST and RESTRICTED |
+| LHS={key=[A!B]} | web.request.header={name=[val_0!val_1]}   | true, when either val_0 or val_1 is set a header        |  
+| LHS={key=[A&B]} | web.request.header={name=[val_0&val_1]}   | true, when both val_0 and val_1 are set as headers      |  
+
+__Note:__ `|` equals OR. `!` is used above for OR because markdown does not support `|` in tables
+
+Example:
 
 ```java
 // 5 permits per second when available system memory is less than 1 giga byte
-@Rate(5)
-@RateCondition("sys.memory.available<1GB")
+@Rate(permits = 5, when = "sys.memory.available<500MB")
 class Resource{ }
 ```
 
 ### jvm.thread
 
-| name                                  | description |
-|---------------------------------------|-------------|
-| `jvm.thread.count`                    |             |
-| `jvm.thread.count.daemon`             |             |  
-| `jvm.thread.count.deadlocked`         |             |
-| `jvm.thread.count.deadlocked.monitor` |             |
-| `jvm.thread.count.peak`               |             |
-| `jvm.thread.count.started`            |             |
-| `jvm.thread.current.count.blocked`    |             |
-|  `jvm.thread.current.count.waited`    |             |
+| name                                   | description |
+|----------------------------------------|-------------|
+| `jvm.thread.count`                     |             |
+| `jvm.thread.count.daemon`              |             |  
+| `jvm.thread.count.deadlocked`          |             |
+| `jvm.thread.count.deadlocked.monitor`  |             |
+| `jvm.thread.count.peak`                |             |
+| `jvm.thread.count.started`             |             |
+| `jvm.thread.current.count.blocked`     |             |
+| `jvm.thread.current.count.waited`      |             |
 
 __jvm.thread(.current).count__ supported format `digits` e.g `128`, `9`
+
+| name                    | description                                   |
+|-------------------------|-----------------------------------------------|
+| `jvm.thread.current.id` | The id of the thread in digits e.g `128`, `9` |
 
 | name                           | description                                            |
 |--------------------------------|--------------------------------------------------------|
@@ -63,13 +77,13 @@ examples of this format
 
 Support must be provided for the expression. Support is provided by default for the following:
 
-| name                   | description                                                                      |
-|------------------------|----------------------------------------------------------------------------------|
-| `sys.memory.available` | (_available memory in the JVM i.e. Maximum heap size (`Xmx`) minus used memory_) | 
-| `sys.memory.free`      | (_amount of free memory in the JVM_)                                             |                                     
-| `sys.memory.max`       | (_max amount of memory that the JVM will attempt to use_)                        |                      
-| `sys.memory.total`     | (_total amount of memory in the JVM_)                                            |
-|  `sys.memory.used`     | (_total minus free memory_)                                                      |
+| name                    | description                                                                      |
+|-------------------------|----------------------------------------------------------------------------------|
+| `sys.memory.available`  | (_available memory in the JVM i.e. Maximum heap size (`Xmx`) minus used memory_) | 
+| `sys.memory.free`       | (_amount of free memory in the JVM_)                                             |                                     
+| `sys.memory.max`        | (_max amount of memory that the JVM will attempt to use_)                        |                      
+| `sys.memory.total`      | (_total amount of memory in the JVM_)                                            |
+| `sys.memory.used`       | (_total minus free memory_)                                                      |
 
 __sys.memory__ supported input formats: `digits`, `digits[B|KB|MB|GB|TB|PB|EB|ZB|YB]` 
 e.g `1000000`, `1_000_000`, `1GB`, `1gb`
@@ -85,7 +99,7 @@ e.g `1000000`, `1_000_000`, `1GB`, `1gb`
 | name                | description                              |
 |---------------------|------------------------------------------|
 | `sys.time`          | (_local date time_)                      |
-|  `sys.time.elapsed` | (_time elapsed since application start_) |
+| `sys.time.elapsed`  | (_time elapsed since application start_) |
 
 __sys.time__ supported input formats: ISO-8601 Time formats:
 `uuuu-MM-dd'T'HH:mm`

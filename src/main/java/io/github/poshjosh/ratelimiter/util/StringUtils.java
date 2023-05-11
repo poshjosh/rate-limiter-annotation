@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.util;
 
 public final class StringUtils {
     private StringUtils() { }
+
     public static boolean hasText(String str) {
         return (str != null && !str.isEmpty() && containsText(str));
     }

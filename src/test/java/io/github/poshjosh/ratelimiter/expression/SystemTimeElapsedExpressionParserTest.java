@@ -11,6 +11,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SystemTimeElapsedExpressionParserTest {
 
+    private final ExpressionParser<Object, Long> expressionParser = ExpressionParser.ofSystemTimeElapsed();
+
     @Test
     void a() {
         System.out.println(Duration.ofHours(1).toMillis());
@@ -19,13 +21,12 @@ class SystemTimeElapsedExpressionParserTest {
 
     @Test
     void shouldSupport() {
-        assertTrue(ExpressionParser.ofSystemTimeElapsed().isSupported(
-                SystemTimeElapsedExpressionParser.TIME_ELAPSED+"="));
+        assertTrue(expressionParser.isSupported(SystemTimeElapsedExpressionParser.TIME_ELAPSED+"="));
     }
 
     @Test
     void shouldNotSupport() {
-        assertFalse(ExpressionParser.ofSystemTimeElapsed().isSupported("sys.memory="));
+        assertFalse(expressionParser.isSupported("sys.memory="));
     }
 
     @ParameterizedTest
@@ -35,13 +36,13 @@ class SystemTimeElapsedExpressionParserTest {
             SystemTimeElapsedExpressionParser.TIME_ELAPSED+"<PT24H",
     })
     void shouldSucceed_givenValidExpression(String value) {
-        ExpressionParser.ofSystemTimeElapsed().parse(this, Expression.of(value));
+        expressionParser.parse(System.currentTimeMillis(), Expression.of(value));
     }
 
     @ParameterizedTest
     @ArgumentsSource(InvalidExpressionArgumentsProvider.class)
     void shouldFail_givenInvalidExpression(String value) {
       assertThrows(RuntimeException.class, () -> 
-              ExpressionParser.ofSystemTimeElapsed().parse(this, Expression.of(value)));
+              expressionParser.parse(System.currentTimeMillis(), Expression.of(value)));
     }
 }

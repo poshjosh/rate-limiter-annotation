@@ -5,7 +5,7 @@ public interface Expression<T> {
     Expression<Object> FALSE = TRUE.flipOperator();
 
     static Expression<String> of(String expression) {
-        final String [] parts = Splitter.ofExpression().split(expression);
+        final String [] parts = Splitter.EXPRESSION_SPLITTER.split(expression);
         return of(parts[0], parts[1], parts[2]);
     }
     static <T> Expression<T> of(T left, String operator, T right) {

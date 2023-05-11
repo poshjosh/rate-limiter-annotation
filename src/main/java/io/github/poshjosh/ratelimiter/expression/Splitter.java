@@ -21,11 +21,7 @@ class Splitter {
         }
     }
 
-    static Splitter ofExpression() { return new ExpressionSplitter(); }
-
-    static Splitter of(Pattern pattern) {
-        return new Splitter(pattern);
-    }
+    static Splitter EXPRESSION_SPLITTER = new ExpressionSplitter();
 
     private final Pattern pattern;
 

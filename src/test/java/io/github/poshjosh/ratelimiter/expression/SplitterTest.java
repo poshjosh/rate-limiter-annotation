@@ -8,7 +8,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class SplitterTest {
 
-    private final Splitter splitter = Splitter.ofExpression();
+    private final Splitter splitter = Splitter.EXPRESSION_SPLITTER;
 
     @ParameterizedTest
     @CsvSource({
@@ -33,6 +33,6 @@ class SplitterTest {
             "1_000"
     })
     void testInValidExpressions(String expression) {
-        assertThrows(RuntimeException.class, () -> Splitter.ofExpression().split(expression));
+        assertThrows(RuntimeException.class, () -> splitter.split(expression));
     }
 }

@@ -37,7 +37,7 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
 
     private Matcher<R> createMatcher(String node, String expression) {
         Matcher<R> matcher = new NodeNameMatcher<>(node);
-        return createMatcher(expression).map(matcher::andThen).orElse(matcher);
+        return createMatcher(expression).map(matcher::and).orElse(matcher);
     }
 
     private List<Matcher<R>> createMatchers(Rates rates) {
@@ -48,14 +48,7 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
     }
 
     private Optional<Matcher<R>> createMatcher(String expression) {
-        if (!StringUtils.hasText(expression)) {
-            return Optional.empty();
-        }
-        if (expressionMatcher.isSupported(expression)) {
-            return Optional.of(expressionMatcher.with(expression));
-        }
-        throw new UnsupportedOperationException(
-                expressionMatcher.getClass().getSimpleName() + " does not support: " + expression);
+        return expressionMatcher.matcher(expression);
     }
 
     @Override public String toString() {

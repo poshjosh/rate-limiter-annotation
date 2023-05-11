@@ -9,7 +9,6 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.GenericDeclaration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -93,16 +92,10 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
     @Override
     public boolean tryConsume(R key, int permits, long timeout, TimeUnit unit) {
-        Function<Node<LimiterConfig<R>>, VisitResult> consumePermits =
-                node -> startVisit(key, permits, timeout, unit, node);
-        return visitNodes(consumePermits);
-    }
-
-    private boolean visitNodes(Function<Node<LimiterConfig<R>>, VisitResult> visitor) {
 
         for(Node<LimiterConfig<R>> node : leafNodes) {
 
-            final VisitResult result = visitor.apply(node);
+            final VisitResult result = startVisit(key, permits, timeout, unit, node);
 
             LOG.trace("Result: {}, node: {}", result, node.getName());
 
@@ -198,8 +191,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     }
 
     private boolean isGenericDeclarationSource(LimiterConfig<R> config) {
-        final Object source = config.getSource().getSource();
-        return source instanceof GenericDeclaration;
+        return config.getSource().getSource() instanceof GenericDeclaration;
     }
 
     private VisitResult resolve(VisitResult result, VisitResult parentResult) {

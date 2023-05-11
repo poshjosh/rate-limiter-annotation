@@ -15,6 +15,7 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
     public static final String COUNT_STARTED = "jvm.thread.count.started";
     public static final String CURRENT_COUNT_BLOCKED = "jvm.thread.current.count.blocked";
     public static final String CURRENT_COUNT_WAITED = "jvm.thread.current.count.waited";
+    public static final String CURRENT_ID = "jvm.thread.current.id";
     public static final String CURRENT_STATE = "jvm.thread.current.state";
     public static final String CURRENT_SUSPENDED = "jvm.thread.current.suspended";
     public static final String CURRENT_TIME_BLOCKED = "jvm.thread.current.time.blocked";
@@ -38,6 +39,7 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
             case COUNT_STARTED:
             case CURRENT_COUNT_BLOCKED:
             case CURRENT_COUNT_WAITED:
+            case CURRENT_ID:
             case CURRENT_TIME_BLOCKED:
             case CURRENT_TIME_CPU:
             case CURRENT_TIME_USER:
@@ -69,21 +71,23 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
             case COUNT_STARTED:
                 return expression.with(threadMXBean.getTotalStartedThreadCount(), right);
             case CURRENT_COUNT_BLOCKED:
-                return expression.with(threadInfo().getBlockedCount(), right);
+                return expression.with(threadInfo(source).getBlockedCount(), right);
             case CURRENT_COUNT_WAITED:
-                return expression.with(threadInfo().getWaitedCount(), right);
+                return expression.with(threadInfo(source).getWaitedCount(), right);
+            case CURRENT_ID:
+                return expression.with(getThreadId(source), right);
             case CURRENT_STATE:
-                return expression.with(threadInfo().getThreadState(), right);
+                return expression.with(threadInfo(source).getThreadState(), right);
             case CURRENT_SUSPENDED:
-                return expression.with(threadInfo().isSuspended(), right);
+                return expression.with(threadInfo(source).isSuspended(), right);
             case CURRENT_TIME_BLOCKED:
-                return expression.with(threadInfo().getBlockedTime(), right);
+                return expression.with(threadInfo(source).getBlockedTime(), right);
             case CURRENT_TIME_CPU:
-                return expression.with(threadMXBean.getCurrentThreadCpuTime(), right);
+                return expression.with(threadMXBean.getThreadCpuTime(getThreadId(source)), right);
             case CURRENT_TIME_USER:
-                return expression.with(threadMXBean.getCurrentThreadUserTime(), right);
+                return expression.with(threadMXBean.getThreadUserTime(getThreadId(source)), right);
             case CURRENT_TIME_WAITED:
-                return expression.with(threadInfo().getWaitedTime(), right);
+                return expression.with(threadInfo(source).getWaitedTime(), right);
             default:
                 throw Checks.notSupported(this, lhs);
         }
@@ -93,8 +97,22 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
         return array == null ? 0 : array.length;
     }
 
-    private ThreadInfo threadInfo() {
-        return threadMXBean.getThreadInfo(Thread.currentThread().getId());
+    private ThreadInfo threadInfo(S source) {
+        return threadMXBean.getThreadInfo(getThreadId(source));
+    }
+
+    private long getThreadId(S source) {
+        if (source instanceof Long) {
+            return (Long)source;
+        }
+        if (source instanceof String) {
+            try {
+                return Long.parseLong((String)source);
+            } catch(NumberFormatException e) {
+                return Thread.currentThread().getId();
+            }
+        }
+        return Thread.currentThread().getId();
     }
 
     private Object right(Expression<String> expression) {
@@ -108,6 +126,7 @@ final class JvmThreadExpressionParser<S> implements ExpressionParser<S, Object> 
             case COUNT_STARTED:
             case CURRENT_COUNT_BLOCKED:
             case CURRENT_COUNT_WAITED:
+            case CURRENT_ID:
                 return Long.parseLong(expression.requireRight());
             case CURRENT_STATE:
                 return Thread.State.valueOf(expression.requireRight());

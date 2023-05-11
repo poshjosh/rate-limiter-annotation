@@ -45,19 +45,56 @@ public interface Matcher<I> {
      * @return a composed {@code Matcher}
      * @throws NullPointerException if {@code after} is null
      */
-    default Matcher<I> andThen(Matcher<? super I> after) {
+    default Matcher<I> and(Matcher<? super I> after) {
         Objects.requireNonNull(after);
         return (I t) -> {
             final String result = match(t);
             // If there was no match, do not continue
-            if(!Matcher.isMatch(result)) {
-                return result;
+            if(!isMatch(result)) {
+                return NO_MATCH;
             }
             final String afterResult = after.match(t);
-            if(!Matcher.isMatch(afterResult)) {
-                return afterResult;
+            if(!isMatch(afterResult)) {
+                return NO_MATCH;
             }
             return composeResults(result, afterResult);
+        };
+    }
+
+    /**
+     * Returns a composed {@code Matcher} that returns a match result composed of the results
+     * of successful matchers.
+     *
+     * <p>Compose a {@code Matcher} that performs, in sequence, this operation followed by the
+     * {@code after} operation. If performing either operation throws an exception, it is relayed
+     * to the caller of the composed operation. If performing this operation throws an exception,
+     * the {@code after} operation will not be performed. If no exceptions are throw, then both
+     * operations will be called. However, only the result of successful operations will be returned.
+     *
+     * @param after the after operation to perform
+     * @return a composed {@code Matcher}
+     * @throws NullPointerException if {@code after} is null
+     */
+    default Matcher<I> or(Matcher<? super I> after) {
+        Objects.requireNonNull(after);
+        return (I t) -> {
+            final String result = match(t);
+            final boolean resultMatch = isMatch(result);
+            final String afterResult = after.match(t);
+            final boolean afterResultMatch = isMatch(afterResult);
+            if (resultMatch) {
+                if (afterResultMatch) {
+                    return composeResults(result, afterResult);
+                } else {
+                    return result;
+                }
+            } else {
+                if (afterResultMatch) {
+                    return afterResult;
+                } else {
+                    return NO_MATCH;
+                }
+            }
         };
     }
 }

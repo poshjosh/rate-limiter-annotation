@@ -69,7 +69,7 @@ final class DefaultExpressionMatcher<R, T> implements ExpressionMatcher<R, T> {
     }
 
     @Override
-    public DefaultExpressionMatcher<R, T> with(Expression<String> expression) {
+    public DefaultExpressionMatcher<R, T> matcher(Expression<String> expression) {
         return new DefaultExpressionMatcher<>(expressionParser, expressionResolver, expression);
     }
 

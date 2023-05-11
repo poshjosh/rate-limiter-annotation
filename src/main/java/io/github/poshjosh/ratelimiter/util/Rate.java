@@ -75,6 +75,7 @@ public final class Rate {
      * <p><code>jvm.thread.count.started</code></p>
      * <p><code>jvm.thread.current.count.blocked</code></p>
      * <p><code>jvm.thread.current.count.waited</code></p>
+     * <p><code>jvm.thread.current.id</code></p>
      * <p><code>jvm.thread.current.state</code></p>
      * <p><code>jvm.thread.current.suspended</code></p>
      * <p><code>jvm.thread.current.time.blocked</code></p>

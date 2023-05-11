@@ -3,8 +3,6 @@ package io.github.poshjosh.ratelimiter.expression;
 import java.util.Locale;
 
 final class SystemMemoryExpressionParser<S> implements ExpressionParser<S, Long> {
-    
-    private static final long MEMORY_AVAILABLE_AT_STARTUP = MemoryUtil.availableMemory();
 
     public static final String MEMORY_AVAILABLE = "sys.memory.available";
     public static final String MEMORY_FREE = "sys.memory.free";
@@ -45,7 +43,7 @@ final class SystemMemoryExpressionParser<S> implements ExpressionParser<S, Long>
             case MEMORY_TOTAL:
                 return expression.with(Runtime.getRuntime().totalMemory(), right(expression));
             case MEMORY_USED:
-                return expression.with(MemoryUtil.usedMemory(MEMORY_AVAILABLE_AT_STARTUP), right(expression));
+                return expression.with(MemoryUtil.usedMemory(), right(expression));
             default:
                 throw Checks.notSupported(this, lhs);
         }

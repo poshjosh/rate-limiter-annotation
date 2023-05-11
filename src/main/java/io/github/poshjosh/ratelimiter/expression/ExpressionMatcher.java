@@ -1,18 +1,22 @@
 package io.github.poshjosh.ratelimiter.expression;
 
+import io.github.poshjosh.ratelimiter.Operator;
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Optional;
 
 public interface ExpressionMatcher<R, T> extends Matcher<R> {
 
     ExpressionMatcher<Object, Object> MATCH_NONE = new ExpressionMatcher<Object, Object>() {
         @Override public String match(Object request) { return Matcher.NO_MATCH; }
-        @Override public ExpressionMatcher<Object, Object> with(Expression<String> expression) {
+        @Override public ExpressionMatcher<Object, Object> matcher(Expression<String> expression) {
             return this;
         }
         @Override public boolean isSupported(Expression<String> expression) {
-            return false;
+            return true;
         }
     };
 
@@ -22,12 +26,12 @@ public interface ExpressionMatcher<R, T> extends Matcher<R> {
     }
 
     static <R> ExpressionMatcher<R, Object> ofDefault() {
-        return of(ofSystemMemory(), ofSystemTime(), ofSystemTimeElapsed(),
+        return any(ofSystemMemory(), ofSystemTime(), ofSystemTimeElapsed(),
                 ofJvmThread(), ofSystemProperty(), ofSystemEnvironment());
     }
 
-    static <R> ExpressionMatcher<R, Object> of(ExpressionMatcher<R, ?>... matchers) {
-        return new ExpressionMatcherComposite<>(matchers);
+    static <R> ExpressionMatcher<R, Object> any(ExpressionMatcher<R, ?>... matchers) {
+        return new AnyExpressionMatcher<>(matchers);
     }
 
     static <R> ExpressionMatcher<R, Long> ofSystemMemory() {
@@ -83,15 +87,51 @@ public interface ExpressionMatcher<R, T> extends Matcher<R> {
 
     @Override String match(R request);
 
-    default ExpressionMatcher<R, T> with(String expression) {
-        return with(Expression.of(expression));
-    }
-
-    ExpressionMatcher<R, T> with(Expression<String> expression);
-
-    default boolean isSupported(String expression) {
-        return isSupported(Expression.of(expression));
-    }
+    ExpressionMatcher<R, T> matcher(Expression<String> expression);
 
     boolean isSupported(Expression<String> expression);
+
+    default Optional<Matcher<R>> matcher(String text) {
+        if (!StringUtils.hasText(text)) {
+            return Optional.empty();
+        }
+        String [] parts = MatcherUtil.splitIntoExpressionsAndConjunctors(text);
+        if (parts.length == 0) {
+            return Optional.empty();
+        }
+        Matcher<R> result = null;
+        Operator operator = Operator.NONE;
+        for (int i = 0; i < parts.length; i++) {
+            final String part = parts[i];
+            if (i % 2 == 0) {
+                final Matcher<R> matcher;
+                if (!StringUtils.hasText(part)) {
+                    matcher = null;
+                } else {
+                    Expression<String> expression = Expression.of(part);
+                    if (isSupported(expression)) {
+                        matcher = matcher(expression);
+                    } else {
+                        throw Checks.notSupported(this, "expression: " + part);
+                    }
+                }
+                if (result == null) {
+                    result = matcher;
+                } else {
+                    switch(operator) {
+                        case AND:
+                            result = result.and(matcher); break;
+                        case OR:
+                            result = result.or(matcher); break;
+                        case NONE:
+                        default:
+                            throw Checks.notSupported(this, "operator: " + operator);
+                    }
+                }
+            } else {
+                operator = Operator.ofSymbol(parts[i]);
+            }
+        }
+        return Optional.ofNullable(result);
+    }
 }
