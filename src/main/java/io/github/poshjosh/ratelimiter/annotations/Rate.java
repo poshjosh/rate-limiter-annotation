@@ -27,6 +27,8 @@ public @interface Rate {
     /**
      * Holds an expression which specifies the condition for rate limiting.
      *
+     * <p>Alias for {@link #when()}</p>
+     *
      * May be any supported string for example:
      *
      * <p><code>sys.memory.available<1_000_000_000</code></p>
@@ -71,7 +73,14 @@ public @interface Rate {
      * !  not (e.g !=, !>, !$ etc)
      * </pre>
      *
+     * @see #when()
      * @see io.github.poshjosh.ratelimiter.expression.ExpressionResolver
+     */
+    String condition() default "";
+
+    /**
+     * Alias for {@link #condition()}
+     * @see #condition()
      */
     String when() default "";
 

@@ -35,7 +35,7 @@ class AnnotationConverterTest {
         assertEquals("", rates.getRateCondition());
     }
 
-    @Rate(permits=7, duration=2, timeUnit=TimeUnit.MINUTES, when="sys.memory.free>0")
+    @Rate(permits=7, duration=2, timeUnit=TimeUnit.MINUTES, condition="sys.memory.free>0")
     static class ClassWithSingleRate {}
 
     @Test
@@ -56,7 +56,7 @@ class AnnotationConverterTest {
     public @interface CustomRateGroup { }
 
     @Rate(1)
-    @Rate(permits=5, when="sys.time.elapsed>PT0S")
+    @Rate(permits=5, condition="sys.time.elapsed>PT0S")
     @RateCondition("sys.memory.free<0")
     @CustomRateGroup
     static class ClassWith2Rates {}

@@ -47,7 +47,7 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
         }
         // Tag:Rule:Operator-may-not-be-specified-when-multiple-rate-conditions-are-specified
         for (Rate rate : rates) {
-            if (StringUtils.hasText(rate.when())) {
+            if (StringUtils.hasText(rate.condition()) || StringUtils.hasText(rate.when())) {
                 throw new AnnotationProcessingException(
                         "Operator may not be specified, when multiple rate conditions are specified; at: " + source);
             }
@@ -69,14 +69,15 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
         return rateGroup == null ? Operator.NONE : rateGroup.operator();
     }
 
-    protected io.github.poshjosh.ratelimiter.util.Rate convert(Rate rate) {
-        final long value = rate.value() == Long.MAX_VALUE ? rate.permits() : rate.value();
+    private io.github.poshjosh.ratelimiter.util.Rate convert(Rate rate) {
+        long value = rate.value() == Long.MAX_VALUE ? rate.permits() : rate.value();
         Duration duration = Duration.of(rate.duration(), toChronoUnit(rate.timeUnit()));
+        String condition = StringUtils.hasText(rate.condition()) ? rate.condition() : rate.when();
         return io.github.poshjosh.ratelimiter.util.Rate
-                .of(value, duration, rate.when(), rate.factoryClass());
+                .of(value, duration, condition, rate.factoryClass());
     }
 
-    protected ChronoUnit toChronoUnit(TimeUnit timeUnit) {
+    private ChronoUnit toChronoUnit(TimeUnit timeUnit) {
         Objects.requireNonNull(timeUnit);
         if (TimeUnit.NANOSECONDS.equals(timeUnit)) {
             return ChronoUnit.NANOS;
