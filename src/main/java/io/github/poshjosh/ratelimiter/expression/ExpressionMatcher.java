@@ -95,7 +95,7 @@ public interface ExpressionMatcher<R, T> extends Matcher<R> {
         if (!StringUtils.hasText(text)) {
             return Optional.empty();
         }
-        String [] parts = MatcherUtil.splitIntoExpressionsAndConjunctors(text);
+        String [] parts = Splitter.splitIntoExpressionsAndConjunctors(text);
         if (parts.length == 0) {
             return Optional.empty();
         }
