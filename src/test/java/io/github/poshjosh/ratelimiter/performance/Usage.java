@@ -96,7 +96,7 @@ public final class Usage {
 
     private static String print(long dividend, int divisor, int scale) {
         BigDecimal value = divide(dividend, divisor, scale);
-        return (dividend < 0 ? "-" : "") + value + getSymbol(scale);
+        return (dividend < 0 ? "-" : "") + value + getSymbol(divisor);
     }
 
     private static BigDecimal divide(long dividend, int divisor, int scale) {
@@ -110,12 +110,12 @@ public final class Usage {
                 .setScale(scale, RoundingMode.CEILING);
     }
 
-    private static String getSymbol(int scale) {
-        switch (scale) {
-        case 1_000_000_000: return "GB";
-        case 1_000_000: return "MB";
-        case 1_000: return "KB";
-        default: return "B";
+    private static String getSymbol(int factor) {
+        switch (factor) {
+            case 1_000_000_000: return "GB";
+            case 1_000_000: return "MB";
+            case 1_000: return "KB";
+            default: return "B";
         }
     }
 }
