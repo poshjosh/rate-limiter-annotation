@@ -50,7 +50,7 @@ final class DefaultRateLimiterProvider<R, K> implements RateLimiterProvider<R, K
         Bandwidth [] bandwidths = config.getBandwidths();
         if (bandwidths.length == 0) {
             if (index == 0) {
-                return Bandwidth.ALWAYS_AVAILABLE;
+                return Bandwidth.UNLIMITED;
             }
             throw noLimitAtIndex(config, index);
         }
