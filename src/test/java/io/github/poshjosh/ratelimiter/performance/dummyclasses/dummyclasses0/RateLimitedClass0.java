@@ -8,6 +8,8 @@ import java.time.Instant;
 
 @RateGroupA
 public class RateLimitedClass0 {
+    public static final String METHOD_5_KEY = "..performance.dummyclasses.dummyclasses0.RateLimitedClass0#method5";
+    public static final int METHOD_5_LIMIT = 5;
     void method_0() {}
     void $method_1(String sval, Instant instant) {}
     String _method_2(Long lval, Object obj) {
@@ -20,9 +22,18 @@ public class RateLimitedClass0 {
             Object g, Object h, Object i, Object j, Object k, Object l, Object m, Object n,
             Object o, Object p, Object q, Object r, Object s, Object t, Object u, Object v,
             Object w, Object x, Object y, Object z) {
-        return "methodNumber4";
+        String id =  this.getClass().getName() + "methodNumber4";
+        System.out.println(id);
+        return id;
     }
-    
+
+    @Rate(name = METHOD_5_KEY, permits = METHOD_5_LIMIT)
+    public String methodNumber5(String a) {
+        String id =  this.getClass().getName() + "methodNumber5";
+        System.out.println(id);
+        return id;
+    }
+
     private void method_4() {}
     
     private void method_5() {}

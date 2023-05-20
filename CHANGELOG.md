@@ -9,6 +9,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.5.1](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.5.1) ] - 2023-05-20
+
+### Added
+
+- Support composite condition expressions e.g of format `sys.time > X & sys.time < Y`
+- Support expression: `web.request.ip`. An alias `web.request.remote.address`.
+- Added `@Rate#condition`. An alias for `@Rate#when`.
+- Added more performance tests
+
+### Changed
+
+- Renamed `Bandwidth#ALWAYS_AVAILABLE` to `Bandwidth#UNLIMITED`
+- Renamed `sys.memory.` to `jvm.memory.`
+
 ## [ [0.5.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.5.0) ] - 2023-05-01
 
 ### Added

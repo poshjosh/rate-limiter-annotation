@@ -22,8 +22,16 @@ public final class Usage {
         this.memory = memory;
     }
 
+    public Usage divideBy(long amount) {
+        return Usage.of(duration / amount, memory / amount);
+    }
+
+    public Usage multiplyBy(long amount) {
+        return Usage.of(duration * amount, memory * amount);
+    }
+
     public Usage current() {
-        return new Usage(System.currentTimeMillis() - duration, usedMemory(memory));
+        return Usage.of(System.currentTimeMillis() - duration, usedMemory(memory));
     }
 
     public boolean isAnyUsageGreaterThan(Usage other) {

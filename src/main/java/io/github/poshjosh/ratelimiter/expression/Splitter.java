@@ -36,8 +36,8 @@ final class Splitter {
 
 
     /**
-     * Input: <code>"sys.memory.free=2G|sys.time.elapsed=PT9M"</code>
-     * Output: <code>["sys.memory.free=2G", "|", "sys.time.elapsed=PT9M"]</code>
+     * Input: <code>"jvm.memory.free=2G|sys.time.elapsed=PT9M"</code>
+     * Output: <code>["jvm.memory.free=2G", "|", "sys.time.elapsed=PT9M"]</code>
      * @param text The text to split
      * @return The result of splitting the value into expressions and conjunctors.
      */

@@ -13,8 +13,8 @@ class SplitterTest {
     @ParameterizedTest
     @CsvSource({
             "web.invalid.uri,=,/abc?key1=val1",
-            "sys.memory.free,=,1_000",
-            "sys.memory.free,!<=,1_000",
+            "jvm.memory.free,=,1_000",
+            "jvm.memory.free,!<=,1_000",
             "     \tweb.request.user.role ,  !$,  ROLE_ADMIN  "
     })
     void testValidExpressions(String lhs, String operator, String rhs) {

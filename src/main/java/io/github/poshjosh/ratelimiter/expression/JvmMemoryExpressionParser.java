@@ -2,18 +2,18 @@ package io.github.poshjosh.ratelimiter.expression;
 
 import java.util.Locale;
 
-final class SystemMemoryExpressionParser<S> implements ExpressionParser<S, Long> {
+final class JvmMemoryExpressionParser<S> implements ExpressionParser<S, Long> {
 
-    public static final String MEMORY_AVAILABLE = "sys.memory.available";
-    public static final String MEMORY_FREE = "sys.memory.free";
-    public static final String MEMORY_MAX = "sys.memory.max";
-    public static final String MEMORY_TOTAL = "sys.memory.total";
-    public static final String MEMORY_USED = "sys.memory.used";
+    public static final String MEMORY_AVAILABLE = "jvm.memory.available";
+    public static final String MEMORY_FREE = "jvm.memory.free";
+    public static final String MEMORY_MAX = "jvm.memory.max";
+    public static final String MEMORY_TOTAL = "jvm.memory.total";
+    public static final String MEMORY_USED = "jvm.memory.used";
 
     // b has to come before all others, because all others end with b
     private static final String [] SUFFIXES = {"yb", "zb", "eb", "pb", "tb", "gb", "mb", "kb", "b"};
 
-    SystemMemoryExpressionParser() { }
+    JvmMemoryExpressionParser() { }
 
     @Override
     public boolean isSupported(Expression<String> expression) {

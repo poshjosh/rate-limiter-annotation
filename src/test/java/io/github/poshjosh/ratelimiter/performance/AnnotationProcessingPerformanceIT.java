@@ -1,38 +1,90 @@
 package io.github.poshjosh.ratelimiter.performance;
 
 import io.github.poshjosh.ratelimiter.ResourceLimiter;
-import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
+import io.github.poshjosh.ratelimiter.performance.dummyclasses.dummyclasses0.RateLimitedClass0;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collections;
-import java.util.List;
-
+import static io.github.poshjosh.ratelimiter.performance.Helpers.annotatedClasses;
+import static io.github.poshjosh.ratelimiter.performance.Helpers.givenResourceLimiterFrom;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class AnnotationProcessingPerformanceIT {
 
+    //
+    // Do not use log level debug/trace, as tests may fail, due the overhead caused by logging
+    //
+
     @Test
     void annotationProcessShouldConsumeLimitedTimeAndMemory() {
 
-        // Do not use log level debug/trace, as tests may fail
-        Usage usageBookmark = Usage.bookmark();
+        // Generally -> duration = no. of classes x 4,   memory = no. of classes x 350k
+        final Usage usageLimit = Usage.of(412, 36_050_000);
 
-        // This package contains 100 randomly rate limited classes
-        final String packageName = "io.github.poshjosh.ratelimiter.performance.dummyclasses";
+        final Usage usageBookmark = Usage.bookmark();
 
-        final List<Class<?>> classList = ClassesInPackageFinder.ofDefaults()
-                .findClasses(Collections.singletonList(packageName), clazz -> true);
-        assertFalse(classList.isEmpty());
+        givenResourceLimiterFrom(annotatedClasses());
 
-        ResourceLimiter.of(classList.toArray(new Class[0]));
+        final Usage recordedUsage = usageBookmark.current();
 
-        final int size = classList.size();
+        System.out.println("   Recorded " + recordedUsage);
+        System.out.println("Max Allowed " + usageLimit);
 
-        Usage currentUsage = usageBookmark.current();
-        System.out.println(currentUsage);
-        Usage usageLimit = Usage.of(size * 4, size * 350_000);
-        assertFalse(currentUsage.isAnyUsageGreaterThan(usageLimit),
+        assertFalse(recordedUsage.isAnyUsageGreaterThan(usageLimit),
                 "Usage should be less or equal to limit, but was not.\nUsage: " +
-                        currentUsage + "\nLimit: " + usageLimit);
+                        recordedUsage + "\nLimit: " + usageLimit);
+    }
+
+    @Test
+    void resourceLimiting_withInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
+        resourceLimitingShouldConsumeLimitedTimeAndMemory(
+                RateLimitedClass0.METHOD_5_KEY, Usage.of(350, 0), 100, 100
+        );
+    }
+
+    @Test
+    void resourceLimiting_withoutInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
+        resourceLimitingShouldConsumeLimitedTimeAndMemory(
+                RateLimitedClass0.METHOD_5_KEY, Usage.of(50, 3_000_000), 10_000, 0
+        );
+    }
+
+    private void resourceLimitingShouldConsumeLimitedTimeAndMemory(
+            String key, Usage usageLimit, int iterations, int intervalMillis)
+            throws InterruptedException{
+
+        final ResourceLimiter<String> resourceLimiter = givenResourceLimiterFrom(annotatedClasses());
+
+        final Usage usageBookmark = Usage.bookmark();
+
+        int successCount = 0;
+        for (int i = 0; i < iterations; i++) {
+            if(resourceLimiter.tryConsume(key)) {
+                ++successCount;
+            }
+            waitFor(intervalMillis);
+        }
+
+        final int totalIntervalMillis = iterations * intervalMillis;
+        Usage _curr = usageBookmark.current();
+        final Usage recordedUsage = Usage.of(_curr.getDuration() - totalIntervalMillis, _curr.getMemory());
+
+        System.out.println("   Recorded " + recordedUsage + ", success rate: " + successCount + "/" + iterations);
+        System.out.println("Max Allowed " + usageLimit);
+
+        assertFalse(recordedUsage.isAnyUsageGreaterThan(usageLimit),
+                "Usage should be less or equal to limit, but was not.\nUsage: " +
+                        recordedUsage + "\nLimit: " + usageLimit);
+    }
+
+    private void waitFor(long timeoutMillis) throws InterruptedException{
+        if (timeoutMillis < 10) {
+            return;
+        }
+        try {
+            Thread.sleep(timeoutMillis);
+        }catch(InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw e;
+        }
     }
 }

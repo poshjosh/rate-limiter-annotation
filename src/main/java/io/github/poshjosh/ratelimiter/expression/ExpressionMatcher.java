@@ -5,7 +5,6 @@ import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.Optional;
 
 public interface ExpressionMatcher<R, T> extends Matcher<R> {
@@ -37,7 +36,7 @@ public interface ExpressionMatcher<R, T> extends Matcher<R> {
     static <R> ExpressionMatcher<R, Long> ofSystemMemory() {
         return of(ExpressionParser.ofSystemMemory(),
                 ExpressionResolver.ofLong(),
-                SystemMemoryExpressionParser.MEMORY_MAX+"=");
+                JvmMemoryExpressionParser.MEMORY_MAX+"=");
     }
 
     static <R> ExpressionMatcher<R, LocalDateTime> ofSystemTime() {

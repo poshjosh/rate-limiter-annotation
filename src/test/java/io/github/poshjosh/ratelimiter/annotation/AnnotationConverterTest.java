@@ -35,7 +35,7 @@ class AnnotationConverterTest {
         assertEquals("", rates.getRateCondition());
     }
 
-    @Rate(permits=7, duration=2, timeUnit=TimeUnit.MINUTES, condition="sys.memory.free>0")
+    @Rate(permits=7, duration=2, timeUnit=TimeUnit.MINUTES, condition="jvm.memory.free>0")
     static class ClassWithSingleRate {}
 
     @Test
@@ -45,7 +45,7 @@ class AnnotationConverterTest {
         io.github.poshjosh.ratelimiter.util.Rate rate = rates.getLimits().get(0);
         assertEquals(7, rate.getPermits());
         assertEquals(Duration.ofMinutes(2), rate.getDuration());
-        assertEquals("sys.memory.free>0", rate.getRateCondition());
+        assertEquals("jvm.memory.free>0", rate.getRateCondition());
     }
 
     @Rate(2)
@@ -57,7 +57,7 @@ class AnnotationConverterTest {
 
     @Rate(1)
     @Rate(permits=5, condition="sys.time.elapsed>PT0S")
-    @RateCondition("sys.memory.free<0")
+    @RateCondition("jvm.memory.free<0")
     @CustomRateGroup
     static class ClassWith2Rates {}
 
@@ -65,7 +65,7 @@ class AnnotationConverterTest {
     void convert_givenClassWithSomeRates_shouldReturnSameNumberOfRates() {
         Rates rates = annotationConverter.convert(ClassWith2Rates.class);
         assertEquals(2, rates.size());
-        assertEquals("sys.memory.free<0", rates.getRateCondition());
+        assertEquals("jvm.memory.free<0", rates.getRateCondition());
         assertTrue(rates.getLimits().stream()
                 .map(rate -> rate.getRateCondition())
                 .anyMatch("sys.time.elapsed>PT0S"::equals));

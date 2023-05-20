@@ -12,7 +12,7 @@ public interface ExpressionParser<S, T> {
     long TIME_AT_STARTUP = System.currentTimeMillis();
 
     static <S> ExpressionParser<S, Long> ofSystemMemory() {
-        return new SystemMemoryExpressionParser<>();
+        return new JvmMemoryExpressionParser<>();
     }
 
     static <S> ExpressionParser<S, LocalDateTime> ofSystemTime() {

@@ -147,7 +147,7 @@ class ResourceLimiterAnnotationTest {
     }
 
     @Rate(1)
-    @RateCondition("sys.memory.free<1")
+    @RateCondition("jvm.memory.free<1")
     public class RateLimitedClass6{ }
 
     @Test
@@ -158,7 +158,7 @@ class ResourceLimiterAnnotationTest {
         assertTrue(limiter.tryConsume(id));
     }
 
-    @Rate(permits=1, when="sys.memory.free<0")
+    @Rate(permits=1, when="jvm.memory.free<0")
     public class RateLimitedClass6b{ }
 
     @Test

@@ -11,7 +11,7 @@ class RateLimitedResource {
 
     // 2 permits per second only when system free memory is less than 1GB
     @Rate(2) 
-    @RateCondition("sys.memory.free<1GB")
+    @RateCondition("jvm.memory.free<1GB")
     @Path("/greet")
     public String greet(String who) {
         return "Hello " + who;

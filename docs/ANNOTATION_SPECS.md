@@ -11,8 +11,7 @@ import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 
 // 5 permits per second for users in role GUEST
-@Rate(5)  
-@RateCondition("web.request.user.role=GUEST")
+@Rate(permits = 5, condition = "web.request.user.role=GUEST")
 @interface MyRateGroup { }
 ``` 
 You could then use the above annotation for as many classes/methods that apply.
@@ -35,8 +34,7 @@ import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 
 // 1 permit per second when system memory is below 1GB
-@Rate(1) 
-@RateCondition("sys.memory.free<1G")
+@Rate(permits = 1, condition = "jvm.memory.free<1G")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface GuestUserRate { }

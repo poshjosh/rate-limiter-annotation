@@ -22,9 +22,17 @@ __Note:__ `|` equals OR. `!` is used above for OR because markdown does not supp
 Example:
 
 ```java
-// 5 permits per second when available system memory is less than 1 giga byte
-@Rate(permits = 5, when = "sys.memory.available<500MB")
-class Resource{ }
+// 5 permits per second when available system memory is less than 1 GB
+@Rate(permits = 5, when = "jvm.memory.available<1G")
+class ResourceA{ }
+
+class ResourceB{
+    // 2 permits per second when available system memory is less than 1 GB, and user role is GUEST
+    @Rate(permits = 2, when = "jvm.memory.available<1G & web.request.user.role=GUEST")
+    void smile() {
+        return ":)";
+    }
+}
 ```
 
 ### jvm.thread
@@ -79,11 +87,11 @@ Support must be provided for the expression. Support is provided by default for 
 
 | name                    | description                                                                      |
 |-------------------------|----------------------------------------------------------------------------------|
-| `sys.memory.available`  | (_available memory in the JVM i.e. Maximum heap size (`Xmx`) minus used memory_) | 
-| `sys.memory.free`       | (_amount of free memory in the JVM_)                                             |                                     
-| `sys.memory.max`        | (_max amount of memory that the JVM will attempt to use_)                        |                      
-| `sys.memory.total`      | (_total amount of memory in the JVM_)                                            |
-| `sys.memory.used`       | (_total minus free memory_)                                                      |
+| `jvm.memory.available`  | (_available memory in the JVM i.e. Maximum heap size (`Xmx`) minus used memory_) | 
+| `jvm.memory.free`       | (_amount of free memory in the JVM_)                                             |                                     
+| `jvm.memory.max`        | (_max amount of memory that the JVM will attempt to use_)                        |                      
+| `jvm.memory.total`      | (_total amount of memory in the JVM_)                                            |
+| `jvm.memory.used`       | (_total minus free memory_)                                                      |
 
 __sys.memory__ supported input formats: `digits`, `digits[B|KB|MB|GB|TB|PB|EB|ZB|YB]` 
 e.g `1000000`, `1_000_000`, `1GB`, `1gb`
