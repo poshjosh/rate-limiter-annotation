@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.util.Rate;
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthFactory;
+import io.github.poshjosh.ratelimiter.model.Rate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.function.Executable;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -145,8 +146,8 @@ class ResourceLimiterTest {
         assertThrows(RuntimeException.class, executable);
     }
 
-    public <T> ResourceLimiter<T> getResourceLimiter(Rate... limits) {
-        return ResourceLimiter.of(key, limits);
+    public <T> ResourceLimiter<T> getResourceLimiter(Rate limit) {
+        return ResourceLimiter.of(key, limit);
     }
 
     protected Rate getRate(long permits, long durationMillis) {

@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.RateConfig;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 
 import java.lang.reflect.GenericDeclaration;
 import java.util.Arrays;

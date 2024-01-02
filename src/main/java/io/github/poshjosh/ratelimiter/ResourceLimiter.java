@@ -1,7 +1,11 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
-import io.github.poshjosh.ratelimiter.annotation.RateSource;
+import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
+import io.github.poshjosh.ratelimiter.model.Rate;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
+import io.github.poshjosh.ratelimiter.model.RateSource;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.*;
@@ -46,9 +50,14 @@ public interface ResourceLimiter<K> {
         return of(RateProcessor.ofDefaults().processAll(sourceOfRateLimitInfo));
     }
 
-    static <K> ResourceLimiter<K> of(String resourceId, Rate... limits) {
+    static <K> ResourceLimiter<K> of(String resourceId, Rate limit) {
+        return of(resourceId, RateConfig.of(RateSource.of(resourceId, limit != null), Rates.of(limit)));
+    }
+
+    static <K> ResourceLimiter<K> of(String resourceId, Operator operator, Rate... limits) {
         final boolean hasLimits = limits != null && limits.length > 0;
-        return of(resourceId, RateConfig.of(RateSource.of(resourceId, hasLimits), Rates.of(limits)));
+        return of(resourceId, RateConfig.of(RateSource.of(resourceId, hasLimits),
+                Rates.of(operator, limits)));
     }
 
     static <K> ResourceLimiter<K> of(String resourceId, RateConfig rateConfig) {

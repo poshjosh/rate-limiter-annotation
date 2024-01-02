@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.annotations;
 
-import io.github.poshjosh.ratelimiter.BandwidthFactory;
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthFactory;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 
 import java.lang.annotation.*;

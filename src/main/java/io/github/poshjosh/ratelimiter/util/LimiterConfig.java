@@ -1,9 +1,11 @@
 package io.github.poshjosh.ratelimiter.util;
 
-import io.github.poshjosh.ratelimiter.*;
-import io.github.poshjosh.ratelimiter.annotation.RateSource;
+import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +35,8 @@ public final class LimiterConfig<R> {
             matcher = Matcher.matchNone();
             matchers = Collections.emptyList();
         } else {
-            matcher = matcherProvider.createMatcher(rateConfig);
-            matchers = matcherProvider.createMatchers(rateConfig);
+            matcher = matcherProvider.createParentMatcher(rateConfig);
+            matchers = matcherProvider.createChildMatchers(rateConfig);
         }
         return of(rateConfig.getSource(), rates, bandwidths, matcher, matchers, ticker);
     }

@@ -99,7 +99,7 @@ class ResourceLimiterAnnotationTest {
         final String key = "one";
         ResourceLimiter<Object> a = buildRateLimiter(RateLimitedClass5.class);
         ResourceLimiter<Object> b =
-            ResourceLimiter.of(key, io.github.poshjosh.ratelimiter.util.Rate.ofSeconds(1));
+            ResourceLimiter.of(key, io.github.poshjosh.ratelimiter.model.Rate.ofSeconds(1));
         ResourceLimiter<Object> c = a.andThen(b);
         assertTrue(c.tryConsume(key));
         assertFalse(c.tryConsume(key));

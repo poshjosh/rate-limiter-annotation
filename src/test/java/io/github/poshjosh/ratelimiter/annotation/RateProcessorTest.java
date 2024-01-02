@@ -2,7 +2,7 @@ package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.RateConfig;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;

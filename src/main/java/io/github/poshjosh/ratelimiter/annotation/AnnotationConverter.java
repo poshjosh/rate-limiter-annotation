@@ -1,8 +1,7 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.annotations.Rate;
-import io.github.poshjosh.ratelimiter.annotations.RateGroup;
-import io.github.poshjosh.ratelimiter.util.Rates;
+import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericDeclaration;

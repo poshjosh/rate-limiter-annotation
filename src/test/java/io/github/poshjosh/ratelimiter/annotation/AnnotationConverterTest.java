@@ -4,7 +4,7 @@ import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
-import io.github.poshjosh.ratelimiter.util.Rates;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.ElementType;
@@ -42,7 +42,7 @@ class AnnotationConverterTest {
     void convert_givenClassWithSingleRate_shouldReturnMatchingRate() {
         Rates rates = annotationConverter.convert(ClassWithSingleRate.class);
         assertEquals(1, rates.size());
-        io.github.poshjosh.ratelimiter.util.Rate rate = rates.getLimits().get(0);
+        io.github.poshjosh.ratelimiter.model.Rate rate = rates.getLimits().get(0);
         assertEquals(7, rate.getPermits());
         assertEquals(Duration.ofMinutes(2), rate.getDuration());
         assertEquals("jvm.memory.free>0", rate.getRateCondition());

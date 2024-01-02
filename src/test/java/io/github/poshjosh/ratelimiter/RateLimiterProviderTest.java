@@ -1,7 +1,10 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.annotation.RateSource;
+import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
+import io.github.poshjosh.ratelimiter.model.Rate;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.*;
 import org.junit.jupiter.api.Test;
 
@@ -36,7 +39,7 @@ class RateLimiterProviderTest {
     }
 
     private LimiterConfig<Object> getConfigThatHasNoLimits(String name) {
-        return getConfig(name, Rates.of());
+        return getConfig(name, Rates.empty());
     }
 
     private LimiterConfig<Object> getConfig(String name) {
