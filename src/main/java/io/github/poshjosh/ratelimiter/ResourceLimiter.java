@@ -47,7 +47,8 @@ public interface ResourceLimiter<K> {
     }
 
     static <K> ResourceLimiter<K> of(String resourceId, Rate... limits) {
-        return of(resourceId, RateConfig.of(RateSource.of(resourceId), Rates.of(limits)));
+        final boolean hasLimits = limits != null && limits.length > 0;
+        return of(resourceId, RateConfig.of(RateSource.of(resourceId, hasLimits), Rates.of(limits)));
     }
 
     static <K> ResourceLimiter<K> of(String resourceId, RateConfig rateConfig) {

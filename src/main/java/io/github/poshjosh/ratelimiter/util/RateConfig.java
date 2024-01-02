@@ -6,7 +6,11 @@ import java.util.Objects;
 
 public final class RateConfig {
 
-    private static final RateSource NO_SOURCE = RateSource.of("");
+    private static final RateSource NO_SOURCE = RateSource.of("", false);
+
+    public static RateConfig of(long permitsPerSecond, String rateCondition) {
+        return of(Rates.of(Rate.of(permitsPerSecond, rateCondition)));
+    }
 
     public static RateConfig of(Rates value) {
         return new RateConfig(NO_SOURCE, value);

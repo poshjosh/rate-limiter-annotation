@@ -22,7 +22,7 @@ class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Meth
     }
 
     @Override protected RateSource toRateSource(Method element) {
-        return RateSource.of(element);
+        return RateSourceFactory.of(element);
     }
 
     @Override protected Node<RateConfig> getParent(

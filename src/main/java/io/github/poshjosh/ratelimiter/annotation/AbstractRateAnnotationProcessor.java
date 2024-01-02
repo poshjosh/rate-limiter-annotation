@@ -5,7 +5,7 @@ import io.github.poshjosh.ratelimiter.annotation.exceptions.DuplicateNameExcepti
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.Operator;
+import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.util.RateConfig;
 import io.github.poshjosh.ratelimiter.util.Rates;
 import org.slf4j.Logger;
@@ -125,7 +125,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
     private Node<RateConfig> createNodeForGroup(
             Node<RateConfig> root, GenericDeclaration groupSource) {
         final String groupName = groupName(root, groupSource);
-        RateSource rateSource = RateSource.of(groupName, groupSource);
+        RateSource rateSource = RateSourceFactory.of(groupName, groupSource);
         R rates = annotationConverter.convert(groupSource);
         checkRateGroupOperator(rates.getOperator(), rates);
         return Node.of(groupName, RateConfig.of(rateSource, rates), root);

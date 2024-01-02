@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.annotations;
 
-import io.github.poshjosh.ratelimiter.Operator;
+import io.github.poshjosh.ratelimiter.util.Operator;
 
 import java.lang.annotation.*;
 

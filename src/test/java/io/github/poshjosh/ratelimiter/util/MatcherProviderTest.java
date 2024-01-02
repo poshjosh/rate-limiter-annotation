@@ -64,6 +64,6 @@ class MatcherProviderTest {
 
     private RateConfig createRateConfig(String nodeName, String globalCondition, String condition) {
         Rates rates = Rates.of(globalCondition, Rate.of(1, condition));
-        return RateConfig.of(RateSource.of(nodeName), rates);
+        return RateConfig.of(RateSource.of(nodeName, true), rates);
     }
 }

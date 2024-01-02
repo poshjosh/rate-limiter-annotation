@@ -5,7 +5,7 @@ import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import java.util.*;
 import java.util.stream.Collectors;
 
-final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
+final class ExpressionMatcherProvider<R> implements MatcherProvider<R> {
 
     private static final class NodeNameMatcher<T> implements Matcher<T> {
         private final String name;
@@ -22,7 +22,7 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
 
     private final ExpressionMatcher<R, Object> expressionMatcher;
 
-    DefaultMatcherProvider() {
+    ExpressionMatcherProvider() {
         expressionMatcher = ExpressionMatcher.ofDefault();
     }
 
@@ -52,6 +52,6 @@ final class DefaultMatcherProvider<R> implements MatcherProvider<R> {
     }
 
     @Override public String toString() {
-        return "DefaultMatcherProvider{expressionMatcher=" + expressionMatcher + '}';
+        return "ExpressionMatcherProvider{expressionMatcher=" + expressionMatcher + '}';
     }
 }

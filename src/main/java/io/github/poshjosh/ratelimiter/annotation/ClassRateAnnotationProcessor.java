@@ -28,7 +28,7 @@ class ClassRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Class
 
     @Override
     protected RateSource toRateSource(Class<?> element) {
-        return RateSource.of(element);
+        return RateSourceFactory.of(element);
     }
 
     // We override this here so we can process the class and its super classes

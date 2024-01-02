@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.LimiterConfig;
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.Operator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +43,7 @@ import java.util.function.Predicate;
  * In addition to each node's main {@link io.github.poshjosh.ratelimiter.util.Matcher}, ancillary
  * matchers may be defined. Ancillary matching takes effect when there is no composition.
  * Composition is the presence of multiple {@link io.github.poshjosh.ratelimiter.annotations.Rate}
- * annotations composed by an {@link io.github.poshjosh.ratelimiter.Operator} (e.g OR, AND, etc).
+ * annotations composed by an {@link Operator} (e.g OR, AND, etc).
  *
  * A single {@link io.github.poshjosh.ratelimiter.node.Node} is passed to this class. From that node,
  * all the leaf nodes are collected. Every request is used to visit each leaf node. For each

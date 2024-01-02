@@ -45,7 +45,7 @@ class RateLimiterProviderTest {
 
     private LimiterConfig<Object> getConfig(String name, Rates rates) {
         Bandwidth[] bandwidths = rateToBandwidthConverter.convert(name, rates, ticker.elapsedMicros());
-        return LimiterConfig.of(RateSource.of(name), rates, bandwidths,
+        return LimiterConfig.of(RateSource.of(name, rates.hasLimits()), rates, bandwidths,
                 Matcher.matchNone(), Collections.emptyList(), ticker);
     }
 }

@@ -1,28 +1,35 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
- * An source of rate limiting information. E.g a class, a method etc
+ * A source of rate limiting information. E.g a class, a method etc
  */
 public interface RateSource {
-    static RateSource of(Class<?> clazz) {
-        return new AbstractRateSource.ClassRateSource(clazz);
-    }
 
-    static RateSource of(Method method) {
-        return new AbstractRateSource.MethodRateSource(method);
-    }
-
-    static RateSource of(String id, GenericDeclaration source) {
-        return new AbstractRateSource.GroupRateSource(id, source);
-    }
-
-    static RateSource of(String id) {
-        return new AbstractRateSource.None(id);
+    static RateSource of(String id, boolean isRateLimited) {
+        return new RateSource() {
+            @Override public Object getSource() { return this; }
+            @Override public String getId() { return id; }
+            @Override public <T extends Annotation> Optional<T> getAnnotation(
+                    Class<T> annotationClass) {
+                return Optional.empty();
+            }
+            @Override public boolean isRateLimited() { return isRateLimited; }
+            @Override public int hashCode() { return Objects.hashCode(getId()); }
+            @Override public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof RateSource)) {
+                    return false;
+                }
+                return getId().equals(((RateSource)o).getId());
+            }
+            @Override public String toString() {
+                return this.getClass().getSimpleName() + '{' + getId() + '}';
+            }
+        };
     }
 
     Object getSource();

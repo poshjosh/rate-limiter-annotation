@@ -32,8 +32,8 @@ public final class Rate {
         return of(permits, Duration.ofDays(1));
     }
 
-    public static Rate of(long permits, String rateCondition) {
-        return of(permits, Duration.ofSeconds(1), rateCondition);
+    public static Rate of(long permitsPerSecond, String rateCondition) {
+        return of(permitsPerSecond, Duration.ofSeconds(1), rateCondition);
     }
 
     public static Rate of(long permits, Duration duration) {
@@ -104,7 +104,6 @@ public final class Rate {
      * !  not (e.g !=, !>, !$ etc)
      * </pre>
      *
-     * @see io.github.poshjosh.ratelimiter.expression.ExpressionResolver
      * @see Rates#getRateCondition()
      */
     private String rateCondition = "";

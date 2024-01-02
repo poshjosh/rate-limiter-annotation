@@ -6,15 +6,28 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.Optional;
 
-abstract class AbstractRateSource implements RateSource{
+public final class RateSourceFactory {
+    private RateSourceFactory() { }
+
+    public static RateSource of(Class<?> clazz) {
+        return new ClassRateSource(clazz);
+    }
+
+    public static RateSource of(Method method) {
+        return new MethodRateSource(method);
+    }
+
+    public static RateSource of(String id, GenericDeclaration source) {
+        return new GroupRateSource(id, source);
+    }
 
     private static final RateProcessor.SourceFilter isRateLimited = RateProcessor.SourceFilter.ofRateLimited();
 
-    static final class ClassRateSource extends AbstractRateSource {
+    private static final class ClassRateSource extends AbstractRateSource {
         private final String id;
         private final Class<?> clazz;
         private final boolean rateLimited;
-        ClassRateSource(Class<?> clazz) {
+        private ClassRateSource(Class<?> clazz) {
             this.id = ElementId.of(clazz);
             this.clazz = clazz;
             this.rateLimited = isRateLimited.test(clazz);
@@ -32,15 +45,15 @@ abstract class AbstractRateSource implements RateSource{
         @Override public boolean isRateLimited() { return rateLimited; }
     }
 
-    static final class MethodRateSource extends AbstractRateSource {
+    private static final class MethodRateSource extends AbstractRateSource {
         private final String id;
         private final Method method;
         private final RateSource declarer;
         private final boolean rateLimited;
-        MethodRateSource(Method method) {
+        private MethodRateSource(Method method) {
             this.id = ElementId.of(method);
             this.method = method;
-            this.declarer = RateSource.of(method.getDeclaringClass());
+            this.declarer = of(method.getDeclaringClass());
             this.rateLimited = isRateLimited.test(method);
         }
         @Override public Method getSource() { return method; }
@@ -54,10 +67,10 @@ abstract class AbstractRateSource implements RateSource{
         @Override public boolean isRateLimited() { return rateLimited; }
     }
 
-    static final class GroupRateSource extends AbstractRateSource {
+    private static final class GroupRateSource extends AbstractRateSource {
         private final String id;
         private final GenericDeclaration source;
-        GroupRateSource(String id, GenericDeclaration source) {
+        private GroupRateSource(String id, GenericDeclaration source) {
             this.id = Objects.requireNonNull(id);
             this.source = Objects.requireNonNull(source);
         }
@@ -72,27 +85,18 @@ abstract class AbstractRateSource implements RateSource{
         @Override public boolean isGroupType() { return true; }
     }
 
-    static final class None extends AbstractRateSource {
-        private final String id;
-        None(String id) {
-            this.id = Objects.requireNonNull(id);
+    protected abstract static class AbstractRateSource implements RateSource {
+        protected AbstractRateSource() {}
+        @Override public int hashCode() { return Objects.hashCode(getId()); }
+        @Override public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof RateSource)) {
+                return false;
+            }
+            return getId().equals(((RateSource)o).getId());
         }
-        @Override public Object getSource() { return this; }
-        @Override public String getId() { return id; }
-        @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> cls) {
-            return Optional.empty();
+        @Override public String toString() {
+            return this.getClass().getSimpleName() + '{' + getId() + '}';
         }
-        @Override public boolean isRateLimited() { return false; }
-    }
-    @Override public int hashCode() { return Objects.hashCode(getId()); }
-    @Override public boolean equals(Object o) {
-        if (this == o) return true;
-        if (!(o instanceof AbstractRateSource)) {
-            return false;
-        }
-        return getId().equals(((AbstractRateSource)o).getId());
-    }
-    @Override public String toString() {
-        return this.getClass().getSimpleName() + '{' + getId() + '}';
     }
 }
