@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.6.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.6.0) ] - 2024-01-21
+
+### Changed
+
+- Moved `Matcher` and `ExpressionMatcher` from project rate-limiter-annotation to project rate-limiter.
+
 ## [ [0.5.1](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.5.1) ] - 2023-05-20
 
 ### Added
