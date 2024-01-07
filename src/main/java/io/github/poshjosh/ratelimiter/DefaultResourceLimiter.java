@@ -125,7 +125,7 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
             Node<LimiterConfig<R>> node, VisitResult previousResult) {
 
         if (node == null || node.isRoot()) {
-            return previousResult;
+            return firstNonNull(previousResult, VisitResult.LIMIT_NOT_SET);
         }
 
         final LimiterConfig<R> config = requireLimiterConfig(node);
@@ -155,13 +155,15 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         final VisitResult result;
         if (!config.hasChildConditions()) {
             if (!matched) {
-                result = node.isLeaf() ? VisitResult.NO_MATCH : previousResult;
+                result = node.isLeaf() ? VisitResult.NO_MATCH :
+                        firstNonNull(previousResult, VisitResult.NO_MATCH);
             } else {
                 result = visitSingle(match, permits, timeout, unit, config);
             }
         } else {
             if (!matched) {
-                result = node.isLeaf() ? VisitResult.NO_MATCH : previousResult;
+                result = node.isLeaf() ? VisitResult.NO_MATCH :
+                        firstNonNull(previousResult, VisitResult.NO_MATCH);
             } else {
                 result = visitMulti(request, match, permits, timeout, unit, node.getName(), config);
             }
@@ -178,6 +180,10 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         final VisitResult parentResult = visit(request, permits, timeout, unit, parent, result);
 
         return resolve(result, parentResult);
+    }
+
+    private VisitResult firstNonNull(VisitResult result, VisitResult alternate) {
+        return result == null ? alternate : result;
     }
 
     private String resolveMatch(String match, Node<LimiterConfig<R>> node) {
