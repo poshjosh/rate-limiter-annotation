@@ -26,7 +26,7 @@ public final class ElementId {
         if ( StringUtils.hasText(specifiedId)) {
             return specifiedId;
         }
-        return clazz.getName();
+        return getName(clazz);
     }
 
     /**
@@ -62,7 +62,7 @@ public final class ElementId {
             return specifiedId;
         }
         final String methodString = method.toString();
-        final int indexOfClassName = methodString.indexOf(method.getDeclaringClass().getName());
+        final int indexOfClassName = methodString.indexOf(getName(method.getDeclaringClass()));
         if(indexOfClassName == -1) {
             // Should not happen
             throw new AssertionError(
@@ -95,7 +95,7 @@ public final class ElementId {
 
     private static String getName(AnnotatedElement source) {
         if (source instanceof Class) {
-            return ((Class)source).getSimpleName();
+            return ((Class)source).getName();
         } else if (source instanceof Method) {
             Method method = (Method)source;
             return getName(method.getDeclaringClass()) + '#' + method.getName();

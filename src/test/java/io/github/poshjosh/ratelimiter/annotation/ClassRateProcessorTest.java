@@ -44,7 +44,7 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
         assertThat(root.findFirstChild(node -> node.getName().equals(root.getName())).isPresent()).isTrue();
         assertHasChildrenHavingNames(root, "ClassGroupOnlyAnon", "PrivateClass", "InternalClass");
         assertHasChildrenHavingNames(root, "GroupAnnotationWithoutName");
-        Node<RateConfig> fire = root.findFirstChild(node -> "GroupAnnotationWithoutName".equals(node.getName()))
+        Node<RateConfig> fire = root.findFirstChild(node -> getId(GroupAnnotationWithoutName.class).equals(node.getName()))
                 .orElseThrow(NullPointerException::new);
         assertHasChildrenHavingNames(fire,
                 ClassWithClassAnnotations.ClassGroupOnly_GroupAnnotationWithoutName.class,

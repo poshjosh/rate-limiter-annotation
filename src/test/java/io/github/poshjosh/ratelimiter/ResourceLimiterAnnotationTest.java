@@ -143,7 +143,7 @@ class ResourceLimiterAnnotationTest {
     }
 
     private ResourceLimiter<Object> testGroupLimiter() {
-        // The classes should be not be in order, as is expected in real situations
+        // The classes should not be in order, as is expected in real situations
         return buildRateLimiter(MyRateGroupMember0.class, MyRateGroup.class, MyRateGroupMember1.class);
     }
 
