@@ -2,26 +2,23 @@
 
 __Distributed rate limiting simplified using annotations__
 
-We believe rate limiting should as easy as:
+We believe that rate limiting should be as simple as:
 
 ```java
 // All methods collectively limited to 10 permits per second
 @Rate(10)
 class RateLimitedResource {
 
-    // 2 permits per second only when system free memory is less than 1GB
-    @Rate(2) 
-    @RateCondition("jvm.memory.free<1GB")
-    @Path("/greet")
-    public String greet(String who) {
-        return "Hello " + who;
-    }
-
-    // 50 permits per minute
-    @Rate(permits = 50, duration =  TimeUnit.MINUTES)
-    @Path("/smile")
+    // 99 permits per second
+    @Rate(99)
     public String smile() {
         return ":)";
+    }
+
+    // 2 permits per second only when system available memory is less than 1GB
+    @Rate(permits = 2, condition = "jvm.memory.available<1GB") 
+    public String greet(String who) {
+        return "Hello " + who;
     }
 }
 ```
