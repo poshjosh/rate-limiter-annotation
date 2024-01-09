@@ -60,7 +60,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
 
         final Node<RateConfig> parentNode = getParent(root, group, source);
 
-        final Node node;
+        final Node<RateConfig> node;
         if (isGroupDefinition(source)) {
             node = Node.empty(); // group has been created no need to also create a node
         } else {
@@ -126,7 +126,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
     private Node<RateConfig> createNodeForGroup(
             Node<RateConfig> root, GenericDeclaration groupSource) {
         final String groupName = groupName(root, groupSource);
-        RateSource rateSource = RateSourceFactory.of(groupName, groupSource);
+        RateSource rateSource = JavaRateSource.of(groupName, groupSource);
         R rates = annotationConverter.convert(groupSource);
         checkRateGroupOperator(rates.getOperator(), rates);
         return Node.of(groupName, RateConfig.of(rateSource, rates), root);

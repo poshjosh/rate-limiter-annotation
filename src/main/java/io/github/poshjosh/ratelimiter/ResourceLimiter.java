@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
@@ -31,6 +32,10 @@ public interface ResourceLimiter<K> {
     Ticker DEFAULT_TICKER = Ticker.SYSTEM_EPOCH_MILLIS;
 
     ResourceLimiter<Object> NO_OP = new ResourceLimiter<Object>() {
+        @Override public List<BandwidthState> getBandwidths(Object key) {
+            return Collections.emptyList();
+        }
+
         @Override public ResourceLimiter<Object> listener(UsageListener listener) { return this; }
         @Override public UsageListener getListener() { return UsageListener.NO_OP; }
         @Override public boolean tryConsume(Object key, int permits, long timeout, TimeUnit unit) {
@@ -46,6 +51,12 @@ public interface ResourceLimiter<K> {
         return (ResourceLimiter<K>) NO_OP;
     }
 
+    /**
+     * Create a ResourceLimiter for the specified classes
+     * @param sourceOfRateLimitInfo The classes which contain rate limit related annotations.
+     * @return A ResourceLimiter instance.
+     * @param <K> The type of the ID for each resource
+     */
     static <K> ResourceLimiter<K> of(Class<?>... sourceOfRateLimitInfo) {
         return of(RateProcessor.ofDefaults().processAll(sourceOfRateLimitInfo));
     }
@@ -97,6 +108,8 @@ public interface ResourceLimiter<K> {
         return new DefaultResourceLimiter<>(listener, rateLimiterProvider, node);
     }
 
+    List<BandwidthState> getBandwidths(K key);
+
     ResourceLimiter<K> listener(UsageListener listener);
 
     UsageListener getListener();
@@ -119,7 +132,7 @@ public interface ResourceLimiter<K> {
      * Acquires a permit from this {@link ResourceLimiter} if it can be acquired immediately without
      * delay.
      *
-     * <p>This method is equivalent to {@code tryAcquire(1)}.
+     * <p>This method is equivalent to {@code tryConsume(1)}.
      *
      * @param key the key to acquire permits for
      * @return {@code true} if the permit was acquired, {@code false} otherwise
@@ -133,7 +146,7 @@ public interface ResourceLimiter<K> {
      * the specified {@code timeout}, or returns {@code false} immediately (without waiting) if
      * the permit would not have been granted before the timeout expired.
      *
-     * <p>This method is equivalent to {@code tryAcquire(1, timeout)}.
+     * <p>This method is equivalent to {@code tryConsume(1, timeout)}.
      *
      * @param key the key to acquire permits for
      * @param timeout the maximum time to wait for the permit. Negative values are treated as zero.
@@ -149,7 +162,7 @@ public interface ResourceLimiter<K> {
      * specified {@code timeout}, or returns {@code false} immediately (without waiting) if the permit
      * would not have been granted before the timeout expired.
      *
-     * <p>This method is equivalent to {@code tryAcquire(1, timeout, unit)}.
+     * <p>This method is equivalent to {@code tryConsume(1, timeout, unit)}.
      *
      * @param key the key to acquire permits for
      * @param timeout the maximum time to wait for the permit. Negative values are treated as zero.
@@ -164,7 +177,7 @@ public interface ResourceLimiter<K> {
     /**
      * Acquires permits from this {@link ResourceLimiter} if it can be acquired immediately without delay.
      *
-     * <p>This method is equivalent to {@code tryAcquire(permits, 0, anyUnit)}.
+     * <p>This method is equivalent to {@code tryConsume(permits, 0, anyUnit)}.
      *
      * @param key the key to acquire permits for
      * @param permits the number of permits to acquire
@@ -204,6 +217,12 @@ public interface ResourceLimiter<K> {
         Objects.requireNonNull(after);
         final UsageListener listener = getListener().andThen(after.getListener());
         return new ResourceLimiter<K>() {
+            @Override public List<BandwidthState> getBandwidths(K key) {
+                List<BandwidthState> limiters = new ArrayList<>();
+                limiters.addAll(ResourceLimiter.this.getBandwidths(key));
+                limiters.addAll(after.getBandwidths(key));
+                return Collections.unmodifiableList(limiters);
+            }
             @Override public ResourceLimiter<K> listener(UsageListener listener) {
                 return ResourceLimiter.this.listener(listener).andThen(after.listener(listener));
             }

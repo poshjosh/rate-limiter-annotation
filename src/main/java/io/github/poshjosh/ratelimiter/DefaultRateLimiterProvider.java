@@ -69,6 +69,9 @@ final class DefaultRateLimiterProvider<R, K> implements RateLimiterProvider<R, K
                 DefaultRateLimiterProvider.this.saveBandwidthToStore(key, bandwidth);
                 return result;
             }
+            @Override public String toString() {
+                return bandwidth.toString();
+            }
         };
     }
 

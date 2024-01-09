@@ -35,10 +35,13 @@ public final class LimiterConfig<R> {
             matcher = Matcher.matchNone();
             matchers = Collections.emptyList();
         } else {
-            matcher = matcherProvider.createParentMatcher(rateConfig);
-            matchers = matcherProvider.createChildMatchers(rateConfig);
+            matcher = matcherProvider.createGroupMatcher(rateConfig);
+            matchers = matcherProvider.createMatchers(rateConfig);
         }
-        return of(rateConfig.getSource(), rates, bandwidths, matcher, matchers, ticker);
+        final LimiterConfig<K> limiterConfig =
+                of(rateConfig.getSource(), rates, bandwidths, matcher, matchers, ticker);
+        LOG.trace("{}", limiterConfig);
+        return limiterConfig;
     }
     private static boolean hasLimitsInTree(Node<RateConfig> node) {
         return hasLimits(node) || parentHasLimits(node);

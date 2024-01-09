@@ -5,12 +5,23 @@ import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
 
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
 public final class ElementId {
 
     private ElementId() { }
+
+    public static String of(GenericDeclaration type) {
+        if (type instanceof Class) {
+            return of((Class)type);
+        } else if (type instanceof Method) {
+            return of((Method)type);
+        } else {
+            throw new UnsupportedOperationException("Unsupported type: " + type);
+        }
+    }
 
     /**
      * Identify a class
@@ -68,7 +79,13 @@ public final class ElementId {
             throw new AssertionError(
                     "Method#toString() does not contain the method's declaring class name as expected. Method: " + method);
         }
-        return methodString.substring(indexOfClassName);
+        final int indexOfClosingBracket = methodString.indexOf(")");
+        if(indexOfClosingBracket == -1) {
+            // Should not happen
+            throw new AssertionError(
+                    "Method#toString() returned unexpected text. Method: " + method);
+        }
+        return methodString.substring(indexOfClassName, indexOfClosingBracket + 1);
     }
 
     private static String getSpecifiedId(AnnotatedElement source) {

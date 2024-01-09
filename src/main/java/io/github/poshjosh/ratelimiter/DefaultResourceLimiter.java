@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.LimiterConfig;
 import io.github.poshjosh.ratelimiter.util.Matcher;
@@ -7,7 +8,6 @@ import io.github.poshjosh.ratelimiter.util.Operator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.GenericDeclaration;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Predicate;
@@ -49,23 +49,24 @@ import java.util.function.Predicate;
  * all the leaf nodes are collected. Every request is used to visit each leaf node. For each
  * leaf node, its parent node is visited recursively till the root node (which is not visited).
  *
- * @param <R> The type of the resource which is consumed
+ * @param <K> The type of the resource which is consumed
  */
-final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
+final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultResourceLimiter.class);
 
     private enum VisitResult {NO_MATCH, LIMIT_NOT_SET, SUCCESS, FAILURE}
 
     private final UsageListener listener;
-    private final RateLimiterProvider<R, String> rateLimiterProvider;
-    private final Collection<Node<LimiterConfig<R>>> leafNodes;
+    private final RateLimiterProvider<K, String> rateLimiterProvider;
+    private final Node<LimiterConfig<K>> rootNode;
+    private final Collection<Node<LimiterConfig<K>>> leafNodes;
 
     DefaultResourceLimiter(
             UsageListener listener,
-            RateLimiterProvider<R, String> rateLimiterProvider,
-            Node<LimiterConfig<R>> node) {
-        this(listener, rateLimiterProvider, collectLeafs(node));
+            RateLimiterProvider<K, String> rateLimiterProvider,
+            Node<LimiterConfig<K>> node) {
+        this(listener, rateLimiterProvider, node, collectLeafs(node));
     }
     private static <R> Collection<Node<LimiterConfig<R>>> collectLeafs(Node<LimiterConfig<R>> node) {
         Set<Node<LimiterConfig<R>>> leafNodes = new LinkedHashSet<>();
@@ -76,15 +77,46 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
 
     private DefaultResourceLimiter(
             UsageListener listener,
-            RateLimiterProvider<R, String> rateLimiterProvider,
-            Collection<Node<LimiterConfig<R>>> leafNodes) {
+            RateLimiterProvider<K, String> rateLimiterProvider,
+            Node<LimiterConfig<K>> rootNode,
+            Collection<Node<LimiterConfig<K>>> leafNodes) {
         this.listener = Objects.requireNonNull(listener);
         this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
+        this.rootNode = Objects.requireNonNull(rootNode);
         this.leafNodes = Collections.unmodifiableCollection(leafNodes);
     }
 
-    @Override public DefaultResourceLimiter<R> listener(UsageListener listener) {
-        return new DefaultResourceLimiter<>(listener, rateLimiterProvider, leafNodes);
+    @Override
+    public List<BandwidthState> getBandwidths(K key) {
+        final List<BandwidthState> bandwidths = new ArrayList<>();
+        rootNode.visitAll(node -> {
+            if (node == null) {
+                return;
+            }
+            final LimiterConfig<K> config = node.getValueOrDefault(null);
+            if (config == null) {
+                return;
+            }
+            final String groupMatch = MatchUtil.match(node, key);
+            if (config.hasChildConditions()) {
+                final int count = config.getMatchers().size();
+                for(int i = 0; i < count; i++) {
+                    final String match = MatchUtil.matchAt(node, key, i, groupMatch);
+                    if (Matcher.isMatch(match)) {
+                        bandwidths.add(rateLimiterProvider.getRateLimiter(match, config, i).getBandwidth());
+                    }
+                }
+            } else {
+                if (Matcher.isMatch(groupMatch)) {
+                    bandwidths.add(rateLimiterProvider.getRateLimiter(groupMatch, config).getBandwidth());
+                }
+            }
+        });
+        return Collections.unmodifiableList(bandwidths);
+    }
+
+    @Override public DefaultResourceLimiter<K> listener(UsageListener listener) {
+        return new DefaultResourceLimiter<>(listener, rateLimiterProvider, rootNode, leafNodes);
     }
 
     @Override public UsageListener getListener() {
@@ -92,9 +124,9 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     }
 
     @Override
-    public boolean tryConsume(R key, int permits, long timeout, TimeUnit unit) {
+    public boolean tryConsume(K key, int permits, long timeout, TimeUnit unit) {
 
-        for(Node<LimiterConfig<R>> node : leafNodes) {
+        for(Node<LimiterConfig<K>> node : leafNodes) {
 
             final VisitResult result = startVisit(key, permits, timeout, unit, node);
 
@@ -113,44 +145,34 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
     }
 
     private VisitResult startVisit(
-            R request, int permits, long timeout, TimeUnit unit, Node<LimiterConfig<R>> node) {
+            K key, int permits, long timeout, TimeUnit unit, Node<LimiterConfig<K>> node) {
         if (!node.isLeaf()) {
             throw new AssertionError("Visiting must start with leaf nodes");
         }
-        return visit(request, permits, timeout, unit, node, null);
+        return visit(key, permits, timeout, unit, node, null);
     }
 
     private VisitResult visit(
-            R request, int permits, long timeout, TimeUnit unit,
-            Node<LimiterConfig<R>> node, VisitResult previousResult) {
+            K key, int permits, long timeout, TimeUnit unit,
+            Node<LimiterConfig<K>> node, VisitResult previousResult) {
 
         if (node == null || node.isRoot()) {
             return firstNonNull(previousResult, VisitResult.LIMIT_NOT_SET);
         }
 
-        final LimiterConfig<R> config = requireLimiterConfig(node);
+        final String match = MatchUtil.match(node, key);
+        final boolean matched = Matcher.isMatch(match);
 
-        final Matcher<R> matcher = config.getMatcher();
-
-        String match = matcher.match(request);
-
-        if (LOG.isTraceEnabled()) {
-            LOG.trace("Match: {}, node: {}, matcher: {}", isMatch(match), node.getName(), matcher);
-        }
-
-        if (!isMatch(match) && node.isLeaf()) {
+        if (!matched && node.isLeaf()) {
             return VisitResult.NO_MATCH;
         }
 
-        final Node<LimiterConfig<R>> parent = node.getParentOrDefault(null);
+        final LimiterConfig<K> config = requireLimiterConfig(node);
+        final Node<LimiterConfig<K>> parent = node.getParentOrDefault(null);
 
         if (!config.hasLimits()) {
-            return visit(request, permits, timeout, unit, parent, VisitResult.LIMIT_NOT_SET);
+            return visit(key, permits, timeout, unit, parent, VisitResult.LIMIT_NOT_SET);
         }
-
-        match = resolveMatch(match, node);
-
-        final boolean matched = isMatch(match);
 
         final VisitResult result;
         if (!config.hasChildConditions()) {
@@ -165,40 +187,25 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
                 result = node.isLeaf() ? VisitResult.NO_MATCH :
                         firstNonNull(previousResult, VisitResult.NO_MATCH);
             } else {
-                result = visitMulti(request, match, permits, timeout, unit, node.getName(), config);
+                result = visitMulti(key, match, permits, timeout, unit, node);
             }
         }
 
         if (matched) {
-            onVisit(request, match, permits, config, result);
+            onVisit(key, match, permits, config, result);
         }
 
         if (parent == null || parent.isRoot()) {
             return result;
         }
 
-        final VisitResult parentResult = visit(request, permits, timeout, unit, parent, result);
+        final VisitResult parentResult = visit(key, permits, timeout, unit, parent, result);
 
         return resolve(result, parentResult);
     }
 
     private VisitResult firstNonNull(VisitResult result, VisitResult alternate) {
         return result == null ? alternate : result;
-    }
-
-    private String resolveMatch(String match, Node<LimiterConfig<R>> node) {
-        final LimiterConfig<R> config = requireLimiterConfig(node);
-        if (config.getSource().isGroupType()) {
-            return node.getName();
-        }
-        if (!isMatch(match) && !isGenericDeclarationSource(config) && !node.isLeaf()) {
-            return node.getName();
-        }
-        return match;
-    }
-
-    private boolean isGenericDeclarationSource(LimiterConfig<R> config) {
-        return config.getSource().getSource() instanceof GenericDeclaration;
     }
 
     private VisitResult resolve(VisitResult result, VisitResult parentResult) {
@@ -214,49 +221,45 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         return VisitResult.FAILURE;
     }
 
-    private void onVisit(Object request, String resourceId, int permits, LimiterConfig<R> config, VisitResult result) {
-        listener.onConsumed(request, resourceId, permits, config);
+    private void onVisit(Object key, String groupMatch, int permits, LimiterConfig<K> config, VisitResult result) {
+        listener.onConsumed(key, groupMatch, permits, config);
         if (!VisitResult.FAILURE.equals(result)) {
             return;
         }
-        listener.onRejected(request, resourceId, permits, config);
+        listener.onRejected(key, groupMatch, permits, config);
     }
 
     private VisitResult visitSingle(
-            String resourceId, int permits, long timeout, TimeUnit unit, LimiterConfig<R> config) {
-        RateLimiter limiter = rateLimiterProvider.getRateLimiter(resourceId, config);
-        return tryAcquire(resourceId, limiter, permits, timeout, unit, config)
+            String groupMatch, int permits, long timeout, TimeUnit unit, LimiterConfig<K> config) {
+        RateLimiter limiter = rateLimiterProvider.getRateLimiter(groupMatch, config);
+        return tryAcquire(groupMatch, limiter, permits, timeout, unit)
                 ? VisitResult.SUCCESS : VisitResult.FAILURE;
     }
 
     private VisitResult visitMulti(
-            R request, String resourceId, int permits, long timeout, TimeUnit unit,
-            String nodeName, LimiterConfig<R> config) {
+            K key, String groupMatch, int permits, long timeout, TimeUnit unit,
+            Node<LimiterConfig<K>> node) {
 
-        final List<Matcher<R>> matchers = config.getMatchers();
+        final LimiterConfig<K> config = requireLimiterConfig(node);
+        
+        final List<Matcher<K>> matchers = config.getMatchers();
 
         int matchCount = 0;
         int successCount = 0;
 
         for (int i = 0; i < matchers.size(); i++) {
 
-            final String match = matchers.get(i).match(request);
-            if (LOG.isTraceEnabled()) {
-                LOG.trace("Match: {}, node: [{}]{}, matcher: {}",
-                        isMatch(match), i, nodeName, matchers.get(i));
-            }
+            final String id = MatchUtil.matchAt(node, key, i, groupMatch);
 
-            if (!isMatch(match)) {
+            if (!Matcher.isMatch(id)) {
                 continue;
             }
 
             ++matchCount;
 
-            final String id = Matcher.composeResults(resourceId, match);
-
             RateLimiter limiter = rateLimiterProvider.getRateLimiter(id, config, i);
 
-            if (tryAcquire(id, limiter, permits, timeout, unit, config)) {
+            if (tryAcquire(id, limiter, permits, timeout, unit)) {
                 ++successCount;
             }
         }
@@ -268,28 +271,26 @@ final class DefaultResourceLimiter<R> implements ResourceLimiter<R> {
         return matchCount == successCount ? VisitResult.SUCCESS : VisitResult.FAILURE;
     }
 
-    private boolean isMatch(String matchResult) {
-        return Matcher.isMatch(matchResult);
-    }
-
     private boolean tryAcquire(
-            Object resourceId, RateLimiter rateLimiter,
-            int permits, long timeout, TimeUnit unit, LimiterConfig<?> config) {
+            Object groupMatch, RateLimiter rateLimiter,
+            int permits, long timeout, TimeUnit unit) {
 
         final boolean acquired = rateLimiter.tryAcquire(permits, timeout, unit);
 
         if(LOG.isTraceEnabled()) {
-            LOG.trace("Limit exceeded: {}, for: {}, limits: {}", !acquired, resourceId, config.getRates());
+            LOG.trace("Limit exceeded: {}, for: {}, bandwidth: {}",
+                    !acquired, groupMatch, rateLimiter.getBandwidth());
         }
 
         return acquired;
     }
 
-    private LimiterConfig<R> requireLimiterConfig(Node<LimiterConfig<R>> node) {
+    private LimiterConfig<K> requireLimiterConfig(Node<LimiterConfig<K>> node) {
         return Objects.requireNonNull(node.getValueOrDefault(null));
     }
 
-    @Override public String toString() {
-        return "DefaultResourceLimiter{" + "leafNodes=" + leafNodes + '}';
+    @Override
+    public String toString() {
+        return "DefaultResourceLimiter{rootNode=" + rootNode + '}';
     }
 }

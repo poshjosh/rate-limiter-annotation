@@ -8,8 +8,8 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 import java.util.Optional;
 
-public final class RateSourceFactory {
-    private RateSourceFactory() { }
+public final class JavaRateSource {
+    private JavaRateSource() { }
 
     public static RateSource of(Class<?> clazz) {
         return new ClassRateSource(clazz);

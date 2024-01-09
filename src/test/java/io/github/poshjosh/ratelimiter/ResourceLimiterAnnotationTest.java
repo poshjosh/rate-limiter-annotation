@@ -4,10 +4,14 @@ import io.github.poshjosh.ratelimiter.annotation.ElementId;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.*;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
@@ -238,6 +242,8 @@ class ResourceLimiterAnnotationTest {
         assertFalse(limiter.tryConsume(id));
     }
 
+    // This first Rate's condition will never evaluate to true,
+    // as elapsed time will always be greater than zero.
     @Rate(permits=1, when="sys.time.elapsed<=PT0S")
     @Rate(permits=2, when="sys.time.elapsed>PT0S")
     public class RateLimitedClass10{ }
