@@ -38,7 +38,7 @@ final class DefaultRateLimiterProvider<R, K> implements RateLimiterProvider<R, K
     private RateLimiter createLimiter(K key, LimiterConfig<R> config, int index) {
         Bandwidth bandwidth = getOrCreateBandwidth(key, config, index);
         bandwidth = withAutoSave(key, bandwidth);
-        return RateLimiter.of(bandwidth, config.getSleepingTicker());
+        return RateLimiter.of(bandwidth, config.getTicker());
     }
 
     private Bandwidth getOrCreateBandwidth(K key, LimiterConfig<R> config, int index) {
@@ -54,7 +54,7 @@ final class DefaultRateLimiterProvider<R, K> implements RateLimiterProvider<R, K
             }
             throw noLimitAtIndex(config, index);
         }
-        return bandwidths[index].with(config.getSleepingTicker().elapsedMicros());
+        return bandwidths[index].with(config.getTicker().elapsedMicros());
     }
 
     private IndexOutOfBoundsException noLimitAtIndex(LimiterConfig<R> config, int index) {

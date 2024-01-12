@@ -113,7 +113,7 @@ public final class LimiterConfig<R> {
         return subMatchers;
     }
 
-    public Ticker getSleepingTicker() { return ticker; }
+    public Ticker getTicker() { return ticker; }
 
     @Override public boolean equals(Object o) {
         if (this == o)
