@@ -3,7 +3,6 @@ package io.github.poshjosh.ratelimiter.util;
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
-import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
@@ -27,19 +26,19 @@ public final class LimiterConfig<R> {
         }
         Rates rates = rateConfig.getRates();
         Bandwidth[] bandwidths = converter.convert(node.getName(), rates, ticker.elapsedMicros());
-        Matcher<K> matcher;
-        List<Matcher<K>> matchers;
+        Matcher<K> mainMatcher;
+        List<Matcher<K>> subMatchers;
         if(!hasLimitsInTree(node)) {
             LOG.debug("No limits specified for group, so no matcher will be created for: {}",
                     node.getName());
-            matcher = Matcher.matchNone();
-            matchers = Collections.emptyList();
+            mainMatcher = Matcher.matchNone();
+            subMatchers = Collections.emptyList();
         } else {
-            matcher = matcherProvider.createGroupMatcher(rateConfig);
-            matchers = matcherProvider.createMatchers(rateConfig);
+            mainMatcher = matcherProvider.createMainMatcher(rateConfig);
+            subMatchers = matcherProvider.createSubMatchers(rateConfig);
         }
         final LimiterConfig<K> limiterConfig =
-                of(rateConfig.getSource(), rates, bandwidths, matcher, matchers, ticker);
+                of(rateConfig.getSource(), rates, bandwidths, mainMatcher, subMatchers, ticker);
         LOG.trace("{}", limiterConfig);
         return limiterConfig;
     }
@@ -52,8 +51,7 @@ public final class LimiterConfig<R> {
                 .isPresent();
     }
     private static boolean hasLimits(Node<RateConfig> node) {
-        return node.getValueOptional().orElseThrow(() -> new NodeValueAbsentException(node))
-                .getRates().hasLimits();
+        return node.requireValue().getRates().hasLimits();
     }
 
     public static <R> LimiterConfig<R> of(RateSource source, Rates rates, Bandwidth[] bandwidths,
@@ -68,25 +66,24 @@ public final class LimiterConfig<R> {
     private final Bandwidth [] bandwidths;
 
     /**
-     * The matcher to apply before applying individual matchers. This is usually
-     * the path pattern matcher (and then) any matchers for general rate conditions.
+     * The matcher to apply before applying sub matchers.
      */
-    private final Matcher<R> matcher;
+    private final Matcher<R> mainMatcher;
 
     /**
      * Matchers for rate conditions specific to each rate.
      */
-    private final List<Matcher<R>> matchers;
+    private final List<Matcher<R>> subMatchers;
 
     private final Ticker ticker;
 
     private LimiterConfig(RateSource source, Rates rates, Bandwidth[] bandwidths,
-            Matcher<R> matcher, List<Matcher<R>> matchers, Ticker ticker) {
+            Matcher<R> mainMatcher, List<Matcher<R>> subMatchers, Ticker ticker) {
         this.source = Objects.requireNonNull(source);
         this.rates = Rates.of(rates);
         this.bandwidths = Arrays.copyOf(bandwidths, bandwidths.length);
-        this.matcher = Objects.requireNonNull(matcher);
-        this.matchers = Collections.unmodifiableList(new ArrayList<>(matchers));
+        this.mainMatcher = Objects.requireNonNull(mainMatcher);
+        this.subMatchers = Collections.unmodifiableList(new ArrayList<>(subMatchers));
         this.ticker = Objects.requireNonNull(ticker);
     }
 
@@ -110,10 +107,10 @@ public final class LimiterConfig<R> {
 
     public Bandwidth [] getBandwidths() { return Arrays.copyOf(bandwidths, bandwidths.length); }
 
-    public Matcher<R> getMatcher() { return matcher; }
+    public Matcher<R> getMainMatcher() { return mainMatcher; }
 
-    public List<Matcher<R>> getMatchers() {
-        return matchers;
+    public List<Matcher<R>> getSubMatchers() {
+        return subMatchers;
     }
 
     public Ticker getSleepingTicker() { return ticker; }
@@ -124,16 +121,16 @@ public final class LimiterConfig<R> {
         if (o == null || getClass() != o.getClass())
             return false;
         LimiterConfig<?> that = (LimiterConfig<?>) o;
-        return rates.equals(that.rates) && matcher.equals(that.matcher) && matchers
-                .equals(that.matchers) && ticker.equals(that.ticker);
+        return rates.equals(that.rates) && mainMatcher.equals(that.mainMatcher) && subMatchers
+                .equals(that.subMatchers) && ticker.equals(that.ticker);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(rates, matcher, matchers, ticker);
+        return Objects.hash(rates, mainMatcher, subMatchers, ticker);
     }
 
     @Override public String toString() {
-        return "LimiterConfig{source=" + source + ", rates=" + rates + ", matcher=" + matcher +
-                ", matchers=" + matchers + ", ticker=" + ticker + '}';
+        return "LimiterConfig{source=" + source + ", rates=" + rates + ", mainMatcher=" + mainMatcher +
+                ", subMatchers=" + subMatchers + ", ticker=" + ticker + '}';
     }
 }

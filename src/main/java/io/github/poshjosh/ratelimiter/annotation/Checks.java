@@ -20,7 +20,7 @@ final class Checks {
                 .findAny().orElseThrow(() ->
                         new AnnotationProcessingException(what + " required at: " + source));
     }
-    static String requireSameId(Rate[] rates, Object source) {
+    static String requireSameId(Object source, Rate[] rates) {
         Set<String> uniqueNames = Arrays.stream(rates)
                 .map(Rate::name).collect(Collectors.toSet());
         if (uniqueNames.size() > 1) {

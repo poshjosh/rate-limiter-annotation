@@ -5,27 +5,28 @@ import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
 
 import java.lang.reflect.AnnotatedElement;
-import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Optional;
 
 public final class ElementId {
 
     private ElementId() { }
 
-    public static String of(GenericDeclaration type) {
-        if (type instanceof Class) {
-            return of((Class)type);
-        } else if (type instanceof Method) {
-            return of((Method)type);
-        } else {
-            throw new UnsupportedOperationException("Unsupported type: " + type);
+    public static Optional<String> parseClassPart(String text) {
+        final int indexOfOpenBracket = text.indexOf('(');
+        if (indexOfOpenBracket == -1) {
+            return Optional.of(text);
         }
+        final int end = text.substring(0, indexOfOpenBracket).lastIndexOf('.');
+        if (end == -1) {
+            return Optional.empty();
+        }
+        return Optional.of(text.substring(0, end));
     }
 
     /**
-     * Identify a class
-     *
+     * Identify a class.
      * The class is identified either by the name attribute of a {@link Rate} annotation
      * on the class or by an id created from the full class name.
      *
@@ -40,9 +41,16 @@ public final class ElementId {
         return getName(clazz);
     }
 
+    public static String ofMethod(Class<?> aClass, String methodName, Class<?>... parameterTypes) {
+        try {
+            return of(aClass.getDeclaredMethod(methodName, parameterTypes));
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     /**
      * Identify a method.
-     *
      * The method is identified either by the name attribute of a {@link Rate} annotation
      * on the method or by an id created from the method signature.
      *
@@ -58,7 +66,7 @@ public final class ElementId {
      *     }
      * </pre>
      *
-     * <p>For <pre>methodA</pre> will return <pre>void com.example.ExampleClass.methodA()</pre></p>
+     * <p>For <pre>methodA</pre> will return <pre>com.example.ExampleClass.methodA()</pre></p>
      *
      * <p>
      *     For <pre>methodB</pre> will return <pre>com.example.ExampleClass.methodB(java.lang.Long,java.lang.String)</pre>
@@ -93,7 +101,7 @@ public final class ElementId {
         // If the source contains a @RateGroup, then it is an annotation type
         //
         final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
-        final String nameFromGroup = getSpecifiedId(source, rateGroup);
+        final String nameFromGroup = getSpecifiedId(rateGroup);
         if (StringUtils.hasText(nameFromGroup)) {
             return nameFromGroup;
         }
@@ -101,24 +109,13 @@ public final class ElementId {
         return getSpecifiedId(source, rates);
     }
 
-    private static String getSpecifiedId(AnnotatedElement source, RateGroup rateGroup) {
+    private static String getSpecifiedId(RateGroup rateGroup) {
         if (rateGroup == null) {
             return "";
         }
         return Arrays.stream(new String[]{rateGroup.value(), rateGroup.name()})
                 .filter(StringUtils::hasText)
-                .findAny().orElse(getName(source));
-    }
-
-    private static String getName(AnnotatedElement source) {
-        if (source instanceof Class) {
-            return ((Class)source).getName();
-        } else if (source instanceof Method) {
-            Method method = (Method)source;
-            return getName(method.getDeclaringClass()) + '#' + method.getName();
-        } else {
-            return "";
-        }
+                .findAny().orElse("");
     }
 
     private static String getSpecifiedId(AnnotatedElement source, Rate [] rates) {
@@ -128,6 +125,10 @@ public final class ElementId {
         if (rates.length == 1) {
             return rates[0].name();
         }
-        return Checks.requireSameId(rates, source);
+        return Checks.requireSameId(source, rates);
+    }
+
+    private static String getName(Class<?> clazz) {
+        return clazz.getName();
     }
 }

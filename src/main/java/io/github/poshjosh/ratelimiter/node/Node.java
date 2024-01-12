@@ -16,6 +16,8 @@
 
 package io.github.poshjosh.ratelimiter.node;
 
+import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -253,6 +255,14 @@ public interface Node<V> {
 
     default boolean hasValue() {
         return getValueOrDefault(null) != null;
+    }
+
+    default V requireValue() {
+        final V value = getValueOrDefault(null);
+        if (value == null) {
+            throw new NodeValueAbsentException(this);
+        }
+        return value;
     }
 
     default Optional<V> getValueOptional() {
