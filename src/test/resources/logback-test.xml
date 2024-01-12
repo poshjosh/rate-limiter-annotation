@@ -8,7 +8,7 @@
     </appender>
 
     <logger name="io.github.poshjosh.ratelimiter" level="debug"/>
-    <!--logger name="io.github.poshjosh.ratelimiter.util.LimiterConfig" level="trace"/-->
+    <!--logger name="io.github.poshjosh.ratelimiter.util.LimiterContextt" level="trace"/-->
     <!--logger name="io.github.poshjosh.ratelimiter.DefaultResourceLimiter" level="trace"/-->
     <!--logger name="io.github.poshjosh.ratelimiter.MatchUtil" level="trace"/-->
 

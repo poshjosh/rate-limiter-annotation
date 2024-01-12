@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.Rate;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.model.Rates;
@@ -20,7 +21,7 @@ class RateLimiterProviderTest {
 
     @Test
     void getLimiters_shouldReturnValidRateLimiter() {
-        LimiterConfig<Object> config = getConfig("test-node-name");
+        LimiterContext<Object> config = getConfig();
         RateLimiter limiter = rateLimiterProvider.getRateLimiter("test-id", config);
         assertTrue(limiter.tryAcquire(1));
         assertFalse(limiter.tryAcquire(1));
@@ -28,7 +29,7 @@ class RateLimiterProviderTest {
 
     @Test
     void getLimiters_givenNoLimitsDefined_shouldNotBeRateLimited() {
-        LimiterConfig<Object> config = getConfigThatHasNoLimits("test-node-name");
+        LimiterContext<Object> config = getConfigThatHasNoLimits();
         RateLimiter limiter = rateLimiterProvider.getRateLimiter("test-id", config);
         // Just asserting that this has no limit
         assertTrue(limiter.tryAcquire(Integer.MAX_VALUE));
@@ -38,17 +39,18 @@ class RateLimiterProviderTest {
         assertTrue(limiter.tryAcquire(Integer.MAX_VALUE));
     }
 
-    private LimiterConfig<Object> getConfigThatHasNoLimits(String name) {
-        return getConfig(name, Rates.empty());
+    private LimiterContext<Object> getConfigThatHasNoLimits() {
+        return getConfig(Rates.empty());
     }
 
-    private LimiterConfig<Object> getConfig(String name) {
-      return getConfig(name, Rates.of(Rate.ofSeconds(1)));
+    private LimiterContext<Object> getConfig() {
+      return getConfig(Rates.of(Rate.ofSeconds(1)));
     }
 
-    private LimiterConfig<Object> getConfig(String name, Rates rates) {
-        Bandwidth[] bandwidths = rateToBandwidthConverter.convert(name, rates, ticker.elapsedMicros());
-        return LimiterConfig.of(RateSource.of(name, rates.hasLimits()), rates, bandwidths,
+    private LimiterContext<Object> getConfig(Rates rates) {
+        Bandwidth[] bandwidths = rateToBandwidthConverter
+                .convert("id", rates, ticker.elapsedMicros());
+        return LimiterContext.of(RateConfig.of(rates), bandwidths,
                 Matcher.matchNone(), Collections.emptyList(), ticker);
     }
 }

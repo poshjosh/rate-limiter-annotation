@@ -2,7 +2,7 @@ package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.LimiterConfig;
+import io.github.poshjosh.ratelimiter.util.LimiterContext;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import org.slf4j.Logger;
@@ -59,18 +59,18 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
 
     private final UsageListener listener;
     private final RateLimiterProvider<K, String> rateLimiterProvider;
-    private final Node<LimiterConfig<K>> rootNode;
-    private final Collection<Node<LimiterConfig<K>>> leafNodes;
+    private final Node<LimiterContext<K>> rootNode;
+    private final Collection<Node<LimiterContext<K>>> leafNodes;
 
     DefaultResourceLimiter(
             UsageListener listener,
             RateLimiterProvider<K, String> rateLimiterProvider,
-            Node<LimiterConfig<K>> node) {
+            Node<LimiterContext<K>> node) {
         this(listener, rateLimiterProvider, node, collectLeafs(node));
     }
-    private static <R> Collection<Node<LimiterConfig<R>>> collectLeafs(Node<LimiterConfig<R>> node) {
-        Set<Node<LimiterConfig<R>>> leafNodes = new LinkedHashSet<>();
-        Predicate<Node<LimiterConfig<R>>> test = n -> n.isLeaf() && n.hasValue();
+    private static <R> Collection<Node<LimiterContext<R>>> collectLeafs(Node<LimiterContext<R>> node) {
+        Set<Node<LimiterContext<R>>> leafNodes = new LinkedHashSet<>();
+        Predicate<Node<LimiterContext<R>>> test = n -> n.isLeaf() && n.hasValue();
         node.getRoot().visitAll(test, leafNodes::add);
         return leafNodes;
     }
@@ -78,8 +78,8 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
     private DefaultResourceLimiter(
             UsageListener listener,
             RateLimiterProvider<K, String> rateLimiterProvider,
-            Node<LimiterConfig<K>> rootNode,
-            Collection<Node<LimiterConfig<K>>> leafNodes) {
+            Node<LimiterContext<K>> rootNode,
+            Collection<Node<LimiterContext<K>>> leafNodes) {
         this.listener = Objects.requireNonNull(listener);
         this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
         this.rootNode = Objects.requireNonNull(rootNode);
@@ -93,7 +93,7 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
             if (node == null) {
                 return;
             }
-            final LimiterConfig<K> config = node.getValueOrDefault(null);
+            final LimiterContext<K> config = node.getValueOrDefault(null);
             if (config == null) {
                 return;
             }
@@ -126,7 +126,7 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
     @Override
     public boolean tryConsume(K key, int permits, long timeout, TimeUnit unit) {
 
-        for(Node<LimiterConfig<K>> node : leafNodes) {
+        for(Node<LimiterContext<K>> node : leafNodes) {
 
             final VisitResult result = startVisit(key, permits, timeout, unit, node);
 
@@ -145,7 +145,7 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
     }
 
     private VisitResult startVisit(
-            K key, int permits, long timeout, TimeUnit unit, Node<LimiterConfig<K>> node) {
+            K key, int permits, long timeout, TimeUnit unit, Node<LimiterContext<K>> node) {
         if (!node.isLeaf()) {
             throw new AssertionError("Visiting must start with leaf nodes");
         }
@@ -154,7 +154,7 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
 
     private VisitResult visit(
             K key, int permits, long timeout, TimeUnit unit,
-            Node<LimiterConfig<K>> node, VisitResult previousResult) {
+            Node<LimiterContext<K>> node, VisitResult previousResult) {
 
         if (node == null || node.isRoot()) {
             return firstNonNull(previousResult, VisitResult.LIMIT_NOT_SET);
@@ -167,8 +167,8 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
             return VisitResult.NO_MATCH;
         }
 
-        final LimiterConfig<K> config = node.requireValue();
-        final Node<LimiterConfig<K>> parent = node.getParentOrDefault(null);
+        final LimiterContext<K> config = node.requireValue();
+        final Node<LimiterContext<K>> parent = node.getParentOrDefault(null);
 
         if (!config.hasLimits()) {
             return visit(key, permits, timeout, unit, parent, VisitResult.LIMIT_NOT_SET);
@@ -221,7 +221,7 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
         return VisitResult.FAILURE;
     }
 
-    private void onVisit(Object key, String mainMatch, int permits, LimiterConfig<K> config, VisitResult result) {
+    private void onVisit(Object key, String mainMatch, int permits, LimiterContext<K> config, VisitResult result) {
         listener.onConsumed(key, mainMatch, permits, config);
         if (!VisitResult.FAILURE.equals(result)) {
             return;
@@ -230,7 +230,7 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
     }
 
     private VisitResult visitSingle(
-            String mainMatch, int permits, long timeout, TimeUnit unit, LimiterConfig<K> config) {
+            String mainMatch, int permits, long timeout, TimeUnit unit, LimiterContext<K> config) {
         RateLimiter limiter = rateLimiterProvider.getRateLimiter(mainMatch, config);
         return tryAcquire(mainMatch, limiter, permits, timeout, unit)
                 ? VisitResult.SUCCESS : VisitResult.FAILURE;
@@ -238,9 +238,9 @@ final class DefaultResourceLimiter<K> implements ResourceLimiter<K> {
 
     private VisitResult visitMulti(
             K key, String mainMatch, int permits, long timeout, TimeUnit unit,
-            Node<LimiterConfig<K>> node) {
+            Node<LimiterContext<K>> node) {
 
-        final LimiterConfig<K> config = node.requireValue();
+        final LimiterContext<K> config = node.requireValue();
         
         final List<Matcher<K>> matchers = config.getSubMatchers();
 

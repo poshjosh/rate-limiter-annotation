@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.util.LimiterConfig;
+import io.github.poshjosh.ratelimiter.util.LimiterContext;
 
 import java.util.Objects;
 
@@ -10,9 +10,9 @@ public interface UsageListener {
         @Override public String toString() { return "UsageListener$NO_OP"; }
     };
 
-    default void onConsumed(Object request, String resourceId, int permits, LimiterConfig<?> config) { }
+    default void onConsumed(Object request, String resourceId, int permits, LimiterContext<?> config) { }
 
-    default void onRejected(Object request, String resourceId, int permits, LimiterConfig<?> config) { }
+    default void onRejected(Object request, String resourceId, int permits, LimiterContext<?> config) { }
 
     /**
      * Returns a composed {@code UsageListener} that performs, in sequence, this
@@ -30,12 +30,12 @@ public interface UsageListener {
         Objects.requireNonNull(after);
         return new UsageListener() {
             @Override
-            public void onConsumed(Object request, String resourceId, int permits, LimiterConfig<?> config) {
+            public void onConsumed(Object request, String resourceId, int permits, LimiterContext<?> config) {
                 UsageListener.this.onConsumed(request, resourceId, permits, config);
                 after.onConsumed(request, resourceId, permits, config);
             }
             @Override
-            public void onRejected(Object request, String resourceId, int permits, LimiterConfig<?> config) {
+            public void onRejected(Object request, String resourceId, int permits, LimiterContext<?> config) {
                 UsageListener.this.onRejected(request, resourceId, permits, config);
                 after.onRejected(request, resourceId, permits, config);
             }

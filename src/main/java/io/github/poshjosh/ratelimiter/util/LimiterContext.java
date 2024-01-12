@@ -11,11 +11,11 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public final class LimiterConfig<R> {
+public final class LimiterContext<R> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LimiterConfig.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LimiterContext.class);
 
-    public static <K> LimiterConfig<K> of(
+    public static <K> LimiterContext<K> of(
             RateToBandwidthConverter converter,
             MatcherProvider<K> matcherProvider,
             Ticker ticker,
@@ -37,10 +37,10 @@ public final class LimiterConfig<R> {
             mainMatcher = matcherProvider.createMainMatcher(rateConfig);
             subMatchers = matcherProvider.createSubMatchers(rateConfig);
         }
-        final LimiterConfig<K> limiterConfig =
-                of(rateConfig.getSource(), rates, bandwidths, mainMatcher, subMatchers, ticker);
-        LOG.trace("{}", limiterConfig);
-        return limiterConfig;
+        final LimiterContext<K> limiterContext =
+                of(rateConfig, bandwidths, mainMatcher, subMatchers, ticker);
+        LOG.trace("{}", limiterContext);
+        return limiterContext;
     }
     private static boolean hasLimitsInTree(Node<RateConfig> node) {
         return hasLimits(node) || parentHasLimits(node);
@@ -54,9 +54,9 @@ public final class LimiterConfig<R> {
         return node.requireValue().getRates().hasLimits();
     }
 
-    public static <R> LimiterConfig<R> of(RateSource source, Rates rates, Bandwidth[] bandwidths,
+    public static <R> LimiterContext<R> of(RateConfig rateConfig, Bandwidth[] bandwidths,
             Matcher<R> matcher, List<Matcher<R>> matchers, Ticker ticker) {
-        return new LimiterConfig<>(source, rates, bandwidths, matcher, matchers, ticker);
+        return new LimiterContext<>(rateConfig, bandwidths, matcher, matchers, ticker);
     }
 
     private final RateSource source;
@@ -77,10 +77,10 @@ public final class LimiterConfig<R> {
 
     private final Ticker ticker;
 
-    private LimiterConfig(RateSource source, Rates rates, Bandwidth[] bandwidths,
+    private LimiterContext(RateConfig rateConfig, Bandwidth[] bandwidths,
             Matcher<R> mainMatcher, List<Matcher<R>> subMatchers, Ticker ticker) {
-        this.source = Objects.requireNonNull(source);
-        this.rates = Rates.of(rates);
+        this.source = Objects.requireNonNull(rateConfig.getSource());
+        this.rates = Rates.of(rateConfig.getRates());
         this.bandwidths = Arrays.copyOf(bandwidths, bandwidths.length);
         this.mainMatcher = Objects.requireNonNull(mainMatcher);
         this.subMatchers = Collections.unmodifiableList(new ArrayList<>(subMatchers));
@@ -120,7 +120,7 @@ public final class LimiterConfig<R> {
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        LimiterConfig<?> that = (LimiterConfig<?>) o;
+        LimiterContext<?> that = (LimiterContext<?>) o;
         return rates.equals(that.rates) && mainMatcher.equals(that.mainMatcher) && subMatchers
                 .equals(that.subMatchers) && ticker.equals(that.ticker);
     }
@@ -130,7 +130,7 @@ public final class LimiterConfig<R> {
     }
 
     @Override public String toString() {
-        return "LimiterConfig{source=" + source + ", rates=" + rates + ", mainMatcher=" + mainMatcher +
+        return "LimiterContext{source=" + source + ", rates=" + rates + ", mainMatcher=" + mainMatcher +
                 ", subMatchers=" + subMatchers + ", ticker=" + ticker + '}';
     }
 }

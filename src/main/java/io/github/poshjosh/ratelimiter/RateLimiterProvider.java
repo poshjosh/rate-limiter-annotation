@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.util.LimiterConfig;
+import io.github.poshjosh.ratelimiter.util.LimiterContext;
 
 public interface RateLimiterProvider<R, K> {
 
@@ -13,9 +13,9 @@ public interface RateLimiterProvider<R, K> {
         return new DefaultRateLimiterProvider<>(store);
     }
 
-    default RateLimiter getRateLimiter(K key, LimiterConfig<R> limiterConfig) {
-        return getRateLimiter(key, limiterConfig, 0);
+    default RateLimiter getRateLimiter(K key, LimiterContext<R> limiterContext) {
+        return getRateLimiter(key, limiterContext, 0);
     }
 
-    RateLimiter getRateLimiter(K key, LimiterConfig<R> limiterConfig, int index);
+    RateLimiter getRateLimiter(K key, LimiterContext<R> limiterContext, int index);
 }

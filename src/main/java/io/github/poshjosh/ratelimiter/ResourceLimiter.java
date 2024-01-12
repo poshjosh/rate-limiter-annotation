@@ -87,24 +87,24 @@ public interface ResourceLimiter<K> {
             Ticker ticker,
             Node<RateConfig> node) {
         RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
-        Function<Node<RateConfig>, LimiterConfig<K>> transformer = currentNode -> {
-            return LimiterConfig.of(converter, matcherProvider, ticker, currentNode);
+        Function<Node<RateConfig>, LimiterContext<K>> transformer = currentNode -> {
+            return LimiterContext.of(converter, matcherProvider, ticker, currentNode);
         };
-        Node<LimiterConfig<K>> limiterNode = node.getRoot().transform(transformer);
+        Node<LimiterContext<K>> limiterNode = node.getRoot().transform(transformer);
         return of(listener, rateLimiterProvider, limiterNode);
     }
 
     static <K> ResourceLimiter<K> of(
             UsageListener listener,
             BandwidthsStore<String> store,
-            Node<LimiterConfig<K>> node) {
+            Node<LimiterContext<K>> node) {
         return of(listener, RateLimiterProvider.of(store), node);
     }
 
     static <K> ResourceLimiter<K> of(
             UsageListener listener,
             RateLimiterProvider<K, String> rateLimiterProvider,
-            Node<LimiterConfig<K>> node) {
+            Node<LimiterContext<K>> node) {
         return new DefaultResourceLimiter<>(listener, rateLimiterProvider, node);
     }
 

@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.LimiterConfig;
+import io.github.poshjosh.ratelimiter.util.LimiterContext;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,8 +12,8 @@ final class MatchUtil {
     private static final Logger LOG = LoggerFactory.getLogger(MatchUtil.class);
     private MatchUtil() { }
 
-    static <K> String match(Node<LimiterConfig<K>> node, K toMatch) {
-        final LimiterConfig<K> config = node.requireValue();
+    static <K> String match(Node<LimiterContext<K>> node, K toMatch) {
+        final LimiterContext<K> config = node.requireValue();
         final Matcher<K> matcher = config.getMainMatcher();
         final String match = matcher.match(toMatch);
         if (LOG.isTraceEnabled()) {
@@ -24,9 +24,9 @@ final class MatchUtil {
 
     }
 
-    static <K> String matchAt(Node<LimiterConfig<K>> node, K toMatch, int i, String mainMatch) {
+    static <K> String matchAt(Node<LimiterContext<K>> node, K toMatch, int i, String mainMatch) {
 
-        final LimiterConfig<K> config = node.requireValue();
+        final LimiterContext<K> config = node.requireValue();
 
         final Matcher<K> matcher = config.getSubMatchers().get(i);
 
@@ -44,8 +44,8 @@ final class MatchUtil {
         return Matcher.composeResults(mainMatch, match);
     }
 
-    private static <K> String resolveMatch(String match, Node<LimiterConfig<K>> node) {
-        final LimiterConfig<K> config = node.requireValue();
+    private static <K> String resolveMatch(String match, Node<LimiterContext<K>> node) {
+        final LimiterContext<K> config = node.requireValue();
         if (config.getSource().isGroupType()) {
             return node.getName();
         }
@@ -55,7 +55,7 @@ final class MatchUtil {
         return match;
     }
 
-    private static boolean isGenericDeclarationSource(LimiterConfig<?> config) {
+    private static boolean isGenericDeclarationSource(LimiterContext<?> config) {
         return config.getSource().getSource() instanceof GenericDeclaration;
     }
 }

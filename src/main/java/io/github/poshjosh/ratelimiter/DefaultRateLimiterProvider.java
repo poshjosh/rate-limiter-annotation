@@ -2,7 +2,7 @@ package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.util.LimiterConfig;
+import io.github.poshjosh.ratelimiter.util.LimiterContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,27 +26,27 @@ final class DefaultRateLimiterProvider<R, K> implements RateLimiterProvider<R, K
         this.resourceIdToRateLimiter = new ConcurrentHashMap<>();
     }
 
-    public RateLimiter getRateLimiter(K key, LimiterConfig<R> limiterConfig, int index) {
+    public RateLimiter getRateLimiter(K key, LimiterContext<R> limiterContext, int index) {
         RateLimiter value;
         if ((value = this.resourceIdToRateLimiter.get(key)) == null) {
-            value = createLimiter(key, limiterConfig, index);
+            value = createLimiter(key, limiterContext, index);
             this.resourceIdToRateLimiter.put(key, value);
         }
         return value;
     }
 
-    private RateLimiter createLimiter(K key, LimiterConfig<R> config, int index) {
+    private RateLimiter createLimiter(K key, LimiterContext<R> config, int index) {
         Bandwidth bandwidth = getOrCreateBandwidth(key, config, index);
         bandwidth = withAutoSave(key, bandwidth);
         return RateLimiter.of(bandwidth, config.getTicker());
     }
 
-    private Bandwidth getOrCreateBandwidth(K key, LimiterConfig<R> config, int index) {
+    private Bandwidth getOrCreateBandwidth(K key, LimiterContext<R> config, int index) {
         final Bandwidth existing = getBandwidthFromStore(key);
         return existing == null ? createBandwidth(config, index) : existing;
     }
 
-    private Bandwidth createBandwidth(LimiterConfig<R> config, int index) {
+    private Bandwidth createBandwidth(LimiterContext<R> config, int index) {
         Bandwidth [] bandwidths = config.getBandwidths();
         if (bandwidths.length == 0) {
             if (index == 0) {
@@ -57,7 +57,7 @@ final class DefaultRateLimiterProvider<R, K> implements RateLimiterProvider<R, K
         return bandwidths[index].with(config.getTicker().elapsedMicros());
     }
 
-    private IndexOutOfBoundsException noLimitAtIndex(LimiterConfig<R> config, int index) {
+    private IndexOutOfBoundsException noLimitAtIndex(LimiterContext<R> config, int index) {
         return new IndexOutOfBoundsException("Index: " + index +
                 ", exceeds number of rate limits defined at: " + config.getSource().getSource());
     }
