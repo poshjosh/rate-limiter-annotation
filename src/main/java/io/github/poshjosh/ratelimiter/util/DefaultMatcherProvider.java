@@ -2,7 +2,6 @@ package io.github.poshjosh.ratelimiter.util;
 
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
-import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -22,9 +21,8 @@ final class DefaultMatcherProvider<INPUT> implements MatcherProvider<INPUT> {
     }
 
     @Override public List<Matcher<INPUT>> createSubMatchers(RateConfig rateConfig) {
-        return rateConfig.getRates().getLimits().stream()
-                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(null))
-                .filter(Objects::nonNull)
+        return rateConfig.getRates().getSubLimits().stream()
+                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(Matcher.matchNone()))
                 .collect(Collectors.toList());
     }
 

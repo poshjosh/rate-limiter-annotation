@@ -1,21 +1,26 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
+import io.github.poshjosh.ratelimiter.model.Rate;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.util.LimiterContext;
+import io.github.poshjosh.ratelimiter.util.Ticker;
 
-public interface RateLimiterProvider<R, K> {
+public interface RateLimiterProvider<K> {
 
-    static <R, K> RateLimiterProvider<R, K> ofDefaults() {
-        return of(BandwidthsStore.ofDefaults());
+    static <K> RateLimiterProvider<K> ofDefaults() {
+        final Ticker ticker = Ticker.ofDefaults();
+        return of(RateToBandwidthConverter.ofDefaults(ticker), BandwidthsStore.ofDefaults(), ticker);
     }
 
-    static <R, K> RateLimiterProvider<R, K> of(BandwidthsStore<K> store) {
-        return new DefaultRateLimiterProvider<>(store);
+    static <K> RateLimiterProvider<K> of(
+            RateToBandwidthConverter converter,
+            BandwidthsStore<K> store,
+            Ticker ticker) {
+        return new DefaultRateLimiterProvider<>(converter, store, ticker);
     }
 
-    default RateLimiter getRateLimiter(K key, LimiterContext<R> limiterContext) {
-        return getRateLimiter(key, limiterContext, 0);
-    }
+    RateLimiter getRateLimiter(K key, Rate rate);
 
-    RateLimiter getRateLimiter(K key, LimiterContext<R> limiterContext, int index);
+    RateLimiter getRateLimiter(K key, Rates rates);
 }

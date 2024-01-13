@@ -32,7 +32,7 @@ class AnnotationConverterTest {
         Rates rates = annotationConverter.convert(ClassWithZeroRates.class);
         assertFalse(rates.hasLimits());
         assertEquals(Operator.NONE, rates.getOperator());
-        assertEquals("", rates.getRateCondition());
+        assertNull(rates.getRateCondition());
     }
 
     @Rate(permits=7, duration=2, timeUnit=TimeUnit.MINUTES, condition="jvm.memory.free>0")
@@ -41,8 +41,8 @@ class AnnotationConverterTest {
     @Test
     void convert_givenClassWithSingleRate_shouldReturnMatchingRate() {
         Rates rates = annotationConverter.convert(ClassWithSingleRate.class);
-        assertEquals(1, rates.size());
-        io.github.poshjosh.ratelimiter.model.Rate rate = rates.getLimits().get(0);
+        assertEquals(1, rates.totalSize());
+        io.github.poshjosh.ratelimiter.model.Rate rate = rates.getLimit();
         assertEquals(7, rate.getPermits());
         assertEquals(Duration.ofMinutes(2), rate.getDuration());
         assertEquals("jvm.memory.free>0", rate.getRateCondition());
@@ -63,10 +63,12 @@ class AnnotationConverterTest {
 
     @Test
     void convert_givenClassWithSomeRates_shouldReturnSameNumberOfRates() {
+        // 1 x RateCondition (main)
+        // 2 x Rate (sub)
         Rates rates = annotationConverter.convert(ClassWith2Rates.class);
-        assertEquals(2, rates.size());
+        assertEquals(3, rates.totalSize());
         assertEquals("jvm.memory.free<0", rates.getRateCondition());
-        assertTrue(rates.getLimits().stream()
+        assertTrue(rates.getSubLimits().stream()
                 .map(rate -> rate.getRateCondition())
                 .anyMatch("sys.time.elapsed>PT0S"::equals));
     }
@@ -74,7 +76,7 @@ class AnnotationConverterTest {
     @Test
     void convert_givenGroupAnnotationWithSomeRates_shouldReturnSameNumberOfRates() {
       Rates rates = annotationConverter.convert(CustomRateGroup.class);
-      assertEquals(2, rates.size());
+      assertEquals(2, rates.totalSize());
       assertEquals(Operator.AND, rates.getOperator());
     }
 }

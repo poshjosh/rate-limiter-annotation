@@ -32,13 +32,25 @@ final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> 
         final Operator operator = operator(rateGroup);
         validate(source, operator, rates);
         if (rates.length == 0) {
-            return Rates.of(operator, rateConditionForAllRates);
+            // Operator is irrelevant for a single Rate
+            return Rates.of(rateConditionForAllRates);
         }
-        final io.github.poshjosh.ratelimiter.model.Rate[] configs = new io.github.poshjosh.ratelimiter.model.Rate[rates.length];
+        final io.github.poshjosh.ratelimiter.model.Rate[] rateData = new io.github.poshjosh.ratelimiter.model.Rate[rates.length];
         for (int i = 0; i < rates.length; i++) {
-            configs[i] = convert(rates[i]);
+            rateData[i] = convert(rates[i]);
         }
-        return Rates.of(operator, rateConditionForAllRates, configs);
+        if (rateData.length == 1) {
+            final io.github.poshjosh.ratelimiter.model.Rate only = rateData[0];
+            if (!StringUtils.hasText(rateConditionForAllRates)) {
+                return Rates.of(only);
+            }
+            if (!StringUtils.hasText(only.getRateCondition())) {
+                only.setRateCondition(rateConditionForAllRates);
+                return Rates.of(only);
+            }
+        }
+
+        return Rates.of(operator, rateConditionForAllRates, rateData);
     }
 
     private void validate(GenericDeclaration source, Operator operator, Rate[] rates) {

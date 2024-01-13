@@ -1,122 +1,59 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
+import io.github.poshjosh.ratelimiter.model.Rate;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.util.LimiterContext;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import io.github.poshjosh.ratelimiter.util.Ticker;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-final class DefaultRateLimiterProvider<R, K> implements RateLimiterProvider<R, K> {
+final class DefaultRateLimiterProvider<K> implements RateLimiterProvider<K> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultRateLimiterProvider.class);
-
-    private final BandwidthsStore<K> store;
-
-    private final ReadWriteLock storeLock = new ReentrantReadWriteLock();
+    private final BandwidthStoreFacade<K> bandwidthStoreFacade;
+    private final Ticker ticker;
 
     private final Map<Object, RateLimiter> resourceIdToRateLimiter;
 
-    DefaultRateLimiterProvider(BandwidthsStore<K> store) {
-        this.store = Objects.requireNonNull(store);
+    DefaultRateLimiterProvider(
+            RateToBandwidthConverter rateToBandwidthConverter,
+            BandwidthsStore<K> bandwidthStore,
+            Ticker ticker) {
+        this.bandwidthStoreFacade =
+                new BandwidthStoreFacade<>(rateToBandwidthConverter, bandwidthStore);
+        this.ticker = Objects.requireNonNull(ticker);
         this.resourceIdToRateLimiter = new ConcurrentHashMap<>();
     }
 
-    public RateLimiter getRateLimiter(K key, LimiterContext<R> limiterContext, int index) {
-        RateLimiter value;
-        if ((value = this.resourceIdToRateLimiter.get(key)) == null) {
-            value = createLimiter(key, limiterContext, index);
-            this.resourceIdToRateLimiter.put(key, value);
+    @Override
+    public RateLimiter getRateLimiter(K key, Rate rate) {
+        RateLimiter rateLimiter;
+        if ((rateLimiter = this.resourceIdToRateLimiter.get(key)) == null) {
+            rateLimiter = createRateLimiter(key, rate);
+            this.resourceIdToRateLimiter.put(key, rateLimiter);
         }
-        return value;
+        return rateLimiter;
     }
 
-    private RateLimiter createLimiter(K key, LimiterContext<R> config, int index) {
-        Bandwidth bandwidth = getOrCreateBandwidth(key, config, index);
-        bandwidth = withAutoSave(key, bandwidth);
-        return RateLimiter.of(bandwidth, config.getTicker());
+    @Override
+    public RateLimiter getRateLimiter(K key, Rates rates) {
+        RateLimiter rateLimiter;
+        if ((rateLimiter = this.resourceIdToRateLimiter.get(key)) == null) {
+            rateLimiter = createRateLimiter(key, rates);
+            this.resourceIdToRateLimiter.put(key, rateLimiter);
+        }
+        return rateLimiter;
     }
 
-    private Bandwidth getOrCreateBandwidth(K key, LimiterContext<R> config, int index) {
-        final Bandwidth existing = getBandwidthFromStore(key);
-        return existing == null ? createBandwidth(config, index) : existing;
+    private RateLimiter createRateLimiter(K key, Rate rate) {
+        Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rate);
+        return RateLimiter.of(bandwidth, ticker);
     }
 
-    private Bandwidth createBandwidth(LimiterContext<R> config, int index) {
-        Bandwidth [] bandwidths = config.getBandwidths();
-        if (bandwidths.length == 0) {
-            if (index == 0) {
-                return Bandwidth.UNLIMITED;
-            }
-            throw noLimitAtIndex(config, index);
-        }
-        return bandwidths[index].with(config.getTicker().elapsedMicros());
-    }
-
-    private IndexOutOfBoundsException noLimitAtIndex(LimiterContext<R> config, int index) {
-        return new IndexOutOfBoundsException("Index: " + index +
-                ", exceeds number of rate limits defined at: " + config.getSource().getSource());
-    }
-
-    private Bandwidth withAutoSave(K key, Bandwidth bandwidth) {
-        return new BandwidthWrapper(bandwidth) {
-            @Override public long reserveEarliestAvailable(int permits, long nowMicros) {
-                final long result = super.reserveEarliestAvailable(permits, nowMicros);
-                DefaultRateLimiterProvider.this.saveBandwidthToStore(key, bandwidth);
-                return result;
-            }
-            @Override public String toString() {
-                return bandwidth.toString();
-            }
-        };
-    }
-
-    private Bandwidth getBandwidthFromStore(K key) {
-        try{
-            storeLock.readLock().lock();
-            return store.get(key);
-        }finally {
-            storeLock.readLock().unlock();
-        }
-    }
-
-    private void saveBandwidthToStore(K key, Bandwidth bandwidth) {
-        try {
-            storeLock.writeLock().lock();
-            store.put(key, bandwidth);
-            LOG.trace("Saved: {} = {}", key, bandwidth);
-        }finally {
-            storeLock.writeLock().unlock();
-        }
-    }
-
-    private static class BandwidthWrapper implements Bandwidth{
-        private final Bandwidth delegate;
-        private BandwidthWrapper(Bandwidth delegate) {
-            this.delegate = Objects.requireNonNull(delegate);
-        }
-        @Override
-        public Bandwidth with(long nowMicros) {
-            return delegate.with(nowMicros);
-        }
-        @Override
-        public long queryEarliestAvailable(long nowMicros) {
-            return delegate.queryEarliestAvailable(nowMicros);
-        }
-        @Override
-        public long reserveEarliestAvailable(int permits, long nowMicros) {
-            return delegate.reserveEarliestAvailable(permits, nowMicros);
-        }
-        @Override
-        public double getPermitsPerSecond() {
-            return delegate.getPermitsPerSecond();
-        }
-        @Override public boolean equals(Object o) { return delegate.equals(o); }
-        @Override public int hashCode() { return delegate.hashCode(); }
-        @Override public String toString() { return delegate.toString(); }
+    private RateLimiter createRateLimiter(K key, Rates rates) {
+        Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rates);
+        return RateLimiter.of(bandwidth, ticker);
     }
 }

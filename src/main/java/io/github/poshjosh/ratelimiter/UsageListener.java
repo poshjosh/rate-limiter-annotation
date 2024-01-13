@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.util.LimiterContext;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 
 import java.util.Objects;
 
@@ -10,9 +10,9 @@ public interface UsageListener {
         @Override public String toString() { return "UsageListener$NO_OP"; }
     };
 
-    default void onConsumed(Object request, String resourceId, int permits, LimiterContext<?> config) { }
+    default void onConsumed(Object request, String resourceId, int permits, RateConfig config) { }
 
-    default void onRejected(Object request, String resourceId, int permits, LimiterContext<?> config) { }
+    default void onRejected(Object request, String resourceId, int permits, RateConfig config) { }
 
     /**
      * Returns a composed {@code UsageListener} that performs, in sequence, this
@@ -30,17 +30,17 @@ public interface UsageListener {
         Objects.requireNonNull(after);
         return new UsageListener() {
             @Override
-            public void onConsumed(Object request, String resourceId, int permits, LimiterContext<?> config) {
+            public void onConsumed(Object request, String resourceId, int permits, RateConfig config) {
                 UsageListener.this.onConsumed(request, resourceId, permits, config);
                 after.onConsumed(request, resourceId, permits, config);
             }
             @Override
-            public void onRejected(Object request, String resourceId, int permits, LimiterContext<?> config) {
+            public void onRejected(Object request, String resourceId, int permits, RateConfig config) {
                 UsageListener.this.onRejected(request, resourceId, permits, config);
                 after.onRejected(request, resourceId, permits, config);
             }
             @Override public String toString() {
-                return "UsageListener$andThen{first=" + this + ", after=" + after + "}";
+                return "UsageListener$andThen{l=" + this + ", r=" + after + "}";
             }
         };
     }

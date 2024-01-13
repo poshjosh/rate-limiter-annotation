@@ -13,8 +13,8 @@ final class MatchUtil {
     private MatchUtil() { }
 
     static <K> String match(Node<LimiterContext<K>> node, K toMatch) {
-        final LimiterContext<K> config = node.requireValue();
-        final Matcher<K> matcher = config.getMainMatcher();
+        final LimiterContext<K> context = node.requireValue();
+        final Matcher<K> matcher = context.getMainMatcher();
         final String match = matcher.match(toMatch);
         if (LOG.isTraceEnabled()) {
             LOG.trace("Match: {}, toMatch: {}, matcher: {}",
@@ -26,9 +26,9 @@ final class MatchUtil {
 
     static <K> String matchAt(Node<LimiterContext<K>> node, K toMatch, int i, String mainMatch) {
 
-        final LimiterContext<K> config = node.requireValue();
+        final LimiterContext<K> context = node.requireValue();
 
-        final Matcher<K> matcher = config.getSubMatchers().get(i);
+        final Matcher<K> matcher = context.getSubMatchers().get(i);
 
         final String match = matcher.match(toMatch);
 
@@ -45,17 +45,13 @@ final class MatchUtil {
     }
 
     private static <K> String resolveMatch(String match, Node<LimiterContext<K>> node) {
-        final LimiterContext<K> config = node.requireValue();
-        if (config.getSource().isGroupType()) {
+        final LimiterContext<K> context = node.requireValue();
+        if (context.isGroupSource()) {
             return node.getName();
         }
-        if (!Matcher.isMatch(match) && !isGenericDeclarationSource(config) && !node.isLeaf()) {
+        if (!Matcher.isMatch(match) && !context.isGenericDeclarationSource() && !node.isLeaf()) {
             return node.getName();
         }
         return match;
-    }
-
-    private static boolean isGenericDeclarationSource(LimiterContext<?> config) {
-        return config.getSource().getSource() instanceof GenericDeclaration;
     }
 }

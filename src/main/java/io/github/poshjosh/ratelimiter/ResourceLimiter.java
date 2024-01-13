@@ -1,14 +1,11 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
-import io.github.poshjosh.ratelimiter.bandwidths.BandwidthState;
-import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.*;
 
 import java.time.Duration;
@@ -26,16 +23,7 @@ import static java.util.concurrent.TimeUnit.MICROSECONDS;
  */
 public interface ResourceLimiter<K> {
 
-    /**
-     * To maintain a synchronized time between distributed services. We use the time since epoch.
-     */
-    Ticker DEFAULT_TICKER = Ticker.SYSTEM_EPOCH_MILLIS;
-
     ResourceLimiter<Object> NO_OP = new ResourceLimiter<Object>() {
-        @Override public List<BandwidthState> getBandwidths(Object key) {
-            return Collections.emptyList();
-        }
-
         @Override public ResourceLimiter<Object> listener(UsageListener listener) { return this; }
         @Override public UsageListener getListener() { return UsageListener.NO_OP; }
         @Override public boolean tryConsume(Object key, int permits, long timeout, TimeUnit unit) {
@@ -77,18 +65,16 @@ public interface ResourceLimiter<K> {
 
     static <K> ResourceLimiter<K> of(Node<RateConfig> node) {
         return of(UsageListener.NO_OP, RateLimiterProvider.ofDefaults(),
-                MatcherProvider.ofDefaults(), DEFAULT_TICKER, node);
+                MatcherProvider.ofDefaults(), node);
     }
 
     static <K> ResourceLimiter<K> of(
             UsageListener listener,
-            RateLimiterProvider<K, String> rateLimiterProvider,
+            RateLimiterProvider<String> rateLimiterProvider,
             MatcherProvider<K> matcherProvider,
-            Ticker ticker,
             Node<RateConfig> node) {
-        RateToBandwidthConverter converter = RateToBandwidthConverter.ofDefaults();
         Function<Node<RateConfig>, LimiterContext<K>> transformer = currentNode -> {
-            return LimiterContext.of(converter, matcherProvider, ticker, currentNode);
+            return LimiterContext.of(matcherProvider, currentNode);
         };
         Node<LimiterContext<K>> limiterNode = node.getRoot().transform(transformer);
         return of(listener, rateLimiterProvider, limiterNode);
@@ -96,19 +82,11 @@ public interface ResourceLimiter<K> {
 
     static <K> ResourceLimiter<K> of(
             UsageListener listener,
-            BandwidthsStore<String> store,
+            RateLimiterProvider<String> rateLimiterProvider,
             Node<LimiterContext<K>> node) {
-        return of(listener, RateLimiterProvider.of(store), node);
+        return new DefaultResourceLimiter<>(
+                listener, new RateLimiterTree<>(rateLimiterProvider, node));
     }
-
-    static <K> ResourceLimiter<K> of(
-            UsageListener listener,
-            RateLimiterProvider<K, String> rateLimiterProvider,
-            Node<LimiterContext<K>> node) {
-        return new DefaultResourceLimiter<>(listener, rateLimiterProvider, node);
-    }
-
-    List<BandwidthState> getBandwidths(K key);
 
     ResourceLimiter<K> listener(UsageListener listener);
 
@@ -217,12 +195,6 @@ public interface ResourceLimiter<K> {
         Objects.requireNonNull(after);
         final UsageListener listener = getListener().andThen(after.getListener());
         return new ResourceLimiter<K>() {
-            @Override public List<BandwidthState> getBandwidths(K key) {
-                List<BandwidthState> limiters = new ArrayList<>();
-                limiters.addAll(ResourceLimiter.this.getBandwidths(key));
-                limiters.addAll(after.getBandwidths(key));
-                return Collections.unmodifiableList(limiters);
-            }
             @Override public ResourceLimiter<K> listener(UsageListener listener) {
                 return ResourceLimiter.this.listener(listener).andThen(after.listener(listener));
             }

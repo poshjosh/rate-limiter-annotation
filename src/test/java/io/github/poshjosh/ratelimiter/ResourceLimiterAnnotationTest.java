@@ -153,48 +153,6 @@ class ResourceLimiterAnnotationTest {
         assertFalse(c.tryConsume(key));
     }
 
-    private static final String RATE_GROUP_NAME = "my-rate-group";
-
-    @Rate(1)
-    @Rate(2)
-    @RateGroup(name = RATE_GROUP_NAME, operator = Operator.AND)
-    @Retention(RetentionPolicy.RUNTIME)
-    @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
-    public @interface MultiClassRateGroup { }
-
-    @MultiClassRateGroup
-    static class MultiClassRateGroupMember1 {
-        void method0() {}
-    }
-
-    static class MultiClassRateGroupMember2 {
-        @MultiClassRateGroup
-        void method0() {}
-    }
-
-    @Test
-    void testGroupMember_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = newMultiClassLimiter();
-        final String id = ElementId.of(MultiClassRateGroupMember1.class);
-        assertTrue(limiter.tryConsume(id));
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
-    }
-
-    @Test
-    void testGroupAnnotation_shouldNotBeRateLimited() {
-        ResourceLimiter<Object> limiter = newMultiClassLimiter();
-        final String id = ElementId.of(MultiClassRateGroupMember1.class);
-        assertTrue(limiter.tryConsume(RATE_GROUP_NAME));
-        assertTrue(limiter.tryConsume(RATE_GROUP_NAME));
-        assertTrue(limiter.tryConsume(RATE_GROUP_NAME));
-    }
-
-    private ResourceLimiter<Object> newMultiClassLimiter() {
-        // The classes should not be in order, as is expected in real situations
-        return newResourceLimiter(MultiClassRateGroupMember1.class, MultiClassRateGroup.class, MultiClassRateGroupMember2.class);
-    }
-
     @Rate(1)
     @RateCondition("jvm.memory.free<1")
     public class ClassWithSeparateRateCondition { }
@@ -305,12 +263,12 @@ class ResourceLimiterAnnotationTest {
     // as elapsed time will always be greater than zero.
     @Rate(permits=1, when="sys.time.elapsed<=PT0S")
     @Rate(permits=2, when="sys.time.elapsed>PT0S")
-    public class ClassWithComposedRates { }
+    public class ClassWithNonConjunctedRates { }
 
     @Test
-    void givenNonComposedRates() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithComposedRates.class);
-        final String id = ElementId.of(ClassWithComposedRates.class);
+    void givenNonConjunctedRates() {
+        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithNonConjunctedRates.class);
+        final String id = ElementId.of(ClassWithNonConjunctedRates.class);
         assertTrue(limiter.tryConsume(id));
         assertTrue(limiter.tryConsume(id));
         assertFalse(limiter.tryConsume(id));
