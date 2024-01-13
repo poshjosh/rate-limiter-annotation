@@ -12,7 +12,7 @@ import java.time.Duration;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class ResourceLimiterTest {
+class RateLimiterFactoryTest {
 
     final String key = "0";
 
@@ -25,59 +25,59 @@ class ResourceLimiterTest {
     @ValueSource(longs = {2_000, 100})
     void shouldNotBeAffectedByLongInitialDelay() throws InterruptedException {
         final long duration = 100;
-        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(2, duration));
+        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(2, duration));
         Thread.sleep(duration + 1);
-        assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire initial permit");
+        assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
     }
 
     @ParameterizedTest
     @ValueSource(longs = {2_000, 100})
     void shouldExceedLimitAfterLongInitialDelay(long duration) throws InterruptedException {
-        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(1, duration));
+        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(1, duration));
         Thread.sleep(duration + 10);
-        assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire initial permit");
-        assertFalse(resourceLimiter.tryConsume(key), "Capable of acquiring additional permit");
+        assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
+        assertFalse(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Capable of acquiring additional permit");
     }
 
     @Test
     void veryLargeLimitShouldNotBeAffectedByDuration() {
         final long duration = 1;
-        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(Long.MAX_VALUE, duration));
+        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(Long.MAX_VALUE, duration));
         for (int i = 0; i < 100; i++) {
-            assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
     }
 
     @Test
     void immediateConsumeShouldSucceed() {
-        ResourceLimiter<String> resourceLimiter = perSecondRateLimiter(1);
-        assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire initial permit");
+        RateLimiterFactory<String> RateLimiterFactory = perSecondRateLimiter(1);
+        assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
     }
 
     @Test
     void testConsumeParameterValidation() {
-        ResourceLimiter<String> resourceLimiter = perSecondRateLimiter(999);
-        assertThrowsRuntimeException(() -> resourceLimiter.tryConsume(key, -1));
+        RateLimiterFactory<String> RateLimiterFactory = perSecondRateLimiter(999);
+        assertThrowsRuntimeException(() -> RateLimiterFactory.getRateLimiter(key).tryAcquire(-1));
         if (!supportsNullKeys) {
-            assertThrowsRuntimeException(() -> resourceLimiter.tryConsume(null, 1));
+            assertThrowsRuntimeException(() -> RateLimiterFactory.getRateLimiter(null).tryAcquire());
         }
     }
 
-    protected <T> ResourceLimiter<T> perSecondRateLimiter(long amount) {
-        return getResourceLimiter(getRate(amount, durationMillis));
+    protected <T> RateLimiterFactory<T> perSecondRateLimiter(long amount) {
+        return getRateLimiterFactory(getRate(amount, durationMillis));
     }
 
     @Test
     void testNewInstanceParameterValidation() {
-        assertThrowsRuntimeException(() -> getResourceLimiter(getRate(-1, 1)));
-        assertThrowsRuntimeException(() -> getResourceLimiter(getRate(1, -1)));
+        assertThrowsRuntimeException(() -> getRateLimiterFactory(getRate(-1, 1)));
+        assertThrowsRuntimeException(() -> getRateLimiterFactory(getRate(1, -1)));
     }
 
     @ParameterizedTest
     @ValueSource(longs = {1, 2, 4})
     void shouldResetWhenLimitNotExceededWithinDuration(long limit) throws InterruptedException{
         final long duration = 2000;
-        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(limit, duration));
+        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(limit, duration));
 
         //long startMillis = 0;
 
@@ -85,10 +85,10 @@ class ResourceLimiterTest {
         for (; i < limit; i++) {
             //System.out.println(i);
             //startMillis = System.currentTimeMillis();
-            assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
         //System.out.println(i);
-        assertFalse(resourceLimiter.tryConsume(key), "Capable of acquiring permit " + limit);
+        assertFalse(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
 
         // Works but is a bit flaky
         //Thread.sleep(duration - (System.currentTimeMillis() - startMillis) + 1); // Leads to reset
@@ -97,41 +97,30 @@ class ResourceLimiterTest {
         i = 0;
         for (; i < limit; i++) {
             //System.out.println(i);
-            assertTrue(resourceLimiter.tryConsume(key), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
         //System.out.println(i);
-        assertFalse(resourceLimiter.tryConsume(key), "Capable of acquiring permit " + limit);
+        assertFalse(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
     }
 
     @Test
     void shouldResetWhenAtThreshold() throws Exception{
-        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(1, 0));
-        resourceLimiter.tryConsume(key);
+        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(1, 0));
+        RateLimiterFactory.getRateLimiter(key).tryAcquire();
 
         // Simulate some time before the next recording
         // This way we can have a reset
         Thread.sleep(durationMillis + 500);
 
-        resourceLimiter.tryConsume(key);
+        RateLimiterFactory.getRateLimiter(key).tryAcquire();
     }
 
     @Test
     void shouldFailWhenLimitExceeded() {
-        ResourceLimiter<String> resourceLimiter = getResourceLimiter(getRate(2, 1000));
-        assertThat(resourceLimiter.tryConsume(key)).isTrue();
-        assertThat(resourceLimiter.tryConsume(key)).isTrue();
-        assertThat(resourceLimiter.tryConsume(key)).isFalse();
-    }
-
-    @Test
-    void testAndThen() {
-        ResourceLimiter<String> a = getResourceLimiter(
-                getRate(10, 1000, BandwidthFactory.AllOrNothing.class));
-        ResourceLimiter<String> b = getResourceLimiter(
-                getRate(1, 1000, BandwidthFactory.AllOrNothing.class));
-        ResourceLimiter<String> c = a.andThen(b);
-        assertTrue(c.tryConsume(key), "Unable to acquire initial permit");
-        assertFalse(c.tryConsume(key), "Capable of acquiring additional permit");
+        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(2, 1000));
+        assertThat(RateLimiterFactory.getRateLimiter(key).tryAcquire()).isTrue();
+        assertThat(RateLimiterFactory.getRateLimiter(key).tryAcquire()).isTrue();
+        assertThat(RateLimiterFactory.getRateLimiter(key).tryAcquire()).isFalse();
     }
 
     static void assertTrue(boolean expression, String message) {
@@ -146,8 +135,8 @@ class ResourceLimiterTest {
         assertThrows(RuntimeException.class, executable);
     }
 
-    public <T> ResourceLimiter<T> getResourceLimiter(Rate limit) {
-        return ResourceLimiter.of(key, limit);
+    public <T> RateLimiterFactory<T> getRateLimiterFactory(Rate limit) {
+        return RateLimiterFactory.of(key, limit);
     }
 
     protected Rate getRate(long permits, long durationMillis) {

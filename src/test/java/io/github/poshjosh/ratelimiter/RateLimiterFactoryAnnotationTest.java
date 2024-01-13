@@ -13,16 +13,16 @@ import java.lang.reflect.Method;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.*;
 
-class ResourceLimiterAnnotationTest {
+class RateLimiterFactoryAnnotationTest {
 
     @Rate(permits = 1, name = "resource-0")
     static class RateLimitedClass { }
 
     @Test
     void testRateLimitedClass() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(RateLimitedClass.class);
-        assertTrue(limiter.tryConsume("resource-0"));
-        assertFalse(limiter.tryConsume("resource-0"));
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(RateLimitedClass.class);
+        assertTrue(limiterFactory.getRateLimiter("resource-0").tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter("resource-0").tryAcquire());
     }
 
     static class ClassWithRateLimitedMethod {
@@ -32,10 +32,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void testClassWithSingleRateLimitedMethod() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithRateLimitedMethod.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithRateLimitedMethod.class);
         final String resourceId = ElementId.ofMethod(ClassWithRateLimitedMethod.class, "hi");
-        assertTrue(limiter.tryConsume(resourceId));
-        assertFalse(limiter.tryConsume(resourceId));
+        assertTrue(limiterFactory.getRateLimiter(resourceId).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(resourceId).tryAcquire());
     }
 
     static class ClassWithNoLimit {
@@ -44,9 +44,9 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void isNotLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithNoLimit.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithNoLimit.class);
         final String resourceId = ElementId.ofMethod(ClassWithRateLimitedMethod.class, "hi");
-        assertTrue(limiter.tryConsume(resourceId, Integer.MAX_VALUE));
+        assertTrue(limiterFactory.getRateLimiter(resourceId).tryAcquire(Integer.MAX_VALUE));
     }
 
     @Rate(2)
@@ -56,10 +56,10 @@ class ResourceLimiterAnnotationTest {
     }
     @Test
     void isLimitedByMethodGivenMethodRateIsLower() {
-        final ResourceLimiter<Object> limiter = newResourceLimiter(ClassRateHigherThanMethodRate.class);
+        final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassRateHigherThanMethodRate.class);
         final String key = ElementId.ofMethod(ClassRateHigherThanMethodRate.class, "hi");
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        assertTrue(limiterFactory.getRateLimiter(key).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(key).tryAcquire());
     }
 
     @Rate(1)
@@ -70,18 +70,18 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void methodIsLimitedByClassGivenClassRateIsLower() throws NoSuchMethodException {
-        final ResourceLimiter<Object> limiter = newResourceLimiter(ClassRateLowerThanMethodRate.class);
+        final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassRateLowerThanMethodRate.class);
         final Method key = ClassRateLowerThanMethodRate.class.getDeclaredMethod("hi");
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        assertTrue(limiterFactory.getRateLimiter(key).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(key).tryAcquire());
     }
 
     @Test
     void methodIdentifiedByIdIsLimitedByClassGivenClassRateIsLower() {
-        final ResourceLimiter<Object> limiter = newResourceLimiter(ClassRateLowerThanMethodRate.class);
+        final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassRateLowerThanMethodRate.class);
         final String key = ElementId.ofMethod(ClassRateLowerThanMethodRate.class, "hi");
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        assertTrue(limiterFactory.getRateLimiter(key).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(key).tryAcquire());
     }
 
     @Rate(permits = 1, name = "class")
@@ -92,10 +92,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void testRateLimitedClassWithNamedRateLimitedMethod() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(
                 RateLimitedClassWithNamedRateLimitedMethod.class);
-        assertTrue(limiter.tryConsume("method"));
-        assertFalse(limiter.tryConsume("method"));
+        assertTrue(limiterFactory.getRateLimiter("method").tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter("method").tryAcquire());
     }
 
     @Rate(permits = 1, timeUnit = SECONDS)
@@ -110,10 +110,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void testRateLimitedClassWithOrLimits() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithOrRateGroup.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithOrRateGroup.class);
         final String id = ElementId.of(ClassWithOrRateGroup.class);
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits = 1, timeUnit = SECONDS)
@@ -128,12 +128,12 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void testRateLimitedClassWithAndLimits() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithAndRateGroup.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithAndRateGroup.class);
         final String id = ElementId.of(ClassWithAndRateGroup.class);
-        assertTrue(limiter.tryConsume(id));
-        assertTrue(limiter.tryConsume(id));
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits = 10, timeUnit = SECONDS)
@@ -142,27 +142,16 @@ class ResourceLimiterAnnotationTest {
         void method_0() { }
     }
 
-    @Test
-    void testAndThen() {
-        final String key = "one";
-        ResourceLimiter<Object> a = newResourceLimiter(ClassWithClassAndMethodLimits.class);
-        ResourceLimiter<Object> b =
-            ResourceLimiter.of(key, io.github.poshjosh.ratelimiter.model.Rate.ofSeconds(1));
-        ResourceLimiter<Object> c = a.andThen(b);
-        assertTrue(c.tryConsume(key));
-        assertFalse(c.tryConsume(key));
-    }
-
     @Rate(1)
     @RateCondition("jvm.memory.free<1")
     public class ClassWithSeparateRateCondition { }
 
     @Test
     void givenRateConditionFalse_shouldNotBeRateLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithSeparateRateCondition.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithSeparateRateCondition.class);
         final String id = ElementId.of(ClassWithSeparateRateCondition.class);
-        assertTrue(limiter.tryConsume(id));
-        assertTrue(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits=1, when="jvm.memory.free<0")
@@ -170,10 +159,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void givenRateWhenResolvesToFalse_shouldNotBeRateLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithWhenRateCondition.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithWhenRateCondition.class);
         final String id = ElementId.of(ClassWithWhenRateCondition.class);
-        assertTrue(limiter.tryConsume(id));
-        assertTrue(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Rate(1)
@@ -182,10 +171,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void givenRateConditionTrue_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithRateConditionTrue.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithRateConditionTrue.class);
         final String id = ElementId.of(ClassWithRateConditionTrue.class);
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits=1, when="sys.time.elapsed>PT0S")
@@ -193,10 +182,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void givenRateWhenResolvesToTrue_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithWhenRateConditionTrue.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithWhenRateConditionTrue.class);
         final String id = ElementId.of(ClassWithWhenRateConditionTrue.class);
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits = 1, condition = "sys.time.elapsed>PT2S")
@@ -204,14 +193,14 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void isLimitedConditionally() throws InterruptedException {
-        final ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithRateCondition.class);
+        final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithRateCondition.class);
         final String key = ElementId.of(ClassWithRateCondition.class);
         // This consumption attempt should have returned false due to limit exceeded,
         // but we have a condition that must be met before rate limiting is applied
-        assertTrue(limiter.tryConsume(key, Integer.MAX_VALUE));
+        assertTrue(limiterFactory.getRateLimiter(key).tryAcquire(Integer.MAX_VALUE));
         Thread.sleep(2000); // Time should match that of the condition specified above
-        assertTrue(limiter.tryConsume(key));
-        assertFalse(limiter.tryConsume(key));
+        assertTrue(limiterFactory.getRateLimiter(key).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(key).tryAcquire());
     }
 
     @Rate(1)
@@ -220,10 +209,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void givenRateConditionTrue_andHavingSpaces_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithSeprateRateConditionSpaced.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithSeprateRateConditionSpaced.class);
         final String id = ElementId.of(ClassWithSeprateRateConditionSpaced.class);
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Rate(name = "resource-8b", permits=1, when=" sys.time.elapsed > PT0S ")
@@ -231,9 +220,9 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void givenRateWhenResolvesToTrue_andHavingSpaces_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithWhenRateConditionSpaced.class);
-        assertTrue(limiter.tryConsume("resource-8b"));
-        assertFalse(limiter.tryConsume("resource-8b"));
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithWhenRateConditionSpaced.class);
+        assertTrue(limiterFactory.getRateLimiter("resource-8b").tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter("resource-8b").tryAcquire());
     }
 
     @Rate(1)
@@ -242,10 +231,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void givenRateConditionHavingNegationResolvesToTrue_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithNegationSeparateRateCondition.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithNegationSeparateRateCondition.class);
         final String id = ElementId.of(ClassWithNegationSeparateRateCondition.class);
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits=1, when="sys.time.elapsed!<=PT0S")
@@ -253,10 +242,10 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void givenWhenHavingNegationResolvesToTrue_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithNegationWhenRateCondition.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithNegationWhenRateCondition.class);
         final String id = ElementId.of(ClassWithNegationWhenRateCondition.class);
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     // This first Rate's condition will never evaluate to true,
@@ -267,14 +256,14 @@ class ResourceLimiterAnnotationTest {
 
     @Test
     void givenNonConjunctedRates() {
-        ResourceLimiter<Object> limiter = newResourceLimiter(ClassWithNonConjunctedRates.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithNonConjunctedRates.class);
         final String id = ElementId.of(ClassWithNonConjunctedRates.class);
-        assertTrue(limiter.tryConsume(id));
-        assertTrue(limiter.tryConsume(id));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
-    private ResourceLimiter<Object> newResourceLimiter(Class<?>... classes) {
-        return ResourceLimiter.of(classes);
+    private RateLimiterFactory<Object> newRateLimiterFactory(Class<?>... classes) {
+        return RateLimiterFactory.of(classes);
     }
 }

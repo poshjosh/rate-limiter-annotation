@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.LimiterContext;
 import io.github.poshjosh.ratelimiter.util.Matcher;
@@ -14,19 +15,20 @@ import java.util.function.Predicate;
  */
 final class RateLimiterTree<K> {
 
-    interface RateLimiterConsumer<K> {
-        void accept(String match, RateLimiter rateLimiter, LimiterContext<K> context,
-                int index, int total);
+    interface RateLimiterConsumer {
+        void accept(String match, RateLimiter rateLimiter,
+                RateConfig config, int index, int max);
     }
 
-    private final RateLimiterProvider<String> rateLimiterProvider;
     private final Node<LimiterContext<K>> rootNode;
+    private final RateLimiterProvider<String> rateLimiterProvider;
     private final Collection<Node<LimiterContext<K>>> leafNodes;
+
     RateLimiterTree(
-            RateLimiterProvider<String> rateLimiterProvider,
-            Node<LimiterContext<K>> rootNode) {
-        this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
+            Node<LimiterContext<K>> rootNode,
+            RateLimiterProvider<String> rateLimiterProvider) {
         this.rootNode = Objects.requireNonNull(rootNode);
+        this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
         this.leafNodes = collectLeafs(rootNode);
     }
     private static <R> Collection<Node<LimiterContext<R>>> collectLeafs(Node<LimiterContext<R>> node) {
@@ -44,18 +46,28 @@ final class RateLimiterTree<K> {
     public void visitRateLimiters(K key, RateLimiterConsumer visitor) {
         // We use this to avoid duplicates.
         final Set<String> visited = new HashSet<>();
+
         for (Node<LimiterContext<K>> node : leafNodes) {
             Node<LimiterContext<K>> current = node;
             do {
+
                 final Node<LimiterContext<K>> constant = current;
+
                 acceptMatchingNode(key, current, (match, index, total) -> {
-                    final LimiterContext<K> context = constant.requireValue();
-                    RateLimiter limiter = getRateLimiter(context, match, index);
+
+                    LimiterContext<K> context = constant.requireValue();
+
                     if (visited.add(match)) {
-                        visitor.accept(match, limiter, context, index, total);
+
+                        RateLimiter limiter = getRateLimiter(context, match, index);
+
+                        visitor.accept(match, limiter, context.getRateConfig(),
+                                visited.size() - 1, total);
                     }
                 });
+
                 current = current.getParentOrDefault(null);
+
             } while(current != null);
         }
     }

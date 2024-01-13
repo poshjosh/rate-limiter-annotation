@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
+import io.github.poshjosh.ratelimiter.annotations.Beta;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
@@ -10,10 +11,36 @@ import io.github.poshjosh.ratelimiter.util.LimiterContext;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.util.Operator;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 
 public interface RateLimiterFactory<K> {
+
+    RateLimiterFactory<Object> NO_OP = new RateLimiterFactory<Object>() {
+        @Override
+        public RateLimiter getRateLimiterOrDefault(Object key, RateLimiter resultIfNone) {
+            return resultIfNone;
+        }
+        @Override
+        public String toString() {
+            return "RateLimiterFactory$NO_OP";
+        }
+    };
+
+    @SuppressWarnings("unchecked")
+    static <K> RateLimiterFactory<K> noop() {
+        return (RateLimiterFactory<K>) NO_OP;
+    }
+    
+    @Beta
+    static RateLimiter getLimiter(Class<?> aClass) {
+        return getLimiter(aClass, aClass);
+    }
+
+    static RateLimiter getLimiter(Class<?> aClass, Object id) {
+        return RateLimiterFactory.of(aClass).getRateLimiter(id);
+    }
 
     /**
      * Create a RateLimiterFactory for the specified classes
@@ -51,18 +78,40 @@ public interface RateLimiterFactory<K> {
             return LimiterContext.of(matcherProvider, currentNode);
         };
         Node<LimiterContext<K>> limiterNode = rootNode.getRoot().transform(transformer);
-        return of(rateLimiterProvider, limiterNode);
+        return of(limiterNode, rateLimiterProvider);
     }
 
     static <K> RateLimiterFactory<K> of(
-            RateLimiterProvider<String> rateLimiterProvider,
-            Node<LimiterContext<K>> rootNode) {
-        return new DefaultRateLimiterFactory<>(new RateLimiterTree<>(rateLimiterProvider, rootNode));
+            Node<LimiterContext<K>> rootNode,
+            RateLimiterProvider<String> rateLimiterProvider) {
+        return new DefaultRateLimiterFactory<>(
+                new RateLimiterTree<>(rootNode, rateLimiterProvider));
+    }
+    
+    default RateLimiter getRateLimiter(K key) {
+        return getRateLimiterOrDefault(key, RateLimiter.NO_LIMIT);
     }
 
-    default RateLimiter getRateLimiterOrDefault(K key) {
-        return getRateLimiter(key).orElse(RateLimiter.NO_LIMIT);
-    }
 
-    Optional<RateLimiter> getRateLimiter(K key);
+    default Optional<RateLimiter> getRateLimiterOptional(K key) {
+        return Optional.ofNullable(getRateLimiterOrDefault(key, null)); 
+    }
+    
+    RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone);
+    
+    default RateLimiterFactory<K> andThen(RateLimiterFactory<K> after) {
+        Objects.requireNonNull(after);
+        return new RateLimiterFactory<K>() {
+            @Override 
+            public RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone) {
+                final RateLimiter l = RateLimiterFactory.this.getRateLimiterOrDefault(key, resultIfNone);
+                final RateLimiter r = after.getRateLimiterOrDefault(key, resultIfNone);
+                return RateLimiters.of(l, r);
+            }
+            @Override 
+            public String toString() {
+                return "RateLimiterFactory$andThen{l=" + RateLimiterFactory.this + ", r=" + after + "}";
+            }
+        };
+    }
 }

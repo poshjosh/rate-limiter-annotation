@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.performance;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiterFactory;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 
 import java.util.Collections;
@@ -20,7 +20,7 @@ public class Helpers {
         return classList;
     }
 
-    static ResourceLimiter givenResourceLimiterFrom(List<Class<?>> classList) {
-        return ResourceLimiter.of(classList.toArray(new Class[0]));
+    static RateLimiterFactory<String> givenRateLimiterFactory(List<Class<?>> classList) {
+        return RateLimiterFactory.of(classList.toArray(new Class[0]));
     }
 }

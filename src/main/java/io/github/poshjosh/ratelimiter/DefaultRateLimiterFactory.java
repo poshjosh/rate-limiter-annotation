@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.util.LimiterContext;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,15 +10,20 @@ final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
 
     private static final Logger LOG = LoggerFactory.getLogger(DefaultRateLimiterFactory.class);
 
-    private static final class Collector<K> implements RateLimiterTree.RateLimiterConsumer<K> {
-        private RateLimiter[] collection;
+    private static final class Collector implements RateLimiterTree.RateLimiterConsumer {
+        private RateLimiter single;
+        private List<RateLimiter> collection;
         @Override
-        public void accept(String match, RateLimiter rateLimiter, LimiterContext<K> context,
-                int index, int total) {
-            if (collection == null) {
-                collection = new RateLimiter[total];
+        public void accept(String match, RateLimiter rateLimiter,
+                RateConfig config, int index, int max) {
+            if (index == -1) {
+                single = rateLimiter;
+                return;
             }
-            collection[index] = rateLimiter;
+            if (collection == null) {
+                collection = new ArrayList<>(max);
+            }
+            collection.add(rateLimiter);
         }
     }
 
@@ -28,7 +33,7 @@ final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
     }
 
     @Override
-    public Optional<RateLimiter> getRateLimiter(K key) {
+    public RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone) {
         // TODO - We could have cached the result of this method with the key.
         // First check that performance is really improved.
         // Then ensure that the cache will not grow indefinitely.
@@ -38,20 +43,27 @@ final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
         // is returned based on some request related condition. In that
         // case, 2 different HttpServletRequests could result to the
         // same RateLimiter.
-        return Optional.ofNullable(buildRateLimiter(key, null));
+        return buildRateLimiter(key, RateLimiter.NO_LIMIT);
     }
 
     private RateLimiter buildRateLimiter(K key, RateLimiter resultIfNone) {
-        Collector<K> collector = new Collector<>();
+        Collector collector = new Collector();
         rateLimiterTree.visitRateLimiters(key, collector);
-        RateLimiter [] limiters = collector.collection;
-        LOG.trace("key = {}, limiters = {}", key, limiters);
-        if (limiters.length == 0) {
+        RateLimiter single = collector.single;
+        List<RateLimiter> multi = collector.collection;
+        LOG.trace("key = {}, limiter(s) = {}", key, single == null ? multi : single);
+        if (single != null) {
+            if (multi != null) {
+                throw new AssertionError("May not have both single and multi");
+            }
+            return single;
+        }
+        if (multi == null || multi.isEmpty()) {
             return resultIfNone;
         }
-        if (limiters.length == 1) {
-            return limiters[0];
+        if (multi.size() == 1) {
+            return multi.get(0) == null ? resultIfNone : multi.get(0);
         }
-        return new RateLimiterComposite(limiters);
+        return RateLimiters.of(multi.toArray(new RateLimiter[0]));
     }
 }

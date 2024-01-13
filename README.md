@@ -47,32 +47,29 @@ To add a dependency on `rate-limiter-annotation` using Maven, use the following:
         </dependency>
 ```
 
-### Concept
+### Concept 
 
-Unlike `RateLimiter`, `ResourceLimiter` introduces the concept of resources. One `ResourceLimiter`
-could be used to rate limit multiple resources distributed across different machines.
+The idea is to be able to rate limit multiple resources fluently and dynamically
 
 ```java
-import java.util.Arrays;
-
-class Concept {
+class DynamicRateLimiting {
 
     @Rate(name="resource-a", permits=1)
     static class ResourceA{}
     
-    @Rate(name="resource-b", permits=5)
+    // Will be rate limited when system elapsed time is greater than 59 seconds
+    @Rate(name="resource-b", permits=5, condition="sys.time.elapsed>PT59S")
     static class ResourceB{}
 
     public static void main(String... args) {
 
-        List<Class<?>> resourceClasses = Arrays.asList(ResourceA.class, ResourceB.class);
+        RateLimiterFactory<String> rateLimiterFactory = RateLimiterFactory
+                .of(ResourceA.class, ResourceB.class);
 
-        ResourceLimiter<String> resourceLimiter = ResourceLimiter.of(resourceClasses);
+        rateLimiterFactory.getLimiter("resource-a").tryAcquire(); // true
+        rateLimiterFactory.getLimiter("resource-a").tryAcquire(); // false
 
-        resourceLimiter.tryConsume("resource-a"); // true
-        resourceLimiter.tryConsume("resource-a"); // false
-
-        resourceLimiter.tryConsume("resource-b"); // false
+        rateLimiterFactory.getLimiter("resource-b").tryAcquire(); // false
     }
 }
 ```
@@ -81,23 +78,21 @@ class Concept {
 ### Sample Usage
 
 ```java
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiterFactory;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
 
     static class RateLimitedResource {
 
-        final ResourceLimiter<String> resourceLimiter;
-
-        RateLimitedResource(ResourceLimiter<String> resourceLimiter) {
-            this.resourceLimiter = resourceLimiter;
-        }
+        RateLimiter rateLimiter = RateLimiterFactory
+                .getLimiter(RateLimitedResource.class, "smile");
 
         // Limited to 3 invocations every second
         @Rate(name = "smile", permits = 3)
         String smile() {
-            if (!resourceLimiter.tryConsume("smile")) {
+            if (!rateLimiter.tryAcquire()) {
                 throw new RuntimeException("Limit exceeded");
             }
             return ":)";
@@ -106,9 +101,7 @@ public class SampleUsage {
 
     public static void main(String... args) {
 
-        ResourceLimiter<String> resourceLimiter = ResourceLimiter.of(RateLimitedResource.class);
-
-        RateLimitedResource rateLimitedResource = new RateLimitedResource(resourceLimiter);
+        RateLimitedResource rateLimitedResource = new RateLimitedResource();
 
         int i = 0;
         for(; i < 3; i++) {

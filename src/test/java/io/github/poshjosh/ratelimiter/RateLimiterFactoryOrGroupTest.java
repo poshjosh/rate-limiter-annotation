@@ -16,14 +16,14 @@ import java.lang.annotation.Target;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ResourceLimiterAndGroupTest {
-    private static final String AND_RATE_GROUP = "and-rate-group";
+class RateLimiterFactoryOrGroupTest {
+    private static final String OR_RATE_GROUP = "or-rate-group";
     private static final int MIN = 1;
     private static final int MAX = 2;
 
     @Rate(MIN)
     @Rate(MAX)
-    @RateGroup(name = AND_RATE_GROUP, operator = Operator.AND)
+    @RateGroup(name = OR_RATE_GROUP, operator = Operator.OR)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     public @interface RateLimitGroup { }
@@ -40,29 +40,29 @@ class ResourceLimiterAndGroupTest {
 
     @ParameterizedTest
     @ValueSource(classes = { RateLimitGroupClass1.class, RateLimitGroupClass2.class})
-    void andGroupMembers_shouldBeRateLimited(Class<?> clazz) {
-        ResourceLimiter<Object> limiter = andGroupMultiClassLimiter();
+    void orGroupMembers_shouldBeRateLimited(Class<?> clazz) {
+        RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
         final String id = ElementId.of(clazz);
-        assertTrue(limiter.tryConsume(id, MAX));
-        assertFalse(limiter.tryConsume(id));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire(MIN));
+        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
     @Test
-    void andGroupName_shouldBeRateLimited() {
-        ResourceLimiter<Object> limiter = andGroupMultiClassLimiter();
-        assertTrue(limiter.tryConsume(AND_RATE_GROUP, MAX));
-        assertFalse(limiter.tryConsume(AND_RATE_GROUP));
+    void orGroupName_shouldBeRateLimited() {
+        RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
+        assertTrue(limiterFactory.getRateLimiter(OR_RATE_GROUP).tryAcquire(MIN));
+        assertFalse(limiterFactory.getRateLimiter(OR_RATE_GROUP).tryAcquire());
     }
 
     @Test
-    void andGroupAnnotation_shouldNotBeRateLimited() {
-        ResourceLimiter<Object> limiter = andGroupMultiClassLimiter();
+    void orGroupAnnotation_shouldNotBeRateLimited() {
+        RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
         String id = ElementId.of(RateLimitGroup.class);
-        assertTrue(limiter.tryConsume(id, Integer.MAX_VALUE));
+        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire(Integer.MAX_VALUE));
     }
 
-    private ResourceLimiter<Object> andGroupMultiClassLimiter() {
+    private RateLimiterFactory<Object> givenRateLimiterFactoryHavingOrGroup() {
         // The classes should not be in order, as is expected in real situations
-        return ResourceLimiter.of(RateLimitGroupClass1.class, RateLimitGroup.class, RateLimitGroupClass2.class);
+        return RateLimiterFactory.of(RateLimitGroupClass1.class, RateLimitGroup.class, RateLimitGroupClass2.class);
     }
 }

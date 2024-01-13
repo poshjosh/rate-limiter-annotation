@@ -1,11 +1,11 @@
 package io.github.poshjosh.ratelimiter.performance;
 
-import io.github.poshjosh.ratelimiter.ResourceLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiterFactory;
 import io.github.poshjosh.ratelimiter.performance.dummyclasses.dummyclasses0.RateLimitedClass0;
 import org.junit.jupiter.api.Test;
 
 import static io.github.poshjosh.ratelimiter.performance.Helpers.annotatedClasses;
-import static io.github.poshjosh.ratelimiter.performance.Helpers.givenResourceLimiterFrom;
+import static io.github.poshjosh.ratelimiter.performance.Helpers.givenRateLimiterFactory;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class AnnotationProcessingPerformanceIT {
@@ -22,7 +22,7 @@ class AnnotationProcessingPerformanceIT {
 
         final Usage usageBookmark = Usage.bookmark();
 
-        givenResourceLimiterFrom(annotatedClasses());
+        givenRateLimiterFactory(annotatedClasses());
 
         final Usage recordedUsage = usageBookmark.current();
 
@@ -52,13 +52,13 @@ class AnnotationProcessingPerformanceIT {
             String key, Usage usageLimit, int iterations, int intervalMillis)
             throws InterruptedException{
 
-        final ResourceLimiter<String> resourceLimiter = givenResourceLimiterFrom(annotatedClasses());
+        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory(annotatedClasses());
 
         final Usage usageBookmark = Usage.bookmark();
 
         int successCount = 0;
         for (int i = 0; i < iterations; i++) {
-            if(resourceLimiter.tryConsume(key)) {
+            if(rateLimiterFactory.getRateLimiter(key).tryAcquire(1)) {
                 ++successCount;
             }
             waitFor(intervalMillis);
@@ -68,7 +68,7 @@ class AnnotationProcessingPerformanceIT {
         Usage _curr = usageBookmark.current();
         final Usage recordedUsage = Usage.of(_curr.getDuration() - totalIntervalMillis, _curr.getMemory());
 
-        System.out.println("   Recorded " + recordedUsage + ", success rate: " + successCount + "/" + iterations);
+        System.out.println("   Recorded " + recordedUsage + ", rate limited: " + successCount + " of " + iterations);
         System.out.println("Max Allowed " + usageLimit);
 
         assertFalse(recordedUsage.isAnyUsageGreaterThan(usageLimit),
