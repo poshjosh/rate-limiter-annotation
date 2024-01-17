@@ -10,16 +10,16 @@ import io.github.poshjosh.ratelimiter.util.Ticker;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-final class DefaultRateLimiterProvider<K> implements RateLimiterProvider<K> {
+final class DefaultRateLimiterProvider implements RateLimiterProvider {
 
-    private final BandwidthStoreFacade<K> bandwidthStoreFacade;
+    private final BandwidthStoreFacade bandwidthStoreFacade;
     private final Ticker ticker;
 
     private final Map<Object, RateLimiter> resourceIdToRateLimiter;
 
     DefaultRateLimiterProvider(
             RateToBandwidthConverter rateToBandwidthConverter,
-            BandwidthsStore<K> bandwidthStore,
+            BandwidthsStore<?> bandwidthStore,
             Ticker ticker) {
         this.bandwidthStoreFacade =
                 new BandwidthStoreFacade<>(rateToBandwidthConverter, bandwidthStore);
@@ -28,7 +28,7 @@ final class DefaultRateLimiterProvider<K> implements RateLimiterProvider<K> {
     }
 
     @Override
-    public RateLimiter getRateLimiter(K key, Rate rate) {
+    public RateLimiter getRateLimiter(String key, Rate rate) {
         RateLimiter rateLimiter;
         if ((rateLimiter = this.resourceIdToRateLimiter.get(key)) == null) {
             rateLimiter = createRateLimiter(key, rate);
@@ -38,7 +38,7 @@ final class DefaultRateLimiterProvider<K> implements RateLimiterProvider<K> {
     }
 
     @Override
-    public RateLimiter getRateLimiter(K key, Rates rates) {
+    public RateLimiter getRateLimiter(String key, Rates rates) {
         RateLimiter rateLimiter;
         if ((rateLimiter = this.resourceIdToRateLimiter.get(key)) == null) {
             rateLimiter = createRateLimiter(key, rates);
@@ -47,12 +47,12 @@ final class DefaultRateLimiterProvider<K> implements RateLimiterProvider<K> {
         return rateLimiter;
     }
 
-    private RateLimiter createRateLimiter(K key, Rate rate) {
+    private RateLimiter createRateLimiter(String key, Rate rate) {
         Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rate);
         return RateLimiter.of(bandwidth, ticker);
     }
 
-    private RateLimiter createRateLimiter(K key, Rates rates) {
+    private RateLimiter createRateLimiter(String key, Rates rates) {
         Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rates);
         return RateLimiter.of(bandwidth, ticker);
     }

@@ -15,7 +15,7 @@ class RateLimiterProviderTest {
     final RateToBandwidthConverter rateToBandwidthConverter = RateToBandwidthConverter.ofDefaults();
     final BandwidthsStore<String> bandwidthsStore = BandwidthsStore.ofDefaults();
     final Ticker ticker = Ticker.ofDefaults();
-    final RateLimiterProvider<String> rateLimiterProvider = RateLimiterProvider.of(
+    final RateLimiterProvider rateLimiterProvider = RateLimiterProvider.of(
             rateToBandwidthConverter, bandwidthsStore, ticker
     );
 

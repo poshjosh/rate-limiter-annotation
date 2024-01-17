@@ -48,6 +48,25 @@ class AnnotationProcessingPerformanceIT {
         );
     }
 
+    @Test
+    void firstCallToGet_shouldConsumeLimitedTimeAndMemory() {
+        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory(annotatedClasses());
+        final Usage bookmark = Usage.bookmark();
+        rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        final Usage recordedUsage = bookmark.current();
+        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(30, 300_000));
+    }
+
+    @Test
+    void secondCallToGet_shouldConsumeLimitedTimeAndMemory() {
+        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory(annotatedClasses());
+        rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        final Usage bookmark = Usage.bookmark();
+        rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        final Usage recordedUsage = bookmark.current();
+        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(3, 3_00));
+    }
+
     private void resourceLimitingShouldConsumeLimitedTimeAndMemory(
             String key, Usage usageLimit, int iterations, int intervalMillis)
             throws InterruptedException{
@@ -68,9 +87,13 @@ class AnnotationProcessingPerformanceIT {
         Usage _curr = usageBookmark.current();
         final Usage recordedUsage = Usage.of(_curr.getDuration() - totalIntervalMillis, _curr.getMemory());
 
-        System.out.println("   Recorded " + recordedUsage + ", rate limited: " + successCount + " of " + iterations);
-        System.out.println("Max Allowed " + usageLimit);
+        System.out.println("Rate limited: " + successCount + " of " + iterations);
+        assertUsageLessOrEqualToLimit(recordedUsage, usageLimit);
+    }
 
+    private void assertUsageLessOrEqualToLimit(Usage recordedUsage, Usage usageLimit) {
+        System.out.println("   Recorded " + recordedUsage);
+        System.out.println("Max Allowed " + usageLimit);
         assertFalse(recordedUsage.isAnyUsageGreaterThan(usageLimit),
                 "Usage should be less or equal to limit, but was not.\nUsage: " +
                         recordedUsage + "\nLimit: " + usageLimit);

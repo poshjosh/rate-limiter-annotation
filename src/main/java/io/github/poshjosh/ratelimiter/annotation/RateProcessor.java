@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.Rates;
+import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
@@ -33,6 +34,10 @@ public interface RateProcessor<S> {
 
     static RateProcessor<Class<?>> ofDefaults() {
         return ofClass();
+    }
+
+    static RateProcessor<RateLimitProperties> ofProperties() {
+        return new PropertyRateProcessor();
     }
 
     static RateProcessor<Class<?>> ofClass() {

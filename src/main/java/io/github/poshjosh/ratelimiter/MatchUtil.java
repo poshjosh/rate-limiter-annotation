@@ -1,12 +1,9 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.LimiterContext;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.lang.reflect.GenericDeclaration;
 
 final class MatchUtil {
     private static final Logger LOG = LoggerFactory.getLogger(MatchUtil.class);

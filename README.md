@@ -120,6 +120,47 @@ public class SampleUsage {
 
 Please read the [annotation specs](docs/ANNOTATION_SPECS.md). It is concise.
 
+### Bandwidth store
+
+You could use a distributed cache to store Bandwidths. First implement
+`BandwidthStore`. The example implementation below uses `spring-boot-starter-data-redis`
+
+```java
+import org.springframework.data.redis.core.RedisTemplate;
+
+public class RedisBandwidthStore implements BandwidthsStore<String> {
+    private final RedisTemplate<String, Bandwidth> redisTemplate;
+    
+    public RedisBandwidthStore(RedisTemplate<String, Bandwidth> redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
+    
+    @Override 
+    public Bandwidth get(String key) {
+        return redisTemplate.opsForValue().get(key);
+    }
+    @Override 
+    public void put(String key, Bandwidth bandwidth) {
+        redisTemplate.opsForValue().set(key, bandwidth);
+    }
+}
+```
+
+Then use the `BandwidthStore` as shown below:
+
+```java
+public class WithCustomBandwidthStore {
+    
+    public RateLimiter getRateLimiter(BandwidthsStore store) {
+        RateLimiterContext context = RateLimiterContext.builder()
+                .classes(MyRateLimitedClass.class)
+                .store(store)
+                .build();
+        return RateLimiterFactory.of(context).getRateLimiter("ID");
+    }
+}
+```
+
 ### Dependents
 
 The following depend on this library:

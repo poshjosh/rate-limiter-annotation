@@ -1,21 +1,23 @@
-package io.github.poshjosh.ratelimiter.util;
+package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
+import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.GenericDeclaration;
 import java.util.*;
 
-public final class LimiterContext<R> {
+final class LimiterContext<R> {
 
     private static final Logger LOG = LoggerFactory.getLogger(LimiterContext.class);
 
-    public static <K> LimiterContext<K> of(
+    static <K> LimiterContext<K> of(
             MatcherProvider<K> matcherProvider,
             Node<RateConfig> node) {
         RateConfig rateConfig = node.getValueOrDefault(null);
@@ -39,14 +41,10 @@ public final class LimiterContext<R> {
                         "Number of Matchers is not equal to number of rates");
             }
         }
-        final LimiterContext<K> limiterContext = of(rateConfig, mainMatcher, subMatchers);
+        final LimiterContext<K> limiterContext =
+                new LimiterContext<>(rateConfig, mainMatcher, subMatchers);
         LOG.trace("{}", limiterContext);
         return limiterContext;
-    }
-
-    public static <R> LimiterContext<R> of(RateConfig rateConfig,
-            Matcher<R> matcher, List<Matcher<R>> matchers) {
-        return new LimiterContext<>(rateConfig, matcher, matchers);
     }
 
     private static boolean hasLimitsInTree(Node<RateConfig> node) {

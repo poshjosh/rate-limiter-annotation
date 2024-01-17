@@ -6,7 +6,9 @@ import java.lang.reflect.Method;
 import java.util.Objects;
 
 final class RateSourceMatcher<INPUT> implements Matcher<INPUT> {
+
     private final String id;
+
     RateSourceMatcher(String id) {
         this.id = Objects.requireNonNull(id);
     }
@@ -24,8 +26,6 @@ final class RateSourceMatcher<INPUT> implements Matcher<INPUT> {
             return sval;
         }
 
-        // TODO - Handle the case when the id is a method key and our input is a class key
-        //  so we would call something lke ElementId.parseClassPart on the id.
         final String classPart = ElementId.parseClassPart(sval).orElse(null);
         if (Objects.equals(id, classPart)) {
             return classPart;
