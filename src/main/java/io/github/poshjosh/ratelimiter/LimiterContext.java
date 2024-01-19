@@ -48,12 +48,17 @@ final class LimiterContext<R> {
     }
 
     private static boolean hasLimitsInTree(Node<RateConfig> node) {
-        return hasLimits(node) || parentHasLimits(node);
+        return hasLimits(node) || (DefaultRateLimiterFactory.isBottomUpTraversal() ?
+                anyParentHasLimits(node) : anyChildHasLimits(node));
     }
-    private static boolean parentHasLimits(Node<RateConfig> node) {
+    private static boolean anyParentHasLimits(Node<RateConfig> node) {
         return node.getParentOptional()
                 .filter(parent -> parent.hasValue() && hasLimitsInTree(parent))
                 .isPresent();
+    }
+    private static boolean anyChildHasLimits(Node<RateConfig> node) {
+        return node.getChildren().stream()
+                .anyMatch(child -> child.hasValue() && hasLimitsInTree(child));
     }
     private static boolean hasLimits(Node<RateConfig> node) {
         return node.requireValue().getRates().hasLimits();

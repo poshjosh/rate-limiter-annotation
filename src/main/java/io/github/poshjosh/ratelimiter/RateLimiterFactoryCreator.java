@@ -1,5 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.node.Node;
+
 final class RateLimiterFactoryCreator {
     private RateLimiterFactoryCreator() { }
 
@@ -14,10 +16,19 @@ final class RateLimiterFactoryCreator {
         if (!context.isRateLimited()) {
             return RateLimiterFactory.noop();
         }
-        RateLimiterFactory<K> propsFactory = new DefaultRateLimiterFactory<>(
-                rootNodes.getPropertiesRootNode(), context.getRateLimiterProvider());
-        RateLimiterFactory<K> annoFactory = new DefaultRateLimiterFactory<>(
-                rootNodes.getAnnotationsRootNode(), context.getRateLimiterProvider());
+        Node<LimiterContext<K>> propsRoot = rootNodes.getPropertiesRootNode();
+        Node<LimiterContext<K>> annoRoot = rootNodes.getAnnotationsRootNode();
+        RateLimiterProvider provider = context.getRateLimiterProvider();
+        if (propsRoot.isEmptyNode() || propsRoot.size() == 0) {
+            return new DefaultRateLimiterFactory<>(annoRoot, provider);
+        }
+
+        if (annoRoot.isEmptyNode() || annoRoot.size() == 0) {
+            return new DefaultRateLimiterFactory<>(propsRoot, provider);
+        }
+
+        RateLimiterFactory<K> propsFactory = new DefaultRateLimiterFactory<>(propsRoot, provider);
+        RateLimiterFactory<K> annoFactory = new DefaultRateLimiterFactory<>(annoRoot, provider);
 
         // Properties take precedence over annotations
         return propsFactory.andThen(annoFactory);

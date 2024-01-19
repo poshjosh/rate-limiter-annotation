@@ -10,7 +10,7 @@ import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class DepthFirstRateNodeCollectorTest {
+class DepthFirstVisitorTest {
 
     @Test
     void shouldVisitEachNodeOnce() {
@@ -18,7 +18,7 @@ class DepthFirstRateNodeCollectorTest {
         int expected = node.size();
         AtomicInteger sum = new AtomicInteger();
         Consumer<Node<Integer>> consumer = e -> sum.incrementAndGet();
-        visitor(consumer).accept(node);
+        DepthFirstVisitor.visitAll(node, consumer);
         assertEquals(expected, sum.get());
     }
 
@@ -28,11 +28,7 @@ class DepthFirstRateNodeCollectorTest {
         Node<Integer> node = TestNode.depthFirst(values.toArray(new Integer[0]));
         List<Integer> collected = new ArrayList<>(values.size());
         Consumer<Node<Integer>> consumer = e -> collected.add(e.getValueOrDefault(0));
-        visitor(consumer).accept(node);
+        DepthFirstVisitor.visitAll(node, consumer);
         assertEquals(values, collected);
-    }
-
-    Consumer<Node<Integer>> visitor(Consumer<Node<Integer>> consumer) {
-        return new DepthFirstNodeVisitor<>(consumer);
     }
 }

@@ -10,7 +10,7 @@
     <logger name="io.github.poshjosh.ratelimiter" level="info"/>
 <!--    <logger name="io.github.poshjosh.ratelimiter.bandwidths.DefaultRateToBandwidthConverter" level="trace"/>-->
 <!--    <logger name="io.github.poshjosh.ratelimiter.LimiterContext" level="trace"/>-->
-<!--    <logger name="io.github.poshjosh.ratelimiter.DefaultRateLimiterFactory" level="trace"/>-->
+<!--    <logger name="io.github.poshjosh.ratelimiter.RateLimiterComposite" level="trace"/>-->
 <!--    <logger name="io.github.poshjosh.ratelimiter.MatchUtil" level="trace"/>-->
 
     <root level="info">

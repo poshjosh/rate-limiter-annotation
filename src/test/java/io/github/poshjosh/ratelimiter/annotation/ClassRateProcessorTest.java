@@ -7,11 +7,37 @@ import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import org.junit.jupiter.api.Test;
 import java.lang.annotation.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
+
+    final RateProcessor<Class<?>> rateProcessor = RateProcessor.ofDefaults();
+
+    @Rate(2)
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
+    @RateGroup
+    public @interface SharedRateGroup { }
+
+    @SharedRateGroup
+    static class ClassWithSharedRateGroup1 {}
+
+    @SharedRateGroup
+    static class ClassWithSharedRateGroup2 {}
+
+    @Test
+    void testRateLimitedClassesWithSharedRateGroup() {
+        Node<RateConfig> root = rateProcessor.processAll(
+                ClassWithSharedRateGroup1.class, ClassWithSharedRateGroup2.class);
+        AtomicInteger leafs = new AtomicInteger();
+        root.visitAll(Node::isLeaf, node -> leafs.incrementAndGet());
+        // 1 root -> 1 group -> 2 classes (leafs)
+        assertThat(root.size()).isEqualTo(4);
+        assertThat(leafs.get()).isEqualTo(2);
+    }
 
     @Test
     void methodNodesFromSuperClassesShouldBeTransferredToResourceAnnotatedClass() {
@@ -39,7 +65,7 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
                           ClassWithMethodAnnotations.class,
                           ClassWithMethodAnnotations.MethodGroupOnlyAnon.class
                 };
-        Node<RateConfig> root = getInstance().processAll(classes);
+        Node<RateConfig> root = rateProcessor.processAll(classes);
         System.out.println(root);
         assertThat(root.findFirstChild(node -> node.getName().equals(root.getName())).isPresent()).isTrue();
         assertHasChildrenHavingNames(root, "ClassGroupOnlyAnon", "PrivateClass", "InternalClass");
@@ -49,10 +75,6 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
         assertHasChildrenHavingNames(fire,
                 ClassWithClassAnnotations.ClassGroupOnly_GroupAnnotationWithoutName.class,
                 ClassWithClassAnnotations.SecondClassGroupOnly_GroupAnnotationWithoutName.class);
-    }
-
-    RateProcessor<Class<?>> getInstance() {
-        return RateProcessor.ofDefaults();
     }
 
     @Override String getId(Class<?> element) {

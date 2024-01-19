@@ -26,9 +26,9 @@ import java.util.function.Predicate;
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 16, 2017 9:21:53 PM
  */
-final class DepthFirstNodeVisitor<T> implements Consumer<Node<T>>{
+final class DepthFirstVisitor<T> implements Consumer<Node<T>>{
 
-    private static final Logger LOG = LoggerFactory.getLogger(DepthFirstNodeVisitor.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(DepthFirstVisitor.class.getName());
 
     private final Predicate<Node<T>> filter;
     
@@ -36,33 +36,29 @@ final class DepthFirstNodeVisitor<T> implements Consumer<Node<T>>{
     
     private final int depth;
 
-    DepthFirstNodeVisitor(Consumer<Node<T>> consumer) {
-        this(node -> true, consumer);
-    }
 
-    DepthFirstNodeVisitor(Predicate<Node<T>> filter, Consumer<Node<T>> consumer) {
-        this(filter, consumer, Integer.MAX_VALUE);
-    }
-
-    DepthFirstNodeVisitor(Predicate<Node<T>> filter, Consumer<Node<T>> consumer, int depth) {
+    DepthFirstVisitor(Predicate<Node<T>> filter, Consumer<Node<T>> consumer, int depth) {
         this.filter = Objects.requireNonNull(filter);
         this.consumer = Objects.requireNonNull(consumer);
         this.depth = depth;
     }
-    
+
     @Override
     public void accept(Node<T> node) {
-        
-        this.visit(node, this.depth);
+        DepthFirstVisitor.visitAll(node, filter, consumer, this.depth);
     }
-    
-    private void visit(Node<T> node, int depth) {
+
+    public static <T> void visitAll(Node<T> node, Consumer<Node<T>> consumer) {
+        DepthFirstVisitor.visitAll(node, currentNode -> true, consumer, Integer.MAX_VALUE);
+    }
+
+    public static <T> void visitAll(Node<T> node, Predicate<Node<T>> filter, Consumer<Node<T>> consumer, int depth) {
 
         if(LOG.isTraceEnabled()) {
             LOG.trace("Visiting: {}", node);
         }
 
-        this.visit(filter, consumer, node);
+        DepthFirstVisitor.visit(filter, consumer, node);
         
         if(depth > 0) {
         
@@ -70,12 +66,12 @@ final class DepthFirstNodeVisitor<T> implements Consumer<Node<T>>{
 
             for(Node<T> childNode : childNodeSet) {
 
-                this.visit(childNode, depth-1);
+                DepthFirstVisitor.visitAll(childNode, filter, consumer, depth-1);
             }
         }
     }
     
-    private void visit(Predicate<Node<T>> test, Consumer<Node<T>> action, Node<T> node) {
+    private static <T> void visit(Predicate<Node<T>> test, Consumer<Node<T>> action, Node<T> node) {
 
         if(test.test(node)) {
 

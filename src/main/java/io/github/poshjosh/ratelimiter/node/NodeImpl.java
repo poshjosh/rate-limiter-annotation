@@ -64,7 +64,7 @@ final class NodeImpl<V> implements Node<V> {
 
     @Override
     public void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer, int depth) {
-        new DepthFirstNodeVisitor<>(filter, consumer, depth).accept(this);
+        DepthFirstVisitor.visitAll(this, filter, consumer, depth);
     }
 
     @Override

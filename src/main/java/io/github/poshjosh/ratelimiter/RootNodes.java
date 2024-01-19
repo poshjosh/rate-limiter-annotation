@@ -97,6 +97,14 @@ class RootNodes<K> {
         return test.test(node) || node.getChildren().stream().anyMatch(child -> testTree(child, test));
     }
 
+    public Node<LimiterContext<K>> getPropertiesRootNode() {
+        return propertiesRootNode;
+    }
+
+    public Node<LimiterContext<K>> getAnnotationsRootNode() {
+        return annotationsRootNode;
+    }
+
     private static final class RateConfigCollector implements RateProcessor.NodeConsumer {
         private final Map<String, RateConfig> nameToRateMap;
         public RateConfigCollector() {
@@ -110,13 +118,5 @@ class RootNodes<K> {
         public Optional<RateConfig> get(String name) {
             return Optional.ofNullable(nameToRateMap.get(name));
         }
-    }
-
-    public Node<LimiterContext<K>> getPropertiesRootNode() {
-        return propertiesRootNode;
-    }
-
-    public Node<LimiterContext<K>> getAnnotationsRootNode() {
-        return annotationsRootNode;
     }
 }
