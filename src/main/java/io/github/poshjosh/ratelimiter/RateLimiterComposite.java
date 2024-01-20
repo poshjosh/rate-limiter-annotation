@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.Operator;
@@ -86,9 +87,22 @@ class RateLimiterComposite<K> implements RateLimiter {
             return matchCount;
         } else {
             if (Matcher.isMatch(mainMatch)) {
-                RateLimiter rateLimiter =
-                        rateLimiterProvider.getRateLimiter(
-                                mainMatch, context.getRatesWithParentRatesAsFallback());
+
+                // We use parent rates as fallback. (Applies only to main matcher).
+                //
+                // This is useful for matchers which cannot match a rate source's parent.
+                //
+                // When a class or method is used as match candidate,
+                // We can write a matcher like RateSourceMatcher which matches the candidate
+                // with the rate source of the matcher and possibly the rate source's parent.
+                // This is because we can use reflection to get a class or method's "parent".
+                //
+                // On the other hand, when an arbitrary value is used as match candidate,
+                // we have to rely on other means. This fallback to the parent here gives
+                // matchers based on this config an avenue to match the rate source's parent.
+                //
+                final Rates rates = context.getRatesWithParentRatesAsFallback();
+                final RateLimiter rateLimiter = rateLimiterProvider.getRateLimiter(mainMatch, rates);
 
                 visitor.accept(mainMatch, rateLimiter);
 
