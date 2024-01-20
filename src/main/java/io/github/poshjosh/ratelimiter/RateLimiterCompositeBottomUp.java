@@ -111,7 +111,8 @@ final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
             } while(node != null);
         }
         if (bandwidths.isEmpty()) {
-            throw new IllegalStateException("No bandwidths specified for this RateLimiter.");
+            // We are unlimited if there is no bandwidth
+            return Bandwidth.UNLIMITED;
         }
         if (bandwidths.size() == 1) {
             return bandwidths.get(0);

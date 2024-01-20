@@ -49,7 +49,8 @@ class RateLimiterComposite<K> implements RateLimiter {
                     (match, rateLimiter) -> bandwidths.add(rateLimiter.getBandwidth()));
         });
         if (bandwidths.isEmpty()) {
-            throw new IllegalStateException("No Bandwidths specified for this RateLimiter.");
+            // We are unlimited if there is no bandwidth
+            return Bandwidth.UNLIMITED;
         }
         if (bandwidths.size() == 1) {
             return bandwidths.get(0);
