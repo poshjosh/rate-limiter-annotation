@@ -1,27 +1,25 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
-import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
-import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.lang.reflect.Method;
 import java.util.*;
 
-class ClassRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Class<?>, Rates> {
+class ClassRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Class<?>> {
 
     private final RateProcessor<Method> methodRateProcessor;
 
     ClassRateAnnotationProcessor(
-            SourceFilter sourceTest, AnnotationConverter<Rate, Rates> annotationConverter) {
+            SourceFilter sourceTest, AnnotationConverter annotationConverter) {
         this(sourceTest, annotationConverter, 
                 new MethodRateAnnotationProcessor(sourceTest, annotationConverter));
     }
 
     ClassRateAnnotationProcessor(
             SourceFilter sourceTest,
-            AnnotationConverter<Rate, Rates> annotationConverter,
+            AnnotationConverter annotationConverter,
             RateProcessor<Method> methodRateProcessor) {
         super(sourceTest, annotationConverter);
         this.methodRateProcessor = methodRateProcessor;

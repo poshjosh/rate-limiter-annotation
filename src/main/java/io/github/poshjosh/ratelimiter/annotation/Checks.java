@@ -22,7 +22,7 @@ final class Checks {
     }
     static String requireSameId(Object source, Rate[] rates) {
         Set<String> uniqueNames = Arrays.stream(rates)
-                .map(Rate::name).collect(Collectors.toSet());
+                .map(Rate::id).collect(Collectors.toSet());
         if (uniqueNames.size() > 1) {
             throw new MisMatchedRateNameException(
                     "Multiple " + Rate.class.getSimpleName() +

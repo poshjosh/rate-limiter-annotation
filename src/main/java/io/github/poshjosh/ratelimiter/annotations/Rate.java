@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface Rate {
 
-    String name() default "";
+    String id() default "";
 
     /** Alias for value */
     long permits() default Long.MAX_VALUE;

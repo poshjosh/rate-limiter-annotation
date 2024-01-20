@@ -1,6 +1,5 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.annotation.ElementId;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
@@ -15,7 +14,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RateLimiterFactoryAnnotationTest {
 
-    @Rate(permits = 1, name = "resource-0")
+    @Rate(permits = 1, id = "resource-0")
     static class RateLimitedClass { }
 
     @Test
@@ -28,12 +27,19 @@ class RateLimiterFactoryAnnotationTest {
     static class ClassWithRateLimitedMethod {
         @Rate(1)
         void hi() { }
+        static Method getRateLimitedMethod() {
+            try {
+                return ClassWithRateLimitedMethod.class.getDeclaredMethod("hi");
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Test
     void testClassWithSingleRateLimitedMethod() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithRateLimitedMethod.class);
-        final String resourceId = ElementId.ofMethod(ClassWithRateLimitedMethod.class, "hi");
+        Object resourceId = ClassWithRateLimitedMethod.getRateLimitedMethod();
         assertTrue(limiterFactory.getRateLimiter(resourceId).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(resourceId).tryAcquire());
     }
@@ -45,7 +51,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void isNotLimited() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithNoLimit.class);
-        final String resourceId = ElementId.ofMethod(ClassWithRateLimitedMethod.class, "hi");
+        Object resourceId = ClassWithRateLimitedMethod.getRateLimitedMethod();
         assertTrue(limiterFactory.getRateLimiter(resourceId).tryAcquire(Integer.MAX_VALUE));
     }
 
@@ -53,11 +59,18 @@ class RateLimiterFactoryAnnotationTest {
     static class ClassRateHigherThanMethodRate {
         @Rate(1)
         void hi() { }
+        static Method getRateLimitedMethod() {
+            try {
+                return ClassRateHigherThanMethodRate.class.getDeclaredMethod("hi");
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
     @Test
     void isLimitedByMethodGivenMethodRateIsLower() {
         final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassRateHigherThanMethodRate.class);
-        final String key = ElementId.ofMethod(ClassRateHigherThanMethodRate.class, "hi");
+        final Object key = ClassRateHigherThanMethodRate.getRateLimitedMethod();
         assertTrue(limiterFactory.getRateLimiter(key).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(key).tryAcquire());
     }
@@ -66,6 +79,13 @@ class RateLimiterFactoryAnnotationTest {
     static class ClassRateLowerThanMethodRate {
         @Rate(2)
         void hi() { }
+        static Method getRateLimitedMethod() {
+            try {
+                return ClassRateLowerThanMethodRate.class.getDeclaredMethod("hi");
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     @Test
@@ -79,14 +99,67 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void methodIdentifiedByIdIsLimitedByClassGivenClassRateIsLower() {
         final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassRateLowerThanMethodRate.class);
-        final String key = ElementId.ofMethod(ClassRateLowerThanMethodRate.class, "hi");
+        final Object key = ClassRateLowerThanMethodRate.getRateLimitedMethod();
         assertTrue(limiterFactory.getRateLimiter(key).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(key).tryAcquire());
     }
 
-    @Rate(permits = 1, name = "class")
+    @Rate(1)
+    @RateGroup
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
+    @interface RateGroupWithLowRate { }
+
+    @RateGroupWithLowRate
+    static class ClassWithGroupRateLower1 {
+        @Rate(2)
+        void hi() { }
+        static Method getRateLimitedMethod() {
+            try {
+                return ClassWithGroupRateLower1.class.getDeclaredMethod("hi");
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    @RateGroupWithLowRate
+    static class ClassWithGroupRateLower2 {
+        @Rate(2)
+        void hi() { }
+    }
+
+    @Test
+    void methodIsLimitedByGroupGivenGroupRateIsLower() throws NoSuchMethodException {
+        final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(
+                ClassWithGroupRateLower1.class);
+        final Method key = ClassWithGroupRateLower1.class.getDeclaredMethod("hi");
+        assertTrue(limiterFactory.getRateLimiter(key).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(key).tryAcquire());
+    }
+
+    @Test
+    void methodIdentifiedByIdIsLimitedByGroupGivenGroupRateIsLower() {
+        final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(
+                ClassWithGroupRateLower1.class);
+        final Object key = ClassWithGroupRateLower1.getRateLimitedMethod();
+        assertTrue(limiterFactory.getRateLimiter(key).tryAcquire());
+        assertFalse(limiterFactory.getRateLimiter(key).tryAcquire());
+    }
+
+    @Test
+    void multipleMethodsAreLimitedByGroupGivenGroupRateIsLower() throws NoSuchMethodException {
+        final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(
+                ClassWithGroupRateLower1.class, ClassWithGroupRateLower2.class);
+        final Method key1 = ClassWithGroupRateLower1.class.getDeclaredMethod("hi");
+        assertTrue(limiterFactory.getRateLimiter(key1).tryAcquire());
+        final Method key2 = ClassWithGroupRateLower2.class.getDeclaredMethod("hi");
+        assertFalse(limiterFactory.getRateLimiter(key2).tryAcquire());
+    }
+
+    @Rate(permits = 1, id = "class")
     static class RateLimitedClassWithNamedRateLimitedMethod {
-        @Rate(permits = 1, name = "method")
+        @Rate(permits = 1, id = "method")
         void method_0() { }
     }
 
@@ -111,7 +184,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void testRateLimitedClassWithOrLimits() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithOrRateGroup.class);
-        final String id = ElementId.of(ClassWithOrRateGroup.class);
+        final Object id = ClassWithOrRateGroup.class;
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
@@ -129,7 +202,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void testRateLimitedClassWithAndLimits() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithAndRateGroup.class);
-        final String id = ElementId.of(ClassWithAndRateGroup.class);
+        final Object id = ClassWithAndRateGroup.class;
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
@@ -149,7 +222,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void givenRateConditionFalse_shouldNotBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithSeparateRateCondition.class);
-        final String id = ElementId.of(ClassWithSeparateRateCondition.class);
+        final Object id = (ClassWithSeparateRateCondition.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
     }
@@ -160,7 +233,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void givenRateWhenResolvesToFalse_shouldNotBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithWhenRateCondition.class);
-        final String id = ElementId.of(ClassWithWhenRateCondition.class);
+        final Object id = (ClassWithWhenRateCondition.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
     }
@@ -172,7 +245,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void givenRateConditionTrue_shouldBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithRateConditionTrue.class);
-        final String id = ElementId.of(ClassWithRateConditionTrue.class);
+        final Object id = (ClassWithRateConditionTrue.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
@@ -183,7 +256,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void givenRateWhenResolvesToTrue_shouldBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithWhenRateConditionTrue.class);
-        final String id = ElementId.of(ClassWithWhenRateConditionTrue.class);
+        final Object id = (ClassWithWhenRateConditionTrue.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
@@ -194,7 +267,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void isLimitedConditionally() throws InterruptedException {
         final RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithRateCondition.class);
-        final String key = ElementId.of(ClassWithRateCondition.class);
+        final Object key = (ClassWithRateCondition.class);
         // This consumption attempt should have returned false due to limit exceeded,
         // but we have a condition that must be met before rate limiting is applied
         assertTrue(limiterFactory.getRateLimiter(key).tryAcquire(Integer.MAX_VALUE));
@@ -210,12 +283,12 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void givenRateConditionTrue_andHavingSpaces_shouldBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithSeprateRateConditionSpaced.class);
-        final String id = ElementId.of(ClassWithSeprateRateConditionSpaced.class);
+        final Object id = (ClassWithSeprateRateConditionSpaced.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(name = "resource-8b", permits=1, when=" sys.time.elapsed > PT0S ")
+    @Rate(id = "resource-8b", permits=1, when=" sys.time.elapsed > PT0S ")
     public class ClassWithWhenRateConditionSpaced { }
 
     @Test
@@ -232,7 +305,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void givenRateConditionHavingNegationResolvesToTrue_shouldBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithNegationSeparateRateCondition.class);
-        final String id = ElementId.of(ClassWithNegationSeparateRateCondition.class);
+        final Object id = (ClassWithNegationSeparateRateCondition.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
@@ -243,7 +316,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void givenWhenHavingNegationResolvesToTrue_shouldBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithNegationWhenRateCondition.class);
-        final String id = ElementId.of(ClassWithNegationWhenRateCondition.class);
+        final Object id = (ClassWithNegationWhenRateCondition.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
@@ -257,7 +330,7 @@ class RateLimiterFactoryAnnotationTest {
     @Test
     void givenNonConjunctedRates() {
         RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithNonConjunctedRates.class);
-        final String id = ElementId.of(ClassWithNonConjunctedRates.class);
+        final Object id = (ClassWithNonConjunctedRates.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());

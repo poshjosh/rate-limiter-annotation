@@ -16,8 +16,8 @@ final class RateLimiterFactoryCreator {
         if (!context.isRateLimited()) {
             return RateLimiterFactory.noop();
         }
-        Node<LimiterContext<K>> propsRoot = rootNodes.getPropertiesRootNode();
-        Node<LimiterContext<K>> annoRoot = rootNodes.getAnnotationsRootNode();
+        Node<RateContext<K>> propsRoot = rootNodes.getPropertiesRootNode();
+        Node<RateContext<K>> annoRoot = rootNodes.getAnnotationsRootNode();
         RateLimiterProvider provider = context.getRateLimiterProvider();
         if (propsRoot.isEmptyNode() || propsRoot.size() == 0) {
             return new DefaultRateLimiterFactory<>(annoRoot, provider);

@@ -27,7 +27,7 @@ public class RateLimitedClass0 {
         return id;
     }
 
-    @Rate(name = METHOD_5_KEY, permits = METHOD_5_LIMIT)
+    @Rate(id = METHOD_5_KEY, permits = METHOD_5_LIMIT)
     public String methodNumber5(String a) {
         String id =  this.getClass().getName() + "methodNumber5";
         System.out.println(id);

@@ -1,9 +1,7 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
-import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
-import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 
 import java.lang.reflect.GenericDeclaration;
@@ -49,22 +47,22 @@ public interface RateProcessor<S> {
     }
 
     static RateProcessor<Class<?>> ofClass(SourceFilter sourceTest) {
-        return ofClass(sourceTest, AnnotationConverter.ofRate());
+        return ofClass(sourceTest, AnnotationConverter.ofDefaults());
     }
 
     static RateProcessor<Method> ofMethod(SourceFilter sourceTest) {
-        return ofMethod(sourceTest, AnnotationConverter.ofRate());
+        return ofMethod(sourceTest, AnnotationConverter.ofDefaults());
     }
 
     static RateProcessor<Class<?>> ofClass(
             SourceFilter sourceTest, 
-            AnnotationConverter<Rate, Rates> annotationConverter) {
+            AnnotationConverter annotationConverter) {
         return new ClassRateAnnotationProcessor(sourceTest, annotationConverter);
     }
 
     static RateProcessor<Method> ofMethod(
             SourceFilter sourceTest,
-            AnnotationConverter<Rate, Rates> annotationConverter) {
+            AnnotationConverter annotationConverter) {
         return new MethodRateAnnotationProcessor(sourceTest, annotationConverter);
     }
 

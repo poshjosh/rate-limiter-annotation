@@ -10,7 +10,7 @@ import java.lang.annotation.*;
 public @interface RateGroup {
 
     /** Alias for value() */
-    String name() default "";
+    String id() default "";
 
     /** Alias for name() */
     String value() default "";

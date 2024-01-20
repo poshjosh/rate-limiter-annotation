@@ -3,34 +3,19 @@ package io.github.poshjosh.ratelimiter.util;
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-final class DefaultMatcherProvider<INPUT> implements MatcherProvider<INPUT> {
-
-    private final ExpressionMatcher<INPUT, Object> expressionMatcher;
+final class DefaultMatcherProvider<INPUT> extends AbstractMatcherProvider<INPUT> {
 
     DefaultMatcherProvider() {
-        expressionMatcher = ExpressionMatcher.ofDefault();
+        super(ExpressionMatcher.ofDefault());
     }
 
-    @Override public Matcher<INPUT> createMainMatcher(RateConfig rateConfig) {
-        final String expression = rateConfig.getRates().getRateCondition();
-        final Matcher<INPUT> matcher = new RateSourceMatcher<>(rateConfig.getId());
-        return createExpressionMatcher(expression).map(matcher::and).orElse(matcher);
-    }
-
-    @Override public List<Matcher<INPUT>> createSubMatchers(RateConfig rateConfig) {
-        return rateConfig.getRates().getSubLimits().stream()
-                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(Matcher.matchNone()))
-                .collect(Collectors.toList());
-    }
-
-    private Optional<Matcher<INPUT>> createExpressionMatcher(String expression) {
-        return expressionMatcher.matcher(expression);
-    }
-
-    @Override public String toString() {
-        return "DefaultMatcherProvider{expressionMatcher=" + expressionMatcher + '}';
+    @Override
+    public Matcher<INPUT> createMainMatcher(RateConfig rateConfig) {
+        final Matcher<INPUT> expressionMatcher = createExpressionMatcher(
+                rateConfig.getRates().getRateCondition()).orElse(null);
+        if (isMatchNone(rateConfig, expressionMatcher != null)) {
+            return Matcher.matchNone();
+        }
+        return andSourceMatcher(expressionMatcher, rateConfig);
     }
 }

@@ -1,17 +1,15 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.annotation.ElementId;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -23,7 +21,7 @@ class RateLimiterFactoryOrGroupTest {
 
     @Rate(MIN)
     @Rate(MAX)
-    @RateGroup(name = OR_RATE_GROUP, operator = Operator.OR)
+    @RateGroup(id = OR_RATE_GROUP, operator = Operator.OR)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
     public @interface RateLimitGroup { }
@@ -36,15 +34,29 @@ class RateLimiterFactoryOrGroupTest {
     static class RateLimitGroupClass2 {
         @RateLimitGroup
         void method0() {}
+        static Method getRateLimitedMethod() {
+            try {
+                return RateLimitGroupClass2.class.getDeclaredMethod("method0");
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
-    @ParameterizedTest
-    @ValueSource(classes = { RateLimitGroupClass1.class, RateLimitGroupClass2.class})
-    void orGroupMembers_shouldBeRateLimited(Class<?> clazz) {
+    @Test
+    void orGroupClass_shouldBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
-        final String id = ElementId.of(clazz);
-        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire(MIN));
-        assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
+        Class<?> clazz = RateLimitGroupClass1.class;
+        assertTrue(limiterFactory.getRateLimiter(clazz).tryAcquire(MIN));
+        assertFalse(limiterFactory.getRateLimiter(clazz).tryAcquire());
+    }
+
+    @Test
+    void orGroupMethod_shouldBeRateLimited() {
+        RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
+        Method method = RateLimitGroupClass2.getRateLimitedMethod();
+        assertTrue(limiterFactory.getRateLimiter(method).tryAcquire(MIN));
+        assertFalse(limiterFactory.getRateLimiter(method).tryAcquire());
     }
 
     @Test
@@ -57,8 +69,7 @@ class RateLimiterFactoryOrGroupTest {
     @Test
     void orGroupAnnotation_shouldNotBeRateLimited() {
         RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
-        String id = ElementId.of(RateLimitGroup.class);
-        assertTrue(limiterFactory.getRateLimiter(id).tryAcquire(Integer.MAX_VALUE));
+        assertTrue(limiterFactory.getRateLimiter(RateLimitGroup.class).tryAcquire(Integer.MAX_VALUE));
     }
 
     private RateLimiterFactory<Object> givenRateLimiterFactoryHavingOrGroup() {

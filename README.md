@@ -54,11 +54,11 @@ The idea is to be able to rate limit multiple resources fluently and dynamically
 ```java
 class DynamicRateLimiting {
 
-    @Rate(name="resource-a", permits=1)
+    @Rate(id="resource-a", permits=1)
     static class ResourceA{}
     
     // Will be rate limited when system elapsed time is greater than 59 seconds
-    @Rate(name="resource-b", permits=5, condition="sys.time.elapsed>PT59S")
+    @Rate(id="resource-b", permits=5, condition="sys.time.elapsed>PT59S")
     static class ResourceB{}
 
     public static void main(String... args) {
@@ -86,12 +86,10 @@ public class SampleUsage {
 
     static class RateLimitedResource {
 
-        RateLimiter rateLimiter = RateLimiterFactory
-                .getLimiter(RateLimitedResource.class, "smile");
+        RateLimiter rateLimiter = RateLimiterFactory.getLimiter(RateLimitedResource.class, "smile");
 
         // Limited to 3 invocations every second
-        @Rate(name = "smile", permits = 3)
-        String smile() {
+        @Rate(id = "smile", permits = 3) String smile() {
             if (!rateLimiter.tryAcquire()) {
                 throw new RuntimeException("Limit exceeded");
             }
@@ -104,7 +102,7 @@ public class SampleUsage {
         RateLimitedResource rateLimitedResource = new RateLimitedResource();
 
         int i = 0;
-        for(; i < 3; i++) {
+        for (; i < 3; i++) {
 
             System.out.println("Invocation " + i + " of 3 should succeed");
             rateLimitedResource.smile();

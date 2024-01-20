@@ -14,11 +14,11 @@ final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
         return BOTTOM_UP_TRAVERSAL;
     }
 
-    private final Node<LimiterContext<K>> rootNode;
+    private final Node<RateContext<K>> rootNode;
     private final RateLimiterProvider rateLimiterProvider;
 
     DefaultRateLimiterFactory(
-            Node<LimiterContext<K>> rootNode,
+            Node<RateContext<K>> rootNode,
             RateLimiterProvider rateLimiterProvider) {
         this.rootNode = Objects.requireNonNull(rootNode);
         this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);

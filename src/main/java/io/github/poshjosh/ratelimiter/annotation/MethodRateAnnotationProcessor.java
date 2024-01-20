@@ -1,24 +1,22 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.annotation.exceptions.AnnotationProcessingException;
-import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
-import io.github.poshjosh.ratelimiter.model.Rates;
 import java.lang.reflect.Method;
 import java.util.Optional;
 import java.util.function.Predicate;
 
-class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Method, Rates> {
+class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Method> {
 
-    MethodRateAnnotationProcessor(AnnotationConverter<Rate, Rates> annotationConverter) {
+    MethodRateAnnotationProcessor(AnnotationConverter annotationConverter) {
         this(RateProcessor.SourceFilter.ofRateLimited(), annotationConverter);
     }
     
     MethodRateAnnotationProcessor(
             SourceFilter sourceTest,
-            AnnotationConverter<Rate, Rates> annotationConverter) {
+            AnnotationConverter annotationConverter) {
         super(sourceTest, annotationConverter);
     }
 
@@ -53,13 +51,13 @@ class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Meth
     }
 
     private Optional<Node<RateConfig>> getDeclaringClassNode(Node<RateConfig> root, Method method) {
-        final String declaringClassId = ElementId.of(method.getDeclaringClass());
+        final String declaringClassId = RateId.of(method.getDeclaringClass());
         Predicate<Node<RateConfig>> testForDeclaringClass = node -> {
             RateConfig rateConfig = node.getValueOrDefault(null);
             if (rateConfig == null) {
                 return false;
             }
-            return declaringClassId.equals(((RateSource)rateConfig.getSource()).getId());
+            return declaringClassId.equals((rateConfig.getSource()).getId());
         };
         return root.findFirstChild(testForDeclaringClass);
     }

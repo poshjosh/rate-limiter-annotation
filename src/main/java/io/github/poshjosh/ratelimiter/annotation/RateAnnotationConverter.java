@@ -14,7 +14,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-final class RateAnnotationConverter implements AnnotationConverter<Rate, Rates> {
+final class RateAnnotationConverter implements AnnotationConverter {
 
     RateAnnotationConverter() { }
 

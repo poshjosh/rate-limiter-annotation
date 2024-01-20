@@ -78,7 +78,7 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
     }
 
     @Override String getId(Class<?> element) {
-        return ElementId.of(element);
+        return RateId.of(element);
     }
 
     @Rate(permits = 2, duration = 20, timeUnit = MILLISECONDS)

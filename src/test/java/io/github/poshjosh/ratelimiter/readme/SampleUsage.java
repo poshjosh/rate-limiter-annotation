@@ -12,7 +12,7 @@ public class SampleUsage {
                 .getLimiter(RateLimitedResource.class, "smile");
 
         // Limited to 3 invocations every second
-        @Rate(name = "smile", permits = 3)
+        @Rate(id = "smile", permits = 3)
         String smile() {
             if (!rateLimiter.tryAcquire()) {
                 throw new RuntimeException("Limit exceeded");

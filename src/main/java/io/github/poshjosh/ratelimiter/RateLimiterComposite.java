@@ -15,11 +15,11 @@ import java.util.function.BiConsumer;
 class RateLimiterComposite<K> implements RateLimiter {
     private static final Logger LOG = LoggerFactory.getLogger(RateLimiterComposite.class);
     private final K key;
-    private final Node<LimiterContext<K>> rootNode;
+    private final Node<RateContext<K>> rootNode;
     private final RateLimiterProvider rateLimiterProvider;
 
     RateLimiterComposite (K key,
-            Node<LimiterContext<K>> rootNode,
+            Node<RateContext<K>> rootNode,
             RateLimiterProvider rateLimiterProvider) {
         this.key = Objects.requireNonNull(key);
         this.rootNode = Objects.requireNonNull(rootNode);
@@ -59,9 +59,9 @@ class RateLimiterComposite<K> implements RateLimiter {
     }
 
     protected int acceptMatchingRateLimiters(
-            Node<LimiterContext<K>> node,
+            Node<RateContext<K>> node,
             BiConsumer<String, RateLimiter> visitor) {
-        final LimiterContext<K> context = node == null ? null : node.getValueOrDefault(null);
+        final RateContext<K> context = node == null ? null : node.getValueOrDefault(null);
         if (context == null) {
             return -1;
         }
@@ -87,7 +87,8 @@ class RateLimiterComposite<K> implements RateLimiter {
         } else {
             if (Matcher.isMatch(mainMatch)) {
                 RateLimiter rateLimiter =
-                        rateLimiterProvider.getRateLimiter(mainMatch, context.getRates());
+                        rateLimiterProvider.getRateLimiter(
+                                mainMatch, context.getRatesWithParentRatesAsFallback());
 
                 visitor.accept(mainMatch, rateLimiter);
 

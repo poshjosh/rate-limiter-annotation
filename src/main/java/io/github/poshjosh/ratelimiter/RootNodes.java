@@ -20,8 +20,8 @@ class RootNodes<K> {
         return new RootNodes<>(context);
     }
 
-    private final Node<LimiterContext<K>> propertiesRootNode;
-    private final Node<LimiterContext<K>> annotationsRootNode;
+    private final Node<RateContext<K>> propertiesRootNode;
+    private final Node<RateContext<K>> annotationsRootNode;
 
     private RootNodes(RateLimiterContext<K> context) {
 
@@ -57,12 +57,11 @@ class RootNodes<K> {
                     .filter(RateSource::isRateLimited).isPresent();
         };
 
-        Predicate<Node<RateConfig>> anyNodeInTreeIsRateLimited = node -> {
-            return testTree(node, isNodeRateLimited);
-        };
+        Predicate<Node<RateConfig>> anyNodeInTreeIsRateLimited =
+                node -> node.anyMatch(isNodeRateLimited);
 
-        Function<Node<RateConfig>, LimiterContext<K>> transformer = currentNode -> {
-            return LimiterContext.of(context.getMatcherProvider(), currentNode);
+        Function<Node<RateConfig>, RateContext<K>> transformer = currentNode -> {
+            return RateContext.of(context.getMatcherProvider(), currentNode);
         };
 
         annotationsRootNode = annoRoot.retainAll(anyNodeInTreeIsRateLimited)
@@ -93,15 +92,11 @@ class RootNodes<K> {
         return RateProcessor.ofProperties();
     }
 
-    private boolean testTree(Node<RateConfig> node, Predicate<Node<RateConfig>> test) {
-        return test.test(node) || node.getChildren().stream().anyMatch(child -> testTree(child, test));
-    }
-
-    public Node<LimiterContext<K>> getPropertiesRootNode() {
+    public Node<RateContext<K>> getPropertiesRootNode() {
         return propertiesRootNode;
     }
 
-    public Node<LimiterContext<K>> getAnnotationsRootNode() {
+    public Node<RateContext<K>> getAnnotationsRootNode() {
         return annotationsRootNode;
     }
 

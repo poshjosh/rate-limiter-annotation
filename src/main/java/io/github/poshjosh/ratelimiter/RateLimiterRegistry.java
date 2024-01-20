@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.AnnotationConverter;
-import io.github.poshjosh.ratelimiter.annotation.ElementId;
+import io.github.poshjosh.ratelimiter.annotation.RateId;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -10,7 +10,7 @@ public interface RateLimiterRegistry<K> {
 
     static <K> RateLimiterRegistry<K> of(RateLimiterContext<K> context) {
         return new DefaultRateLimiterRegistry<>(
-                context, RootNodes.of(context), AnnotationConverter.ofRate());
+                context, RootNodes.of(context), AnnotationConverter.ofDefaults());
     }
 
     RateLimiterRegistry<K> register(Class<?> source);
@@ -25,11 +25,11 @@ public interface RateLimiterRegistry<K> {
 
 
     default boolean isRegistered(Class<?> source) {
-        return isRegistered(ElementId.of(source));
+        return isRegistered(RateId.of(source));
     }
 
     default boolean isRegistered(Method source) {
-        return isRegistered(source.getDeclaringClass()) || isRegistered(ElementId.of(source));
+        return isRegistered(source.getDeclaringClass()) || isRegistered(RateId.of(source));
     }
 
     boolean isRegistered(String name);

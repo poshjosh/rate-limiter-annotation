@@ -12,19 +12,24 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Predicate;
 
+/**
+ * Going bottom-up gives us the opportunity to short-circuit the traversal
+ * when we find a match.
+ * @param <K>
+ */
 @Experimental
 final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
-    private final Node<LimiterContext<K>>[] leafNodes;
+    private final Node<RateContext<K>>[] leafNodes;
 
     RateLimiterCompositeBottomUp(K key,
-            Node<LimiterContext<K>> rootNode,
+            Node<RateContext<K>> rootNode,
             RateLimiterProvider rateLimiterProvider) {
         super(key, rootNode, rateLimiterProvider);
         this.leafNodes = collectLeafs(rootNode);
     }
-    private static <R> Node<LimiterContext<R>> [] collectLeafs(Node<LimiterContext<R>> node) {
-        Set<Node<LimiterContext<R>>> leafNodes = new LinkedHashSet<>();
-        Predicate<Node<LimiterContext<R>>> test = n -> n.isLeaf() && n.hasValue();
+    private static <R> Node<RateContext<R>> [] collectLeafs(Node<RateContext<R>> node) {
+        Set<Node<RateContext<R>>> leafNodes = new LinkedHashSet<>();
+        Predicate<Node<RateContext<R>>> test = n -> n.isLeaf() && n.hasValue();
         node.getRoot().visitAll(test, leafNodes::add);
         return leafNodes.toArray(new Node[0]);
     }
@@ -33,7 +38,7 @@ final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
     public double acquire(int permits) {
         Set<String> attempts = new HashSet<>();
         AtomicLong totalTime = new AtomicLong();
-        for (Node<LimiterContext<K>> node : leafNodes) {
+        for (Node<RateContext<K>> node : leafNodes) {
             do {
                 acceptMatchingRateLimiters(node, (match, rateLimiter) -> {
                     if (!attempts.add(match)) {
@@ -55,7 +60,7 @@ final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
         Set<String> attempts = new HashSet<>();
         AtomicInteger successes = new AtomicInteger();
         outer:
-        for (Node<LimiterContext<K>> node : leafNodes) {
+        for (Node<RateContext<K>> node : leafNodes) {
             do {
                 final int matchCount = acceptMatchingRateLimiters(node, (match, rateLimiter) -> {
                     if (attempts.add(match) && rateLimiter.tryAcquire(permits, timeout, unit)) {
@@ -72,8 +77,8 @@ final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
         return attempts.size() == successes.get();
     }
 
-    private boolean matchSucceeded(Node<LimiterContext<K>> node, int matchCount) {
-        LimiterContext<K> context = node.getValueOrDefault(null);
+    private boolean matchSucceeded(Node<RateContext<K>> node, int matchCount) {
+        RateContext<K> context = node.getValueOrDefault(null);
         if (context == null) {
             return false;
         }
@@ -94,7 +99,7 @@ final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
     public Bandwidth getBandwidth() {
         Set<String> attempts = new HashSet<>();
         List<Bandwidth> bandwidths = new ArrayList<>();
-        for (Node<LimiterContext<K>> node : leafNodes) {
+        for (Node<RateContext<K>> node : leafNodes) {
             do {
                 acceptMatchingRateLimiters(node, (match, rateLimiter) -> {
                     if (!attempts.add(match)) {

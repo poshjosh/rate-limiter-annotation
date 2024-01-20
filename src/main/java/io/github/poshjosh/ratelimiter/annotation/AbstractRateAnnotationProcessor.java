@@ -16,18 +16,18 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericDeclaration;
 import java.util.*;
 
-abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R extends Rates>
+abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
         implements RateProcessor<S> {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractRateAnnotationProcessor.class);
 
     private final SourceFilter sourceTest;
 
-    private final AnnotationConverter<Rate, R> annotationConverter;
+    private final AnnotationConverter annotationConverter;
 
     protected AbstractRateAnnotationProcessor(
             SourceFilter sourceTest,
-            AnnotationConverter<Rate, R> annotationConverter) {
+            AnnotationConverter annotationConverter) {
         this.sourceTest = Objects.requireNonNull(sourceTest);
         this.annotationConverter = Objects.requireNonNull(annotationConverter);
     }
@@ -120,27 +120,26 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
 
     private Optional<Node<RateConfig>> findNodeForGroup(
             Node<RateConfig> root, GenericDeclaration groupSource) {
-        final String groupName = groupName(root, groupSource);
+        final String groupName = RateId.of((Class<?>)groupSource);
         return root.findFirstChild(childNode -> groupName.equals(childNode.getName()));
     }
     private Node<RateConfig> createNodeForGroup(
             Node<RateConfig> root, GenericDeclaration groupSource) {
-        final String groupName = groupName(root, groupSource);
-        RateSource rateSource = JavaRateSource.of(groupName, groupSource);
-        R rates = annotationConverter.convert(groupSource);
+        final Class<?> clazz = (Class<?>)groupSource;
+        final RateSource rateSource = JavaRateSource.ofAnnotation(clazz);
+        final Rates rates = annotationConverter.convert(groupSource);
         checkRateGroupOperator(rates.getOperator(), rates);
-        return Node.of(groupName, RateConfig.of(rateSource, rates), root);
-    }
-    private String groupName(Node<RateConfig> root, GenericDeclaration groupSource) {
-        return ElementId.of((Class)groupSource);
+        final RateConfig rootConfig = root.getValueOrDefault(null);
+        return Node.of(rateSource.getId(), RateConfig.of(rateSource, rates, rootConfig), root);
     }
 
     private Node<RateConfig> createNodeForElement(
             Node<RateConfig> root, Node<RateConfig> parentNode, S source) {
         final RateSource rateSource = toRateSource(source);
         requireUniqueName(root, source, rateSource.getId());
-        final R rates = annotationConverter.convert(source);
-        return Node.of(rateSource.getId(), RateConfig.of(rateSource, rates), parentNode);
+        final Rates rates = annotationConverter.convert(source);
+        final RateConfig parentConfig = parentNode.getValueOrDefault(null);
+        return Node.of(rateSource.getId(), RateConfig.of(rateSource, rates, parentConfig), parentNode);
     }
 
     private String requireUniqueName(Node<RateConfig> root, Object source, String name) {
@@ -153,7 +152,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration, R e
         return name;
     }
 
-    private void checkRateGroupOperator(Operator operator, R rates) {
+    private void checkRateGroupOperator(Operator operator, Rates rates) {
         if (rates.hasLimits()) {
             return;
         }

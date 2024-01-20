@@ -43,7 +43,8 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
             requireParentNameDoesNotMatchChild(parent.getName(), name);
             Rates rates = entry.getValue();
             RateSource rateSource = new PropertyRateSource(name, rates.hasLimits(), source);
-            Node<RateConfig> node = Node.of(name, RateConfig.of(rateSource, rates), parent);
+            RateConfig parentConfig = parent.getValueOrDefault(null);
+            Node<RateConfig> node = Node.of(name, RateConfig.of(rateSource, rates, parentConfig), parent);
             nodeConsumer.accept(rates, node);
         }
     }

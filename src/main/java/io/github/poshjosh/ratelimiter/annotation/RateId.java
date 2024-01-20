@@ -1,28 +1,54 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
+import io.github.poshjosh.ratelimiter.annotations.Experimental;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.AnnotatedElement;
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.util.Arrays;
-import java.util.Optional;
 
-public final class ElementId {
+public final class RateId {
+    private static final Logger LOG = LoggerFactory.getLogger(RateId.class);
 
-    private ElementId() { }
+    private RateId() { }
 
-    public static Optional<String> parseClassPart(String text) {
+    // Currently not used, also does not support Methods with arguments
+    @Experimental
+    static GenericDeclaration parse(String text, GenericDeclaration resultIfNone) {
         final int indexOfOpenBracket = text.indexOf('(');
         if (indexOfOpenBracket == -1) {
-            return Optional.of(text);
+            Class<?> clazz = getClassOrNull(text, text);
+            return clazz == null ? resultIfNone : clazz;
         }
-        final int end = text.substring(0, indexOfOpenBracket).lastIndexOf('.');
-        if (end == -1) {
-            return Optional.empty();
+        final String classAndMethodPart = text.substring(0, indexOfOpenBracket);
+        final int endOfClassPart = classAndMethodPart.lastIndexOf('.');
+        if (endOfClassPart == -1) {
+            return resultIfNone;
         }
-        return Optional.of(text.substring(0, end));
+        Class<?> clazz = getClassOrNull(classAndMethodPart.substring(0, endOfClassPart), text);
+        if (clazz == null) {
+            return resultIfNone;
+        }
+        try {
+            return clazz.getDeclaredMethod(classAndMethodPart.substring(endOfClassPart + 1));
+        } catch (NoSuchMethodException e) {
+            LOG.debug("Failed to parse method part of: " + text, e);
+            return resultIfNone; // A text id could look like a class-method signature
+        }
+    }
+
+    private static Class<?> getClassOrNull(String name, String text) {
+        try {
+            return Class.forName(name);
+        } catch (ClassNotFoundException e) {
+            LOG.debug("Failed to parse: " + text, e);
+            return null;
+        }
     }
 
     /**
@@ -39,14 +65,6 @@ public final class ElementId {
             return specifiedId;
         }
         return getName(clazz);
-    }
-
-    public static String ofMethod(Class<?> aClass, String methodName, Class<?>... parameterTypes) {
-        try {
-            return of(aClass.getDeclaredMethod(methodName, parameterTypes));
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /**
@@ -113,7 +131,7 @@ public final class ElementId {
         if (rateGroup == null) {
             return "";
         }
-        return Arrays.stream(new String[]{rateGroup.value(), rateGroup.name()})
+        return Arrays.stream(new String[]{rateGroup.value(), rateGroup.id()})
                 .filter(StringUtils::hasText)
                 .findAny().orElse("");
     }
@@ -123,7 +141,7 @@ public final class ElementId {
             return "";
         }
         if (rates.length == 1) {
-            return rates[0].name();
+            return rates[0].id();
         }
         return Checks.requireSameId(source, rates);
     }

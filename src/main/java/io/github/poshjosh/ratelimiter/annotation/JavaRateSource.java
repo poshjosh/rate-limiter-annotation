@@ -12,6 +12,9 @@ public final class JavaRateSource {
     private JavaRateSource() { }
 
     public static RateSource of(Class<?> clazz) {
+        if (clazz.isAnnotation()) {
+            return ofAnnotation(clazz);
+        }
         return new ClassRateSource(clazz);
     }
 
@@ -19,8 +22,11 @@ public final class JavaRateSource {
         return new MethodRateSource(method);
     }
 
-    public static RateSource of(String id, GenericDeclaration source) {
-        return new GroupRateSource(id, source);
+    public static RateSource ofAnnotation(Class<?> source) {
+        if (!source.isAnnotation()) {
+            throw new IllegalArgumentException("Source must be an annotation type");
+        }
+        return new AnnotationRateSource(source);
     }
 
     private static final RateProcessor.SourceFilter isRateLimited = RateProcessor.SourceFilter.ofRateLimited();
@@ -30,16 +36,16 @@ public final class JavaRateSource {
         private final Class<?> clazz;
         private final boolean rateLimited;
         private ClassRateSource(Class<?> clazz) {
-            this.id = ElementId.of(clazz);
-            this.clazz = clazz;
+            this.id = RateId.of(clazz);
+            this.clazz = Objects.requireNonNull(clazz);
             this.rateLimited = isRateLimited.test(clazz);
+        }
+        @Override public String getId() {
+            return id;
         }
         @Override public Class<?> getSource() { return clazz; }
         @Override public Optional<RateSource> getDeclarer() {
             return Optional.of(this);
-        }
-        @Override public String getId() {
-            return id;
         }
         @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
             return Optional.ofNullable(clazz.getAnnotation(annotationClass));
@@ -53,37 +59,41 @@ public final class JavaRateSource {
         private final RateSource declarer;
         private final boolean rateLimited;
         private MethodRateSource(Method method) {
-            this.id = ElementId.of(method);
-            this.method = method;
+            this.id = RateId.of(method);
+            this.method = Objects.requireNonNull(method);
             this.declarer = of(method.getDeclaringClass());
             this.rateLimited = isRateLimited.test(method);
         }
-        @Override public Method getSource() { return method; }
-        @Override public Optional<RateSource> getDeclarer() { return Optional.of(declarer); }
         @Override public String getId() {
             return id;
         }
+        @Override public Method getSource() { return method; }
+        @Override public Optional<RateSource> getDeclarer() { return Optional.of(declarer); }
         @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
             return Optional.ofNullable(method.getAnnotation(annotationClass));
         }
         @Override public boolean isRateLimited() { return rateLimited; }
     }
 
-    private static final class GroupRateSource extends AbstractRateSource {
+    private static final class AnnotationRateSource extends AbstractRateSource {
         private final String id;
-        private final GenericDeclaration source;
-        private GroupRateSource(String id, GenericDeclaration source) {
-            this.id = Objects.requireNonNull(id);
-            this.source = Objects.requireNonNull(source);
+        private final Class<?> clazz;
+        private final boolean rateLimited;
+        private AnnotationRateSource(Class<?> source) {
+            this.id = RateId.of(source);
+            this.clazz = Objects.requireNonNull(source);
+            this.rateLimited = isRateLimited.test(source);
         }
-        @Override public GenericDeclaration getSource() { return source; }
+
         @Override public String getId() {
             return id;
         }
+        @Override public GenericDeclaration getSource() { return clazz; }
+
         @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
-            return Optional.empty();
+            return Optional.ofNullable(clazz.getAnnotation(annotationClass));
         }
-        @Override public boolean isRateLimited() { return true; }
+        @Override public boolean isRateLimited() { return rateLimited; }
         @Override public boolean isGroupType() { return true; }
     }
 

@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.GenericDeclaration;
 import java.util.*;
 
-final class LimiterContext<R> {
+final class RateContext<R> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LimiterContext.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RateContext.class);
 
-    static <K> LimiterContext<K> of(
+    static <K> RateContext<K> of(
             MatcherProvider<K> matcherProvider,
             Node<RateConfig> node) {
         RateConfig rateConfig = node.getValueOrDefault(null);
@@ -27,7 +27,7 @@ final class LimiterContext<R> {
         }
         Matcher<K> mainMatcher;
         List<Matcher<K>> subMatchers;
-        if(!hasLimitsInTree(node)) {
+        if(!hasLimitsInTree(node) && !rateConfig.shouldDelegateToParent()) {
             LOG.debug("No limits specified for group, so no matcher will be created for: {}",
                     node.getName());
             mainMatcher = Matcher.matchNone();
@@ -35,18 +35,18 @@ final class LimiterContext<R> {
         } else {
             mainMatcher = matcherProvider.createMainMatcher(rateConfig);
             subMatchers = matcherProvider.createSubMatchers(rateConfig);
-            // Tag:Rule:number-of-matchers-equals-number-of-rates
+            // Tag:Rule:number-of-matchers-must-equal-number-of-rates
             if (subMatchers.size() != rateConfig.getRates().subLimitSize()) {
                 throw new IllegalStateException(
-                        "Number of Matchers is not equal to number of rates");
+                        String.format("Number of Matchers: %s is not equal to number of rates: %s",
+                                subMatchers.size(), rateConfig.getRates().subLimitSize()));
             }
         }
-        final LimiterContext<K> limiterContext =
-                new LimiterContext<>(rateConfig, mainMatcher, subMatchers);
-        LOG.trace("{}", limiterContext);
-        return limiterContext;
+        final RateContext<K> rateContext =
+                new RateContext<>(rateConfig, mainMatcher, subMatchers);
+        LOG.trace("{}", rateContext);
+        return rateContext;
     }
-
     private static boolean hasLimitsInTree(Node<RateConfig> node) {
         return hasLimits(node) || (DefaultRateLimiterFactory.isBottomUpTraversal() ?
                 anyParentHasLimits(node) : anyChildHasLimits(node));
@@ -76,7 +76,7 @@ final class LimiterContext<R> {
      */
     private final List<Matcher<R>> subMatchers;
 
-    private LimiterContext(RateConfig rateConfig,
+    private RateContext(RateConfig rateConfig,
             Matcher<R> mainMatcher, List<Matcher<R>> subMatchers) {
         this.rateConfig = Objects.requireNonNull(rateConfig);
         this.mainMatcher = Objects.requireNonNull(mainMatcher);
@@ -113,6 +113,10 @@ final class LimiterContext<R> {
         return Rates.of(rateConfig.getRates());
     }
 
+    public Rates getRatesWithParentRatesAsFallback() {
+        return Rates.of(rateConfig.getRatesWithParentRatesAsFallback());
+    }
+
     public Matcher<R> getMainMatcher() { return mainMatcher; }
 
     public List<Matcher<R>> getSubMatchers() {
@@ -128,7 +132,7 @@ final class LimiterContext<R> {
             return true;
         if (o == null || getClass() != o.getClass())
             return false;
-        LimiterContext<?> that = (LimiterContext<?>) o;
+        RateContext<?> that = (RateContext<?>) o;
         return rateConfig.equals(that.rateConfig) && mainMatcher.equals(that.mainMatcher)
                 && subMatchers.equals(that.subMatchers);
     }
@@ -138,7 +142,7 @@ final class LimiterContext<R> {
     }
 
     @Override public String toString() {
-        return "LimiterContext{config=" + rateConfig +
+        return "RateContext{config=" + rateConfig +
                 ", mainMatcher=" + mainMatcher + ", subMatchers=" + subMatchers + '}';
     }
 }

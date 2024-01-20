@@ -24,7 +24,7 @@ class RateLimiterFactoryTest {
 
     @io.github.poshjosh.ratelimiter.annotations.Rate(1)
     static class ResourceWithClassAndMethodRates {
-        @io.github.poshjosh.ratelimiter.annotations.Rate(name = "smile", permits = 2)
+        @io.github.poshjosh.ratelimiter.annotations.Rate(id = "smile", permits = 2)
         void smile() { }
         static Method getRateLimitedMethod() {
             try {
@@ -63,7 +63,7 @@ class RateLimiterFactoryTest {
 
     @io.github.poshjosh.ratelimiter.annotations.Rate(2)
     static class ResourceWithClassRateLargerThanMethodRate {
-        @io.github.poshjosh.ratelimiter.annotations.Rate(name = "smile", permits = 1)
+        @io.github.poshjosh.ratelimiter.annotations.Rate(id = "smile", permits = 1)
         void smile() { }
         static Method getRateLimitedMethod() {
             try {

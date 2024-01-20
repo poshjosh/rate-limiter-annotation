@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class AnnotationConverterTest {
 
-    AnnotationConverter<Rate, Rates> annotationConverter = AnnotationConverter.ofRate();
+    AnnotationConverter annotationConverter = AnnotationConverter.ofDefaults();
 
     @Test
     void getAnnotationType() {
@@ -52,7 +52,7 @@ class AnnotationConverterTest {
     @Rate(10)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
-    @RateGroup(name="resource-group", operator = Operator.AND)
+    @RateGroup(id ="resource-group", operator = Operator.AND)
     public @interface CustomRateGroup { }
 
     @Rate(1)

@@ -17,6 +17,7 @@
 package io.github.poshjosh.ratelimiter.node;
 
 import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 
 import java.util.Collections;
 import java.util.List;
@@ -57,6 +58,10 @@ public interface Node<V> {
 
     static <T> Node<T> of(String name, T value, Node<T> parent) {
         return new NodeImpl(name, value, parent);
+    }
+
+    default boolean anyMatch(Predicate<Node<V>> test) {
+        return test.test(this) || getChildren().stream().anyMatch(child -> child.anyMatch(test));
     }
 
     default int size() {

@@ -63,6 +63,11 @@ final class NodeImpl<V> implements Node<V> {
     }
 
     @Override
+    public boolean anyMatch(Predicate<Node<V>> test) {
+        return test.test(this) || children.stream().anyMatch(child -> child.anyMatch(test));
+    }
+
+    @Override
     public void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer, int depth) {
         DepthFirstVisitor.visitAll(this, filter, consumer, depth);
     }

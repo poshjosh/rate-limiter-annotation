@@ -20,12 +20,12 @@ public final class PropertyRateSource implements RateSource {
         this.source = Objects.requireNonNull(source);
     }
 
-    @Override public Object getSource() {
-        return source;
-    }
-
     @Override public String getId() {
         return id;
+    }
+
+    @Override public Object getSource() {
+        return source;
     }
 
     @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {

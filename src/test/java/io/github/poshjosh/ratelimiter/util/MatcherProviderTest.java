@@ -19,11 +19,27 @@ class MatcherProviderTest {
     private final MatcherProvider<String> matcherProvider = MatcherProvider.ofDefaults();
 
     @Test
-    void createMainMatcher_givenNoRateCondition_shouldCreateANodeNameMatcher() {
+    void createMainMatcher_givenOnlyNodeName_shouldCreateANodeNameMatcher() {
         String nodeName = "test-node-name";
         RateConfig rateConfig = givenRateConfigWithNoConditions(nodeName);
         Matcher<String> matcher = matcherProvider.createMainMatcher(rateConfig);
         assertTrue(matcher.matches(nodeName));
+        assertFalse(matcher.matches("invalid"));
+    }
+
+    @Test
+    void mainMatcherForNodeName_shouldNotMatchSubText() {
+        String nodeName = "test-node-name";
+        RateConfig rateConfig = givenRateConfigWithNoConditions(nodeName);
+        Matcher<String> matcher = matcherProvider.createMainMatcher(rateConfig);
+        assertFalse(matcher.matches(nodeName.substring(0, 3)));
+    }
+
+    @Test
+    void mainMatcherForNodeName_shouldNotMatchSuperText() {
+        String nodeName = "test-node-name";
+        RateConfig rateConfig = givenRateConfigWithNoConditions(nodeName);
+        Matcher<String> matcher = matcherProvider.createMainMatcher(rateConfig);
         assertFalse(matcher.matches(nodeName + "1"));
     }
 
@@ -76,7 +92,7 @@ class MatcherProviderTest {
     }
 
     @Test
-    void createSubMatchers_givenOneNonGlobalRateConditions_shouldReturnOne() {
+    void createSubMatchers_givenOneNonGlobalRateCondition_shouldReturnOne() {
         String nodeName = "test-node-name";
         RateConfig rateConfig = givenRateConfigWithConditions(nodeName, "", "sys.time.elapsed>PT0S");
         List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
@@ -89,6 +105,6 @@ class MatcherProviderTest {
 
     private RateConfig givenRateConfigWithConditions(String nodeName, String globalCondition, String condition) {
         Rates rates = Rates.of(globalCondition, Rate.of(1, condition));
-        return RateConfig.of(RateSource.of(nodeName, true), rates);
+        return RateConfig.of(RateSource.of(nodeName, true), rates, null);
     }
 }
