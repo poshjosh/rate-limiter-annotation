@@ -121,4 +121,26 @@ final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
         // succeeds only when all Bandwidths succeed. This is the case here.
         return Bandwidths.of(Operator.OR, bandwidths.toArray(new Bandwidth[0]));
     }
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("RateLimiterCompositeBottomUp@").append(Integer.toHexString(hashCode())).append("{");
+        Set<String> attempts = new HashSet<>();
+        for (Node<RateContext<K>> node : leafNodes) {
+            do {
+                acceptMatchingRateLimiters(node, (match, rateLimiter) -> {
+                    if (!attempts.add(match)) {
+                        return;
+                    }
+                    if (builder.length() > 0) {
+                        builder.append(", ");
+                    }
+                    builder.append(match).append("=").append(rateLimiter);
+                });
+                node = node.getParentOrDefault(null);
+            } while(node != null);
+        }
+        builder.append("}");
+        return builder.toString();
+    }
 }

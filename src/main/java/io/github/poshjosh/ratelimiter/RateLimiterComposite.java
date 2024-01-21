@@ -149,4 +149,21 @@ class RateLimiterComposite<K> implements RateLimiter {
             }
         }
     }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("RateLimiterComposite@").append(Integer.toHexString(hashCode())).append("{");
+        rootNode.visitAll(node -> {
+            acceptMatchingRateLimiters(node,
+                    (match, rateLimiter) -> {
+                        if (builder.length() > 0) {
+                            builder.append(", ");
+                        }
+                        builder.append(match).append("=").append(rateLimiter);
+                    });
+        });
+        builder.append("}");
+        return builder.toString();
+    }
 }
