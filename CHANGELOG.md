@@ -9,7 +9,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
-## [ [0.6.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.6.0) ] - 2024-01-21
+## [ [0.7.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.7.0) ] - 2024-01-21
+
+### Added
+
+- Added RateLimiterFactory to replace ResourceLimiter
+- Added method RateConfig.getParentOptional()
+- Added more performance tests
+
+### Changed
+
+- Revamp logic for matching rate conditions
+- Renamed @Rate.name to @Rate.id
+- Renamed @RateGroup.name to @RateGroup.id
+- Renamed ElementId to RateId
+- Renamed all ResourceLimiterXXX to RateLimiterXXX
+- Renamed all ResourceLimitingXXX to RateLimitingXXX
+- Renamed all ResourceLimiterConfigXXX to RateLimiterContextXXXX
+
+### Removed
+
+- Removed ResourceLimiter and UsageListener
+- Streamlined the methods in RateLimiterRegistry
+- Moved RateLimiterProperties and RateLimiterRegistry to project rate-limiter-annotation
+
+## [ [0.6.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.6.0) ] - 2024-01-12
 
 ### Changed
 
