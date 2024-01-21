@@ -35,6 +35,6 @@ class ResourceB{
 }
 ```
 
-### Supported LHS
+### Supported Left Hand Side (LHS)
 
-See the [core specification](https://github.com/poshjosh/rate-limiter-annotation/blob/main/docs/RATE-CONDITION-EXPRESSION-LANGUAGE.md), the following are supported:
+[View the full list of supported LHS here](https://github.com/poshjosh/rate-limiter/blob/master/docs/RATE-CONDITION-EXPRESSION-LANGUAGE.md)
