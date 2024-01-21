@@ -29,22 +29,31 @@ final class BandwidthStoreFacade<K> {
     }
 
     Bandwidth getOrCreateBandwidth(K key, Rate rate) {
-        Bandwidth existing = getBandwidthFromStore(key); // Coming from store without auto save
-        if (existing == null) {
-            return rateToBandwidthConverter.convert(rate);
+        // Bandwidth coming from store will not have auto-save if
+        // deserialized from a local machine.
+        Bandwidth bandwidth = getBandwidthFromStore(key);
+        if (bandwidth == null) {
+            bandwidth = rateToBandwidthConverter.convert(rate);
+            saveBandwidthToStore(key, bandwidth);
         }
-        return withAutoSave(key, existing);
+        return withAutoSave(key, bandwidth);
     }
 
     Bandwidth getOrCreateBandwidth(K key, Rates rates) {
-        Bandwidth existing = getBandwidthFromStore(key);
-        if (existing == null) {
-            return rateToBandwidthConverter.convert(rates);
+        // Bandwidth coming from store will not have auto-save if
+        // deserialized from a local machine.
+        Bandwidth bandwidth = getBandwidthFromStore(key);
+        if (bandwidth == null) {
+            bandwidth = rateToBandwidthConverter.convert(rates);
+            saveBandwidthToStore(key, bandwidth);
         }
-        return withAutoSave(key, existing);
+        return withAutoSave(key, bandwidth);
     }
 
     private Bandwidth withAutoSave(K key, Bandwidth bandwidth) {
+        if (bandwidth instanceof BandwidthWrapper) {
+            return bandwidth;
+        }
         return new BandwidthWrapper(bandwidth) {
             @Override public long reserveEarliestAvailable(int permits, long nowMicros) {
                 final long result = super.reserveEarliestAvailable(permits, nowMicros);

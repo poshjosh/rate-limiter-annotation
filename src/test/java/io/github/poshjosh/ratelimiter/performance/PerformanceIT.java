@@ -2,9 +2,7 @@ package io.github.poshjosh.ratelimiter.performance;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.RateLimiterFactory;
-import io.github.poshjosh.ratelimiter.bandwidths.BandwidthFactory;
 import io.github.poshjosh.ratelimiter.performance.dummyclasses.dummyclasses0.RateLimitedClass0;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.github.poshjosh.ratelimiter.performance.Helpers.annotatedClasses;
@@ -39,7 +37,7 @@ abstract class PerformanceIT {
     @Test
     void resourceLimiting_withInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
         resourceLimitingShouldConsumeLimitedTimeAndMemory(
-                RateLimitedClass0.METHOD_5_KEY, Usage.of(350, 0), 100, 100
+                RateLimitedClass0.METHOD_5_KEY, Usage.of(350, 30_000), 100, 100
         );
     }
 

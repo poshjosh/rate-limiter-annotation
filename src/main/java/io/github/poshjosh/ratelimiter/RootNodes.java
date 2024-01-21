@@ -68,7 +68,7 @@ class RootNodes<K> {
                 .orElseGet(() -> Node.of("root.annotations"))
                 .getRoot().transform(transformer);
 
-        LOG.debug("Nodes:\n{}", annotationsRootNode);
+        LOG.debug("ANNOTATION SOURCED NODES:\n{}", annotationsRootNode);
 
         Predicate<Node<RateConfig>> nodesNotTransferred =
                 node -> !transferredToAnnotations.contains(node.getName());
@@ -77,7 +77,7 @@ class RootNodes<K> {
                 .orElseGet(() -> Node.of("root.properties"))
                 .getRoot().transform(transformer);
 
-        LOG.debug("Nodes:\n{}", propertiesRootNode);
+        LOG.debug("PROPERTIES SOURCED NODES:\n{}", propertiesRootNode);
     }
 
     private RateProcessor<Class<?>> getClassRateProcessor() {

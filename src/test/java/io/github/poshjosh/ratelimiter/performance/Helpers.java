@@ -20,7 +20,7 @@ public class Helpers {
         return classList;
     }
 
-    static RateLimiterFactory<String> givenRateLimiterFactory(List<Class<?>> classList) {
+    static RateLimiterFactory givenRateLimiterFactory(List<Class<?>> classList) {
         return RateLimiterFactory.of(classList.toArray(new Class[0]));
     }
 }

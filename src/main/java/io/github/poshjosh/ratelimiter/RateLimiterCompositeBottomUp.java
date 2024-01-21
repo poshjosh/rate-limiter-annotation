@@ -8,24 +8,29 @@ import io.github.poshjosh.ratelimiter.util.Operator;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiConsumer;
 import java.util.function.Predicate;
 
 /**
- * Going bottom-up gives us the opportunity to short-circuit the traversal
- * when we find a match.
+ * In bottom-up traversal, if we traverse all the branches in the tree,
+ * we will encounter some nodes twice. This happens because 2 or more
+ * leaf nodes may share the same parent.
+ * Fortunately we don't need to traverse all the branches in the tree.
+ * We stop after the current branch once we find a match.
  * @param <K>
  */
 @Experimental
-final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
+final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
+    private final K key;
     private final Node<RateContext<K>>[] leafNodes;
+    private final RateLimiterProvider rateLimiterProvider;
 
-    RateLimiterCompositeBottomUp(K key,
+    RateLimiterCompositeBottomUp (K key,
             Node<RateContext<K>> rootNode,
             RateLimiterProvider rateLimiterProvider) {
-        super(key, rootNode, rateLimiterProvider);
+        this.key = Objects.requireNonNull(key);
         this.leafNodes = collectLeafs(rootNode);
+        this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
     }
     private static <R> Node<RateContext<R>> [] collectLeafs(Node<RateContext<R>> node) {
         Set<Node<RateContext<R>>> leafNodes = new LinkedHashSet<>();
@@ -36,111 +41,64 @@ final class RateLimiterCompositeBottomUp<K> extends RateLimiterComposite<K> {
 
     @Override
     public double acquire(int permits) {
-        Set<String> attempts = new HashSet<>();
-        AtomicLong totalTime = new AtomicLong();
-        for (Node<RateContext<K>> node : leafNodes) {
-            do {
-                acceptMatchingRateLimiters(node, (match, rateLimiter) -> {
-                    if (!attempts.add(match)) {
-                        return;
-                    }
-                    double timeSpent = rateLimiter.acquire(permits);
-                    if (timeSpent > 0) { // Only increment when > 0, as some value may be negative.
-                        totalTime.addAndGet((long)timeSpent);
-                    }
-                });
-                node = node.getParentOrDefault(null);
-            } while(node != null);
-        }
-        return totalTime.get();
+        PermitAcquiringVisitor visitor = new PermitAcquiringVisitor(permits);
+        visitNodesBottomUp(visitor);
+        return visitor.getTotalTimeSpent();
     }
 
     @Override
     public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
-        Set<String> attempts = new HashSet<>();
-        AtomicInteger successes = new AtomicInteger();
-        outer:
-        for (Node<RateContext<K>> node : leafNodes) {
-            do {
-                final int matchCount = acceptMatchingRateLimiters(node, (match, rateLimiter) -> {
-                    if (attempts.add(match) && rateLimiter.tryAcquire(permits, timeout, unit)) {
-                        successes.incrementAndGet();
-                    }
-                });
-                // For bottom-up traversal, we can stop at the first match.
-                if (matchSucceeded(node, matchCount)) {
-                    break outer;
-                }
-                node = node.getParentOrDefault(null);
-            } while(node != null);
-        }
-        return attempts.size() == successes.get();
+        PermitAttemptingVisitor visitor = new PermitAttemptingVisitor(permits, timeout, unit);
+        visitNodesBottomUp(visitor);
+        return visitor.isNoLimitExceeded();
     }
-
-    private boolean matchSucceeded(Node<RateContext<K>> node, int matchCount) {
-        RateContext<K> context = node.getValueOrDefault(null);
-        if (context == null) {
-            return false;
-        }
-        if (context.hasSubConditions()) {
-            return matchCount >= context.getSubMatchers().size();
-        } else {
-            return matchCount >= 1;
-        }
-    }
-
-    // We use Sets to prevent duplicates.
-    // Since we visit from leaf nodes upwards to root, we often encounter
-    // the same parent rate limiter multiple times. This happens because
-    // 2 or more leaf nodes may share the same parent.
-    //
 
     @Override
     public Bandwidth getBandwidth() {
-        Set<String> attempts = new HashSet<>();
         List<Bandwidth> bandwidths = new ArrayList<>();
-        for (Node<RateContext<K>> node : leafNodes) {
-            do {
-                acceptMatchingRateLimiters(node, (match, rateLimiter) -> {
-                    if (!attempts.add(match)) {
-                        return;
-                    }
-                    bandwidths.add(rateLimiter.getBandwidth());
-                });
-                node = node.getParentOrDefault(null);
-            } while(node != null);
-        }
-        if (bandwidths.isEmpty()) {
-            // We are unlimited if there is no bandwidth
-            return Bandwidth.UNLIMITED;
-        }
-        if (bandwidths.size() == 1) {
-            return bandwidths.get(0);
-        }
+        BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) -> {
+            bandwidths.add(rateLimiter.getBandwidth());
+        };
+        visitNodesBottomUp(visitor);
         // For multiple Bandwidths conjugated with Operator.OR, the composed Bandwidth
         // succeeds only when all Bandwidths succeed. This is the case here.
         return Bandwidths.of(Operator.OR, bandwidths.toArray(new Bandwidth[0]));
     }
-    @Override
-    public String toString() {
-        StringBuilder builder = new StringBuilder();
-        builder.append("RateLimiterCompositeBottomUp@").append(Integer.toHexString(hashCode())).append("{");
-        Set<String> attempts = new HashSet<>();
+
+    private void visitNodesBottomUp(BiConsumer<String, RateLimiter> visitor) {
         for (Node<RateContext<K>> node : leafNodes) {
+            boolean atLeastOneNodeInBranchMatched = false;
             do {
-                acceptMatchingRateLimiters(node, (match, rateLimiter) -> {
-                    if (!attempts.add(match)) {
-                        return;
-                    }
-                    if (builder.length() > 0) {
-                        builder.append(", ");
-                    }
-                    builder.append(match).append("=").append(rateLimiter);
-                });
+                // We need to traverse the entire branch, even if we find a match
+                if (matchesRateLimiters(node, visitor)) {
+                    atLeastOneNodeInBranchMatched = true;
+                }
                 node = node.getParentOrDefault(null);
             } while(node != null);
+            // If at least one node in the last branch matches, we skip
+            // the subsequent branches
+            if (atLeastOneNodeInBranchMatched) {
+                break;
+            }
         }
-        builder.append("}");
+    }
+
+    private boolean matchesRateLimiters(
+            Node<RateContext<K>> node, BiConsumer<String, RateLimiter> visitor) {
+        return MatchUtil.matchesRateLimiters(node, key, rateLimiterProvider, visitor);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder builder = new StringBuilder()
+                .append("RateLimiterCompositeBottomUp@")
+                .append(Integer.toHexString(hashCode()))
+                .append("{");
+        BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) -> {
+            builder.append("\n\tmatch=").append(match).append(", limiter=").append(rateLimiter);
+        };
+        visitNodesBottomUp(visitor);
+        builder.append("\n}");
         return builder.toString();
     }
 }

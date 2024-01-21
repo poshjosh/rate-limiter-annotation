@@ -49,24 +49,25 @@ final class DepthFirstVisitor<T> implements Consumer<Node<T>>{
     }
 
     public static <T> void visitAll(Node<T> node, Consumer<Node<T>> consumer) {
-        DepthFirstVisitor.visitAll(node, currentNode -> true, consumer, Integer.MAX_VALUE);
+        visitAll(node, currentNode -> true, consumer, Integer.MAX_VALUE);
     }
 
-    public static <T> void visitAll(Node<T> node, Predicate<Node<T>> filter, Consumer<Node<T>> consumer, int depth) {
+    public static <T> void visitAll(Node<T> node, Predicate<Node<T>> filter,
+            Consumer<Node<T>> consumer, int remainingDepth) {
 
         if(LOG.isTraceEnabled()) {
             LOG.trace("Visiting: {}", node);
         }
 
-        DepthFirstVisitor.visit(filter, consumer, node);
+        visit(filter, consumer, node);
         
-        if(depth > 0) {
-        
+        if(remainingDepth > 0) {
+
             final List<Node<T>> childNodeSet = node.getChildren();
 
             for(Node<T> childNode : childNodeSet) {
 
-                DepthFirstVisitor.visitAll(childNode, filter, consumer, depth-1);
+                visitAll(childNode, filter, consumer, remainingDepth-1);
             }
         }
     }

@@ -1,19 +1,10 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.annotations.Experimental;
 import io.github.poshjosh.ratelimiter.node.Node;
 
 import java.util.*;
 
 final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
-
-    @Experimental
-    private static final boolean BOTTOM_UP_TRAVERSAL = false;
-    @Experimental
-    static boolean isBottomUpTraversal() {
-        return BOTTOM_UP_TRAVERSAL;
-    }
-
     private final Node<RateContext<K>> rootNode;
     private final RateLimiterProvider rateLimiterProvider;
 
@@ -32,7 +23,7 @@ final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
         // We could cache the result of this method, but it could be disastrous
         // We cannot tell how many keys will be presented. This means that
         // the size of our cache may be arbitrarily large.
-        return BOTTOM_UP_TRAVERSAL ?
+        return RateContext.isBottomUpTraversal() ?
                 new RateLimiterCompositeBottomUp<>(key, rootNode, rateLimiterProvider) :
                 new RateLimiterComposite<>(key, rootNode, rateLimiterProvider);
     }

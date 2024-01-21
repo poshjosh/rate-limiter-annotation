@@ -17,6 +17,10 @@ final class RateContext<R> {
 
     private static final Logger LOG = LoggerFactory.getLogger(RateContext.class);
 
+    static boolean isBottomUpTraversal() {
+        return true; // Bottom-up traversal performs better, as of the last tests.
+    }
+
     static <K> RateContext<K> of(
             MatcherProvider<K> matcherProvider,
             Node<RateConfig> node) {
@@ -48,7 +52,7 @@ final class RateContext<R> {
         return rateContext;
     }
     private static boolean hasLimitsInTree(Node<RateConfig> node) {
-        return hasLimits(node) || (DefaultRateLimiterFactory.isBottomUpTraversal() ?
+        return hasLimits(node) || (isBottomUpTraversal() ?
                 anyParentHasLimits(node) : anyChildHasLimits(node));
     }
     private static boolean anyParentHasLimits(Node<RateConfig> node) {
