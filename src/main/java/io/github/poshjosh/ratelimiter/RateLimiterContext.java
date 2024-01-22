@@ -85,7 +85,11 @@ public interface RateLimiterContext<K> {
     }
 
     default boolean isRateLimited() {
-        return getProperties().isRateLimitingEnabled() && hasRateSources();
+        return isRateLimitingEnabled() && hasRateSources();
+    }
+
+    default boolean isRateLimitingEnabled() {
+        return getProperties().isRateLimitingEnabled();
     }
 
     boolean hasRateSources();
