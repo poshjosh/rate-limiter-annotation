@@ -53,9 +53,10 @@ class RateLimiterComposite<K> implements RateLimiter {
         AtomicBoolean matchFound = new AtomicBoolean(false);
         AtomicBoolean firstLeafAfterMatch = new AtomicBoolean(false);
         rootNode.visitAll(
-                node -> !(matchFound.get() && firstLeafAfterMatch.get()),
+                node -> !firstLeafAfterMatch.get(),
                 node -> {
-                    // We still need to traverse the entire branch, even if we find a match
+                    // We still need to traverse the entire current branch, even if we find a match
+                    // However, we stop at the current branch, if we find a match in it.
                     if (matchesRateLimiters(node, visitor)) {
                         matchFound.set(true);
                     }

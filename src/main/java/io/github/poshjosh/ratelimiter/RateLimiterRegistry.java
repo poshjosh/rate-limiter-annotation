@@ -33,4 +33,14 @@ public interface RateLimiterRegistry<K> {
     }
 
     boolean isRegistered(String name);
+
+    default boolean hasMatcher(Class<?> source) {
+        return hasMatcher(RateId.of(source));
+    }
+
+    default boolean hasMatcher(Method source) {
+        return hasMatcher(source.getDeclaringClass()) || hasMatcher(RateId.of(source));
+    }
+
+    boolean hasMatcher(String id);
 }

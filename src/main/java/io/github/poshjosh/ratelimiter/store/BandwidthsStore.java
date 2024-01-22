@@ -1,13 +1,14 @@
 package io.github.poshjosh.ratelimiter.store;
 
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.WeakHashMap;
 
 public interface BandwidthsStore<K> {
 
     static <K> BandwidthsStore<K> ofDefaults() {
-        return ofMap(new ConcurrentHashMap<>());
+        return ofMap(new WeakHashMap<>());
     }
 
     static <K> BandwidthsStore<K> ofMap(Map<K, Bandwidth> map) {

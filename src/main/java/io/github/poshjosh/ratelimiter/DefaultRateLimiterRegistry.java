@@ -66,6 +66,11 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
                 || rootNodes.getAnnotationsRootNode().findFirstChild(node -> isName(id, node)).isPresent();
     }
 
+    @Override
+    public boolean hasMatcher(String id) {
+        return getRateContext(id).filter(RateContext::hasMatcher).isPresent();
+    }
+
     private Optional<RateLimiter> getOrCreateRateLimiter(GenericDeclaration source) {
         final String rateId = RateId.of(source);
         RateContext<K> context = getRateContext(rateId)

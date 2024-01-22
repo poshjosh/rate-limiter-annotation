@@ -7,12 +7,14 @@ import java.util.*;
 final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
     private final Node<RateContext<K>> rootNode;
     private final RateLimiterProvider rateLimiterProvider;
+    private final Map<K, RateLimiter> keyToRateLimiterMap;
 
     DefaultRateLimiterFactory(
             Node<RateContext<K>> rootNode,
             RateLimiterProvider rateLimiterProvider) {
         this.rootNode = Objects.requireNonNull(rootNode);
         this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
+        this.keyToRateLimiterMap = new WeakHashMap<>();
     }
 
     /**
@@ -20,12 +22,15 @@ final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
      * @param key The key to match
      */
     public RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone) {
-        // We could cache the result of this method, but it could be disastrous
-        // We cannot tell how many keys will be presented. This means that
-        // the size of our cache may be arbitrarily large.
-        return RateContext.isBottomUpTraversal() ?
+        final RateLimiter fromCache = keyToRateLimiterMap.get(key);
+        if (fromCache != null) {
+            return fromCache;
+        }
+        final RateLimiter rateLimiter = RateContext.isBottomUpTraversal() ?
                 new RateLimiterCompositeBottomUp<>(key, rootNode, rateLimiterProvider) :
                 new RateLimiterComposite<>(key, rootNode, rateLimiterProvider);
+        keyToRateLimiterMap.put(key, rateLimiter);
+        return rateLimiter;
     }
 
     @Override

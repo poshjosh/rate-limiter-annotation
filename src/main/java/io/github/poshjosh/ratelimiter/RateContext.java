@@ -87,6 +87,11 @@ final class RateContext<R> {
         this.subMatchers = Collections.unmodifiableList(new ArrayList<>(subMatchers));
     }
 
+    public boolean hasMatcher() {
+        return !Matcher.matchNone().equals(mainMatcher) ||
+                subMatchers.stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
+    }
+
     public boolean isGroupSource() {
         return rateConfig.getSource().isGroupType();
     }

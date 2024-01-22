@@ -41,6 +41,14 @@ abstract class PerformanceIT {
         );
     }
 
+    // At 100 req/sec Heap memory cyclically peaks at 130MB
+//    @Test
+//    void profileThis_resourceLimiting_withInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
+//        resourceLimitingShouldConsumeLimitedTimeAndMemory(
+//                RateLimitedClass0.METHOD_5_KEY, Usage.of(3500, 300_000), 10000, 10
+//        );
+//    }
+
     @Test
     void resourceLimiting_withoutInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
         resourceLimitingShouldConsumeLimitedTimeAndMemory(

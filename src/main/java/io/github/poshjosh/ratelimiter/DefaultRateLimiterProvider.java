@@ -8,14 +8,13 @@ import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
 import io.github.poshjosh.ratelimiter.util.Ticker;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 final class DefaultRateLimiterProvider implements RateLimiterProvider {
 
     private final BandwidthStoreFacade bandwidthStoreFacade;
     private final Ticker ticker;
 
-    private final Map<Object, RateLimiter> resourceIdToRateLimiter;
+    private final Map<Object, RateLimiter> keyToRateLimiterMap;
 
     DefaultRateLimiterProvider(
             RateToBandwidthConverter rateToBandwidthConverter,
@@ -24,15 +23,15 @@ final class DefaultRateLimiterProvider implements RateLimiterProvider {
         this.bandwidthStoreFacade =
                 new BandwidthStoreFacade<>(rateToBandwidthConverter, bandwidthStore);
         this.ticker = Objects.requireNonNull(ticker);
-        this.resourceIdToRateLimiter = new ConcurrentHashMap<>();
+        this.keyToRateLimiterMap = new WeakHashMap<>();
     }
 
     @Override
     public RateLimiter getRateLimiter(String key, Rate rate) {
         RateLimiter rateLimiter;
-        if ((rateLimiter = this.resourceIdToRateLimiter.get(key)) == null) {
+        if ((rateLimiter = this.keyToRateLimiterMap.get(key)) == null) {
             rateLimiter = createRateLimiter(key, rate);
-            this.resourceIdToRateLimiter.put(key, rateLimiter);
+            this.keyToRateLimiterMap.put(key, rateLimiter);
         }
         return rateLimiter;
     }
@@ -40,9 +39,9 @@ final class DefaultRateLimiterProvider implements RateLimiterProvider {
     @Override
     public RateLimiter getRateLimiter(String key, Rates rates) {
         RateLimiter rateLimiter;
-        if ((rateLimiter = this.resourceIdToRateLimiter.get(key)) == null) {
+        if ((rateLimiter = this.keyToRateLimiterMap.get(key)) == null) {
             rateLimiter = createRateLimiter(key, rates);
-            this.resourceIdToRateLimiter.put(key, rateLimiter);
+            this.keyToRateLimiterMap.put(key, rateLimiter);
         }
         return rateLimiter;
     }

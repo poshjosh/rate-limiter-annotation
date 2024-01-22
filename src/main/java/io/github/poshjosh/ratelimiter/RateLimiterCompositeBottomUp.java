@@ -69,7 +69,8 @@ final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
         for (Node<RateContext<K>> node : leafNodes) {
             boolean atLeastOneNodeInBranchMatched = false;
             do {
-                // We need to traverse the entire branch, even if we find a match
+                // We need to traverse the entire current branch, even if we find a match.
+                // However, we stop at the current branch, if we find a match in it.
                 if (matchesRateLimiters(node, visitor)) {
                     atLeastOneNodeInBranchMatched = true;
                 }
