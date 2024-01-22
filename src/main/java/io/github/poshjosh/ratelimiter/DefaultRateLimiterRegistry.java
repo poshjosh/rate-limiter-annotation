@@ -4,9 +4,11 @@ import io.github.poshjosh.ratelimiter.annotation.AnnotationConverter;
 import io.github.poshjosh.ratelimiter.annotation.RateId;
 import io.github.poshjosh.ratelimiter.annotation.JavaRateSource;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 
+import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
 import java.util.*;
 
@@ -27,21 +29,19 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
 
     @Override
     public RateLimiterRegistry<K> register(Class<?> source) {
-        if (isRegistered(RateId.of(source))) {
+        if (isRegistered(source)) {
             return this;
         }
-        Node<RateConfig> node = createNode(source);
-        toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
+        addRateContextToAnnotationsRoot(source);
         return this;
     }
 
     @Override
     public RateLimiterRegistry<K> register(Method source) {
-        if (isRegistered(RateId.of(source))) {
+        if (isRegistered(source)) {
             return this;
         }
-        Node<RateConfig> node = createNode(source);
-        toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
+        addRateContextToAnnotationsRoot(source);
         return this;
     }
 
@@ -52,14 +52,12 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
 
     @Override
     public Optional<RateLimiter> getRateLimiter(Class<?> clazz) {
-        RateContext<K> context = getRateContext(clazz).orElseGet(() -> createRateContext(clazz));
-        return getRateLimiter(RateId.of(clazz), context.getRates());
+        return getOrCreateRateLimiter(clazz);
     }
 
     @Override
     public Optional<RateLimiter> getRateLimiter(Method method) {
-        RateContext<K> context = getRateContext(method).orElseGet(() -> createRateContext(method));
-        return getRateLimiter(RateId.of(method), context.getRates());
+        return getOrCreateRateLimiter(method);
     }
 
     @Override
@@ -68,27 +66,31 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
                 || rootNodes.getAnnotationsRootNode().findFirstChild(node -> isName(id, node)).isPresent();
     }
 
-    private Optional<RateLimiter> getRateLimiter(String key, Rates rates) {
-        if (!rates.hasLimits()) {
+    private Optional<RateLimiter> getOrCreateRateLimiter(GenericDeclaration source) {
+        final String rateId = RateId.of(source);
+        RateContext<K> context = getRateContext(rateId)
+                .orElseGet(() -> addRateContextToAnnotationsRoot(source).orElse(null));
+        if (context == null) {
             return Optional.empty();
         }
-        RateLimiterProvider provider = context.getRateLimiterProvider();
-        return Optional.of(provider.getRateLimiter(key, rates));
+        return getRateLimiter(rateId, context);
     }
 
-    private RateContext<K> createRateContext(Class<?> source) {
-        Node<RateConfig> node = createNode(source);
-        return toRateContextNode(null, node).requireValue();
+    private Optional<RateLimiter> getRateLimiter(String key, RateContext<K> rateContext) {
+        // This is faster, but will not work if the @Rate annotation is not
+        // present on the class or method. (e.g. it is present on a @RateGroup)
+        //if (!rateContext.getRates().hasLimits())
+        if (!rateContext.getSource().isRateLimited()) {
+            return Optional.empty();
+        }
+        final Rates rates = rateContext.getRatesWithParentRatesAsFallback();
+        return Optional.of(context.getRateLimiterProvider().getRateLimiter(key, rates));
     }
-    private RateContext<K> createRateContext(Method source) {
-        Node<RateConfig> node = createNode(source);
-        return toRateContextNode(null, node).requireValue();
-    }
-    private Optional<RateContext<K>> getRateContext(Class<?> clazz) {
-        return getRateContext(RateId.of(clazz));
-    }
-    private Optional<RateContext<K>> getRateContext(Method method) {
-        return getRateContext(RateId.of(method));
+
+    private Optional<RateContext<K>> addRateContextToAnnotationsRoot(GenericDeclaration source) {
+        Node<RateContext<K>> parent = rootNodes.getAnnotationsRootNode();
+        return createNode(source, null)
+                .map(node -> toRateContextNode(parent, node).requireValue());
     }
     private Optional<RateContext<K>> getRateContext(String id) {
         RateContext<K> rateContext = rootNodes.getPropertiesRootNode()
@@ -114,23 +116,18 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return RateContext.of(context.getMatcherProvider(), node);
     }
 
-    private Node<RateConfig> createNode( Class<?> source) {
-        RateConfig rateConfig = createRateConfig(source);
-        return Node.of(rateConfig.getId(), rateConfig, null);
+    private Optional<Node<RateConfig>> createNode(
+            GenericDeclaration source, Node<RateConfig> parent) {
+        return createRateConfig(source, parent == null ? null : parent.requireValue())
+                .map(rateConfig -> Node.of(rateConfig.getId(), rateConfig, parent));
     }
 
-    private Node<RateConfig> createNode(Method source) {
-        RateConfig rateConfig = createRateConfig(source);
-        return Node.of(rateConfig.getId(), rateConfig, null);
-    }
-
-    private RateConfig createRateConfig(Class<?> source) {
+    private Optional<RateConfig> createRateConfig(GenericDeclaration source, RateConfig parent) {
+        RateSource rateSource = JavaRateSource.of(source);
+        if (!rateSource.isRateLimited()) {
+            return Optional.empty();
+        }
         Rates rates = annotationConverter.convert(source);
-        return RateConfig.of(JavaRateSource.of(source), rates, null);
-    }
-
-    private RateConfig createRateConfig(Method source) {
-        Rates rates = annotationConverter.convert(source);
-        return RateConfig.of(JavaRateSource.of(source), rates, null);
+        return Optional.of(RateConfig.of(rateSource, rates, parent));
     }
 }

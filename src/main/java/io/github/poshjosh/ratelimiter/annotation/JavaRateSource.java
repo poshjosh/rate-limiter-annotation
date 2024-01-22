@@ -11,6 +11,16 @@ import java.util.Optional;
 public final class JavaRateSource {
     private JavaRateSource() { }
 
+    public static RateSource of(GenericDeclaration source) {
+        if (source instanceof Class) {
+            return of((Class)source);
+        }
+        if (source instanceof Method) {
+            return of((Method)source);
+        }
+        throw new UnsupportedOperationException("Unsupported source type: " + source);
+    }
+
     public static RateSource of(Class<?> clazz) {
         if (clazz.isAnnotation()) {
             return ofAnnotation(clazz);

@@ -51,6 +51,16 @@ public final class RateId {
         }
     }
 
+    public static String of(GenericDeclaration source) {
+        if (source instanceof Class) {
+            return of((Class<?>) source);
+        }
+        if (source instanceof Method) {
+            return of((Method) source);
+        }
+        throw new UnsupportedOperationException("Unsupported source: " + source);
+    }
+
     /**
      * Identify a class.
      * The class is identified either by the name attribute of a {@link Rate} annotation
