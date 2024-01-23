@@ -57,7 +57,7 @@ abstract class PerformanceIT {
     }
 
     @Test
-    void firstCallToGet_shouldConsumeLimitedTimeAndMemory() throws InterruptedException {
+    void firstCallToGet_shouldConsumeLimitedTimeAndMemory() {
         final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory(annotatedClasses());
         final Usage bookmark = Usage.bookmark();
         rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
