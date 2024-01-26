@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.annotations.Rate;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.lang.reflect.GenericDeclaration;
@@ -15,5 +16,5 @@ public interface AnnotationConverter {
         return Rate.class;
     }
 
-    Rates convert(GenericDeclaration source);
+    Rates convert(RateSource source);
 }

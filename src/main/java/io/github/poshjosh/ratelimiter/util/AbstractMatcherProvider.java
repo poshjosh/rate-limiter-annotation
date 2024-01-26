@@ -41,7 +41,7 @@ public abstract class AbstractMatcherProvider<INPUT> implements MatcherProvider<
 
     protected boolean isMatchNone(RateConfig rateConfig, boolean isExpressionPresent) {
         return !isExpressionPresent
-                && !rateConfig.getRates().hasLimits()
+                && !rateConfig.getRates().hasLimitsSet()
                 && !rateConfig.getSource().isGroupType();
     }
 

@@ -65,7 +65,7 @@ final class RateContext<R> {
                 .anyMatch(child -> child.hasValue() && hasLimitsInTree(child));
     }
     private static boolean hasLimits(Node<RateConfig> node) {
-        return node.requireValue().getRates().hasLimits();
+        return node.requireValue().getRates().hasLimitsSet();
     }
 
     private final RateConfig rateConfig;
@@ -105,7 +105,7 @@ final class RateContext<R> {
     }
 
     public boolean hasLimits() {
-        return rateConfig.getRates().hasLimits();
+        return rateConfig.getRates().hasLimitsSet();
     }
 
     public boolean hasSubConditions() {

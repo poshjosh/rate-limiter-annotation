@@ -47,12 +47,18 @@ final class DefaultRateLimiterProvider implements RateLimiterProvider {
     }
 
     private RateLimiter createRateLimiter(String key, Rate rate) {
-        Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rate);
+        final Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rate);
+        if (Bandwidth.UNLIMITED.equals(bandwidth)) {
+            return RateLimiter.NO_LIMIT;
+        }
         return RateLimiter.of(bandwidth, ticker);
     }
 
     private RateLimiter createRateLimiter(String key, Rates rates) {
-        Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rates);
+        final Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rates);
+        if (Bandwidth.UNLIMITED.equals(bandwidth)) {
+            return RateLimiter.NO_LIMIT;
+        }
         return RateLimiter.of(bandwidth, ticker);
     }
 }

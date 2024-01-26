@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.annotation.exceptions.AnnotationProcessing
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
@@ -24,7 +25,11 @@ final class RateAnnotationConverter implements AnnotationConverter {
     }
 
     @Override
-    public Rates convert(GenericDeclaration source) {
+    public Rates convert(RateSource rateSource) {
+        if (!rateSource.isRateLimited()) {
+            return Rates.none();
+        }
+        final GenericDeclaration source = (GenericDeclaration)rateSource.getSource();
         final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
         final Rate[] rates = source.getAnnotationsByType(getAnnotationType());
         final String rateConditionForAllRates = getRateCondition(source);
@@ -83,7 +88,7 @@ final class RateAnnotationConverter implements AnnotationConverter {
 
     private io.github.poshjosh.ratelimiter.model.Rate convert(Rate rate) {
         long value = rate.value() == Long.MAX_VALUE ? rate.permits() : rate.value();
-        Duration duration = Duration.of(rate.duration(), toChronoUnit(rate.timeUnit()));
+        Duration duration = rate.duration() == 0 ? Duration.ZERO : Duration.of(rate.duration(), toChronoUnit(rate.timeUnit()));
         String condition = StringUtils.hasText(rate.condition()) ? rate.condition() : rate.when();
         return io.github.poshjosh.ratelimiter.model.Rate
                 .of(value, duration, condition, rate.factoryClass());

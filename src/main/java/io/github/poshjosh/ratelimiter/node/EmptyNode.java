@@ -18,11 +18,6 @@ final class EmptyNode<V> implements Node<V>{
     }
 
     @Override
-    public Optional<Node<V>> findFirst(Node<V> offset, V... path) {
-        return Optional.empty();
-    }
-
-    @Override
     public Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest) {
         return Optional.empty();
     }

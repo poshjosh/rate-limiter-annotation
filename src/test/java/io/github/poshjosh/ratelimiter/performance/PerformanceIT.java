@@ -2,11 +2,16 @@ package io.github.poshjosh.ratelimiter.performance;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.RateLimiterFactory;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.performance.dummyclasses.dummyclasses0.RateLimitedClass0;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static io.github.poshjosh.ratelimiter.performance.Helpers.annotatedClasses;
-import static io.github.poshjosh.ratelimiter.performance.Helpers.givenRateLimiterFactory;
+import java.lang.reflect.Method;
+import java.util.List;
+import java.util.stream.Stream;
+
+import static io.github.poshjosh.ratelimiter.performance.Helpers.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 abstract class PerformanceIT {
@@ -14,11 +19,13 @@ abstract class PerformanceIT {
     //
     // Do not use log level debug/trace, as tests may fail, due the overhead caused by logging
     //
-//
-//    @BeforeEach
-//    void beforeEach() throws InterruptedException {
-//        Runtime.getRuntime().gc();
-//        Thread.sleep(3000);
+
+    // At 10k iterations with 10 millis interval (100 req/sec)
+//    @Test
+//    void profileThis_resourceLimiting_withInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
+//        resourceLimitingShouldConsumeLimitedTimeAndMemory(
+//                RateLimitedClass0.METHOD_5_KEY, Usage.of(3500, 300_000), 10000, 10
+//        );
 //    }
 
     @Test
@@ -26,7 +33,7 @@ abstract class PerformanceIT {
 
         final Usage usageBookmark = Usage.bookmark();
 
-        givenRateLimiterFactory(annotatedClasses());
+        givenRateLimiterFactory();
 
         final Usage recordedUsage = usageBookmark.current();
 
@@ -36,21 +43,15 @@ abstract class PerformanceIT {
 
     @Test
     void resourceLimiting_withInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
+        garbageCollectAndWaitABit();
         resourceLimitingShouldConsumeLimitedTimeAndMemory(
                 RateLimitedClass0.METHOD_5_KEY, Usage.of(350, 30_000), 100, 100
         );
     }
 
-    // At 100 req/sec Heap memory cyclically peaks at 130MB
-//    @Test
-//    void profileThis_resourceLimiting_withInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
-//        resourceLimitingShouldConsumeLimitedTimeAndMemory(
-//                RateLimitedClass0.METHOD_5_KEY, Usage.of(3500, 300_000), 10000, 10
-//        );
-//    }
-
     @Test
     void resourceLimiting_withoutInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
+        garbageCollectAndWaitABit();
         resourceLimitingShouldConsumeLimitedTimeAndMemory(
                 RateLimitedClass0.METHOD_5_KEY, Usage.of(50, 3_000_000), 10_000, 0
         );
@@ -62,12 +63,12 @@ abstract class PerformanceIT {
         final Usage bookmark = Usage.bookmark();
         rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage recordedUsage = bookmark.current();
-        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(30, 300_000));
+        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(30, 30_000));
     }
 
     @Test
     void secondCallToGet_shouldConsumeLimitedTimeAndMemory() {
-        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory(annotatedClasses());
+        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory();
         rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage bookmark = Usage.bookmark();
         rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
@@ -76,9 +77,24 @@ abstract class PerformanceIT {
     }
 
     @Test
+    void get_shouldConsumeLimitedTimeAndMemory() throws InterruptedException {
+        garbageCollectAndWaitABit();
+        final RateLimiterFactory<Object> rateLimiterFactory = givenRateLimiterFactory();
+        final List<Method> methods = annotatedClassMethods();
+        final int count = methods.size();
+        final Usage bookmark = Usage.bookmark();
+        for(int i = 0; i < count; i++) {
+            final Method method = methods.get(i);
+            rateLimiterFactory.getRateLimiter(method);
+        }
+        final Usage recordedUsage = bookmark.current();
+        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(count/10, 50_000 * count));
+    }
+
+    @Test
     void tryConsume_shouldConsumeLimitedTimeAndMemory() {
 
-        final RateLimiter rateLimiter = givenRateLimiterFactory(annotatedClasses())
+        final RateLimiter rateLimiter = givenRateLimiterFactory()
                 .getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
 
         final Usage usageBookmark = Usage.bookmark();
@@ -94,7 +110,7 @@ abstract class PerformanceIT {
             String key, Usage usageLimit, int iterations, int intervalMillis)
             throws InterruptedException{
 
-        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory(annotatedClasses());
+        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory();
 
         final Usage usageBookmark = Usage.bookmark();
 
@@ -120,6 +136,11 @@ abstract class PerformanceIT {
         assertFalse(recordedUsage.isAnyUsageGreaterThan(usageLimit),
                 "Usage should be less or equal to limit, but was not.\nUsage: " +
                         recordedUsage + "\nLimit: " + usageLimit);
+    }
+
+    private void garbageCollectAndWaitABit() throws InterruptedException {
+        Runtime.getRuntime().gc();
+        waitFor(3000);
     }
 
     private void waitFor(long timeoutMillis) throws InterruptedException{

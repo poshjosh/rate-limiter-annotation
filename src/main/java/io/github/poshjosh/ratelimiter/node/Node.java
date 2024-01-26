@@ -228,13 +228,6 @@ public interface Node<V> {
         }
         return target;
     }
-    
-    default Optional<Node<V>> findFirstChild(V... path) {
-        
-        return this.findFirst(this, path);
-    }
-    
-    Optional<Node<V>> findFirst(Node<V> offset, V... path);
 
     default Optional<Node<V>> findFirstChild() {
         return findFirstChild(node -> true);
@@ -250,6 +243,10 @@ public interface Node<V> {
     boolean hasChildren();
 
     Node<V> getChild(int index);
+
+    default int getChildCount() {
+        return getChildren().size();
+    }
 
     /**
      * @return An <b>un-modifiable</b> list view of this node's children

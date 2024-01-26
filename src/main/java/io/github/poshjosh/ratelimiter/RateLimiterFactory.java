@@ -51,13 +51,13 @@ public interface RateLimiterFactory<K> {
 
     static <K> RateLimiterFactory<K> of(String resourceId, Rate limit) {
         RateSource rateSource = RateSource.of(resourceId, limit != null);
-        return of(resourceId, RateConfig.of(rateSource, Rates.of(limit), null));
+        return of(resourceId, RateConfig.of(rateSource, Rates.of(limit)));
     }
 
     static <K> RateLimiterFactory<K> of(String resourceId, Operator operator, Rate... limits) {
         final boolean hasLimits = limits != null && limits.length > 0;
         return of(resourceId, RateConfig.of(RateSource.of(resourceId, hasLimits),
-                Rates.of(operator, limits), null));
+                Rates.of(operator, limits)));
     }
 
     static <K> RateLimiterFactory<K> of(String resourceId, RateConfig rateConfig) {

@@ -80,45 +80,26 @@ final class NodeImpl<V> implements Node<V> {
     }
 
     @Override
-    public Optional<Node<V>> findFirst(Node<V> offset, V... path) {
-        for (V valueToFind : path) {
-            final Predicate<Node<V>> nodeTest = (node) -> Objects.equals(node.getValueOrDefault(null), valueToFind);
-            final Optional<Node<V>> foundNode = this.findFirst(offset, nodeTest);
-            if(foundNode.isPresent()) {
-                offset = foundNode.get();
-            }else{
-                offset = null;
-                break;
-            }
-        }
-        return Optional.ofNullable(offset);
-    }
-    
-    @Override
     public Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest) {
+        return Optional.ofNullable(findFirstOrNull(offset, nodeTest));
+    }
 
+    private Node<V> findFirstOrNull(Node<V> offset, Predicate<Node<V>> nodeTest) {
         Node<V> found = null;
-
         if(nodeTest.test(offset)) {
             found = offset;
-        }else{
-
-            final List<Node<V>> childNodes = offset.getChildren();
-
-            for(Node<V> child : childNodes) {
-
-                final Optional<Node<V>> foundInChild = findFirst(child, nodeTest);
-
-                if(foundInChild.isPresent()) {
-
-                    found = foundInChild.get();
-
+        } else {
+            // offset.getChildren().stream() returns a copy which is less performant
+            final int childCount = offset.getChildCount();
+            for(int i = 0; i < childCount; i++) {
+                Node<V> child = offset.getChild(i);
+                found = findFirstOrNull(child, nodeTest);
+                if(found != null) {
                     break;
                 }
             }
         }
-
-        return Optional.ofNullable(found);
+        return found;
     }
 
     @Override
@@ -143,6 +124,11 @@ final class NodeImpl<V> implements Node<V> {
 
     @Override
     public Node<V> getChild(int index) { return children.get(index); }
+
+    @Override
+    public int getChildCount() {
+        return children.size();
+    }
 
     /**
      * @return An <b>un-modifiable</b> list view of this node's children

@@ -30,7 +30,6 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
                     + " is reserved, and may not be used to identify rates in "
                     + RateLimitProperties.class.getName());
         }
-        nodeConsumer.accept(Rates.empty(), rootNode);
         createNodes(rootNode, nodeConsumer, source, configsWithoutParent);
         return rootNode;
     }
@@ -42,7 +41,7 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
             String name = entry.getKey();
             requireParentNameDoesNotMatchChild(parent.getName(), name);
             Rates rates = entry.getValue();
-            RateSource rateSource = new PropertyRateSource(name, rates.hasLimits(), source);
+            RateSource rateSource = new PropertyRateSource(name, rates.hasLimitsSet(), source);
             RateConfig parentConfig = parent.getValueOrDefault(null);
             Node<RateConfig> node = Node.of(name, RateConfig.of(rateSource, rates, parentConfig), parent);
             nodeConsumer.accept(rates, node);

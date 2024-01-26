@@ -29,6 +29,9 @@ final class BandwidthStoreFacade<K> {
     }
 
     Bandwidth getOrCreateBandwidth(K key, Rate rate) {
+        if (!rate.isSet()) {
+            return Bandwidth.UNLIMITED;
+        }
         // Bandwidth coming from store will not have auto-save if
         // deserialized from a local machine.
         Bandwidth bandwidth = getBandwidthFromStore(key);
@@ -40,6 +43,9 @@ final class BandwidthStoreFacade<K> {
     }
 
     Bandwidth getOrCreateBandwidth(K key, Rates rates) {
+        if (!rates.isSet()) {
+            return Bandwidth.UNLIMITED;
+        }
         // Bandwidth coming from store will not have auto-save if
         // deserialized from a local machine.
         Bandwidth bandwidth = getBandwidthFromStore(key);

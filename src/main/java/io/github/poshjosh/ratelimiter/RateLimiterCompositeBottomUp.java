@@ -1,6 +1,5 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.annotations.Experimental;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.node.Node;
@@ -19,7 +18,6 @@ import java.util.function.Predicate;
  * We stop after the current branch once we find a match.
  * @param <K>
  */
-@Experimental
 final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
     private final K key;
     private final Node<RateContext<K>>[] leafNodes;
@@ -91,15 +89,19 @@ final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder()
+        final StringBuilder builder = new StringBuilder()
                 .append("RateLimiterCompositeBottomUp@")
                 .append(Integer.toHexString(hashCode()))
                 .append("{");
+        final int lengthBeforeVisit = builder.length();
         BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) -> {
             builder.append("\n\tmatch=").append(match).append(", limiter=").append(rateLimiter);
         };
         visitNodesBottomUp(visitor);
-        builder.append("\n}");
+        if (builder.length() > lengthBeforeVisit) {
+            builder.append('\n');
+        }
+        builder.append("}");
         return builder.toString();
     }
 }

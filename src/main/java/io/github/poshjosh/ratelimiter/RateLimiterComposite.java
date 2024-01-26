@@ -73,15 +73,19 @@ class RateLimiterComposite<K> implements RateLimiter {
 
     @Override
     public String toString() {
-        StringBuilder builder = new StringBuilder()
+        final StringBuilder builder = new StringBuilder()
                 .append("RateLimiterComposite@")
                 .append(Integer.toHexString(hashCode()))
                 .append("{");
+        final int lengthBeforeVisit = builder.length();
         BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) -> {
             builder.append("\n\tmatch=").append(match).append(", limiter=").append(rateLimiter);
         };
         visitNodesTopDown(visitor);
-        builder.append("\n}");
+        if (builder.length() > lengthBeforeVisit) {
+            builder.append('\n');
+        }
+        builder.append("}");
         return builder.toString();
     }
 }

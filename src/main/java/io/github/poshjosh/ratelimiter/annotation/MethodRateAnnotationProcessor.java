@@ -46,8 +46,11 @@ class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Meth
     }
 
     private boolean hasLimits(Node<RateConfig> node) {
-        return node != null && node.getValueOptional()
-                .filter(v -> v.getRates().hasLimits()).isPresent();
+        RateConfig rateConfig = node == null ? null : node.getValueOrDefault(null);
+        if (rateConfig == null) {
+            return false;
+        }
+        return rateConfig.getRates().hasLimitsSet();
     }
 
     private Optional<Node<RateConfig>> getDeclaringClassNode(Node<RateConfig> root, Method method) {

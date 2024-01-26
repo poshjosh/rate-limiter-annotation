@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.7.1](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.7.1) ] - 2024-01-26
+
+### Added
+
+- Improve performance, bump to v0.7.1
+
 ## [ [0.7.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.7.0) ] - 2024-01-21
 
 ### Added

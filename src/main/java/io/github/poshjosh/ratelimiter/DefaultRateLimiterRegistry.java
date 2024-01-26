@@ -84,7 +84,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     private Optional<RateLimiter> getRateLimiter(String key, RateContext<K> rateContext) {
         // This is faster, but will not work if the @Rate annotation is not
         // present on the class or method. (e.g. it is present on a @RateGroup)
-        //if (!rateContext.getRates().hasLimits())
+        //if (!rateContext.getRates().hasLimitsSet())
         if (!rateContext.getSource().isRateLimited()) {
             return Optional.empty();
         }
@@ -132,7 +132,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         if (!rateSource.isRateLimited()) {
             return Optional.empty();
         }
-        Rates rates = annotationConverter.convert(source);
+        Rates rates = annotationConverter.convert(rateSource);
         return Optional.of(RateConfig.of(rateSource, rates, parent));
     }
 }

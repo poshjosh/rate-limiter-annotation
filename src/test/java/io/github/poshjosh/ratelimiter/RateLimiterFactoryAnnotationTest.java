@@ -217,7 +217,7 @@ class RateLimiterFactoryAnnotationTest {
 
     @Rate(1)
     @RateCondition("jvm.memory.free<1")
-    public class ClassWithSeparateRateCondition { }
+    static class ClassWithSeparateRateCondition { }
 
     @Test
     void givenRateConditionFalse_shouldNotBeRateLimited() {
@@ -228,7 +228,7 @@ class RateLimiterFactoryAnnotationTest {
     }
 
     @Rate(permits=1, when="jvm.memory.free<0")
-    public class ClassWithWhenRateCondition { }
+    static class ClassWithWhenRateCondition { }
 
     @Test
     void givenRateWhenResolvesToFalse_shouldNotBeRateLimited() {
@@ -239,8 +239,8 @@ class RateLimiterFactoryAnnotationTest {
     }
 
     @Rate(1)
-    @RateCondition("sys.time.elapsed>PT0S")
-    public class ClassWithRateConditionTrue { }
+    @RateCondition("sys.time.elapsed>=PT0S")
+    static class ClassWithRateConditionTrue { }
 
     @Test
     void givenRateConditionTrue_shouldBeRateLimited() {
@@ -250,8 +250,8 @@ class RateLimiterFactoryAnnotationTest {
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(permits=1, when="sys.time.elapsed>PT0S")
-    public class ClassWithWhenRateConditionTrue { }
+    @Rate(permits=1, when="sys.time.elapsed>=PT0S")
+    static class ClassWithWhenRateConditionTrue { }
 
     @Test
     void givenRateWhenResolvesToTrue_shouldBeRateLimited() {
@@ -261,8 +261,8 @@ class RateLimiterFactoryAnnotationTest {
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(permits = 1, condition = "sys.time.elapsed>PT2S")
-    public class ClassWithRateCondition { }
+    @Rate(permits = 1, condition = "sys.time.elapsed>=PT2S")
+    static class ClassWithRateCondition { }
 
     @Test
     void isLimitedConditionally() throws InterruptedException {
@@ -277,19 +277,20 @@ class RateLimiterFactoryAnnotationTest {
     }
 
     @Rate(1)
-    @RateCondition(" sys.time.elapsed > PT0S ")
-    public class ClassWithSeprateRateConditionSpaced { }
+    @RateCondition(" sys.time.elapsed >= PT0S ")
+    static class ClassWithSeparateRateConditionSpaced { }
 
     @Test
     void givenRateConditionTrue_andHavingSpaces_shouldBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(ClassWithSeprateRateConditionSpaced.class);
-        final Object id = (ClassWithSeprateRateConditionSpaced.class);
+        RateLimiterFactory<Object> limiterFactory = newRateLimiterFactory(
+                ClassWithSeparateRateConditionSpaced.class);
+        final Object id = (ClassWithSeparateRateConditionSpaced.class);
         assertTrue(limiterFactory.getRateLimiter(id).tryAcquire());
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(id = "resource-8b", permits=1, when=" sys.time.elapsed > PT0S ")
-    public class ClassWithWhenRateConditionSpaced { }
+    @Rate(id = "resource-8b", permits=1, when=" sys.time.elapsed >= PT0S ")
+    static class ClassWithWhenRateConditionSpaced { }
 
     @Test
     void givenRateWhenResolvesToTrue_andHavingSpaces_shouldBeRateLimited() {
@@ -299,8 +300,8 @@ class RateLimiterFactoryAnnotationTest {
     }
 
     @Rate(1)
-    @RateCondition("sys.time.elapsed!<=PT0S")
-    public class ClassWithNegationSeparateRateCondition { }
+    @RateCondition("sys.time.elapsed!<PT0S") // We have had 0 secs, which may cause !<= to fail
+    static class ClassWithNegationSeparateRateCondition { }
 
     @Test
     void givenRateConditionHavingNegationResolvesToTrue_shouldBeRateLimited() {
@@ -310,8 +311,8 @@ class RateLimiterFactoryAnnotationTest {
         assertFalse(limiterFactory.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(permits=1, when="sys.time.elapsed!<=PT0S")
-    public class ClassWithNegationWhenRateCondition { }
+    @Rate(permits=1, when="sys.time.elapsed!<PT0S") // We have had 0 secs, which may cause !<= to fail
+    static class ClassWithNegationWhenRateCondition { }
 
     @Test
     void givenWhenHavingNegationResolvesToTrue_shouldBeRateLimited() {
@@ -322,10 +323,10 @@ class RateLimiterFactoryAnnotationTest {
     }
 
     // This first Rate's condition will never evaluate to true,
-    // as elapsed time will always be greater than zero.
-    @Rate(permits=1, when="sys.time.elapsed<=PT0S")
-    @Rate(permits=2, when="sys.time.elapsed>PT0S")
-    public class ClassWithNonConjunctedRates { }
+    // as elapsed time will never be less than zero.
+    @Rate(permits=1, when="sys.time.elapsed<PT0S")
+    @Rate(permits=2, when="sys.time.elapsed>=PT0S")
+    static class ClassWithNonConjunctedRates { }
 
     @Test
     void givenNonConjunctedRates() {

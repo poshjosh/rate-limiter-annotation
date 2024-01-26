@@ -29,10 +29,11 @@ class AnnotationConverterTest {
 
     @Test
     void convert_givenClassWithZeroRates_shouldReturnEmptyRates() {
-        Rates rates = annotationConverter.convert(ClassWithZeroRates.class);
-        assertFalse(rates.hasLimits());
+        Rates rates = annotationConverter.convert(JavaRateSource.of(ClassWithZeroRates.class));
+        assertFalse(rates.hasLimitsSet());
         assertEquals(Operator.NONE, rates.getOperator());
-        assertNull(rates.getRateCondition());
+//        System.out.println("AnnotationConverterTest\n" + rates);
+        assertTrue(rates.getRateCondition() == null || rates.getRateCondition().isEmpty());
     }
 
     @Rate(permits=7, duration=2, timeUnit=TimeUnit.MINUTES, condition="jvm.memory.free>0")
@@ -40,7 +41,7 @@ class AnnotationConverterTest {
 
     @Test
     void convert_givenClassWithSingleRate_shouldReturnMatchingRate() {
-        Rates rates = annotationConverter.convert(ClassWithSingleRate.class);
+        Rates rates = annotationConverter.convert(JavaRateSource.of(ClassWithSingleRate.class));
         assertEquals(1, rates.totalSize());
         io.github.poshjosh.ratelimiter.model.Rate rate = rates.getLimit();
         assertEquals(7, rate.getPermits());
@@ -65,7 +66,7 @@ class AnnotationConverterTest {
     void convert_givenClassWithSomeRates_shouldReturnSameNumberOfRates() {
         // 1 x RateCondition (main)
         // 2 x Rate (sub)
-        Rates rates = annotationConverter.convert(ClassWith2Rates.class);
+        Rates rates = annotationConverter.convert(JavaRateSource.of(ClassWith2Rates.class));
         assertEquals(3, rates.totalSize());
         assertEquals("jvm.memory.free<0", rates.getRateCondition());
         assertTrue(rates.getSubLimits().stream()
@@ -75,7 +76,7 @@ class AnnotationConverterTest {
 
     @Test
     void convert_givenGroupAnnotationWithSomeRates_shouldReturnSameNumberOfRates() {
-      Rates rates = annotationConverter.convert(CustomRateGroup.class);
+      Rates rates = annotationConverter.convert(JavaRateSource.of(CustomRateGroup.class));
       assertEquals(2, rates.totalSize());
       assertEquals(Operator.AND, rates.getOperator());
     }

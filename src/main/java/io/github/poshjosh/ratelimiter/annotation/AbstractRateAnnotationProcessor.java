@@ -127,7 +127,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
             Node<RateConfig> root, GenericDeclaration groupSource) {
         final Class<?> clazz = (Class<?>)groupSource;
         final RateSource rateSource = JavaRateSource.ofAnnotation(clazz);
-        final Rates rates = annotationConverter.convert(groupSource);
+        final Rates rates = annotationConverter.convert(rateSource);
         checkRateGroupOperator(rates.getOperator(), rates);
         final RateConfig rootConfig = root.getValueOrDefault(null);
         return Node.of(rateSource.getId(), RateConfig.of(rateSource, rates, rootConfig), root);
@@ -137,7 +137,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
             Node<RateConfig> root, Node<RateConfig> parentNode, S source) {
         final RateSource rateSource = toRateSource(source);
         requireUniqueName(root, source, rateSource.getId());
-        final Rates rates = annotationConverter.convert(source);
+        final Rates rates = annotationConverter.convert(rateSource);
         final RateConfig parentConfig = parentNode.getValueOrDefault(null);
         return Node.of(rateSource.getId(), RateConfig.of(rateSource, rates, parentConfig), parentNode);
     }
@@ -153,7 +153,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
     }
 
     private void checkRateGroupOperator(Operator operator, Rates rates) {
-        if (rates.hasLimits()) {
+        if (rates.hasLimitsSet()) {
             return;
         }
         if (!Operator.NONE.equals(operator)) {
