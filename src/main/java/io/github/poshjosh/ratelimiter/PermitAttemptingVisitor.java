@@ -4,7 +4,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
-class PermitAttemptingVisitor implements BiConsumer<String, RateLimiter> {
+final class PermitAttemptingVisitor implements BiConsumer<String, RateLimiter> {
     private final int permits;
 
     private final long timeout;

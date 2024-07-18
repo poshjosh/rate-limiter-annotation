@@ -26,7 +26,7 @@ final class DefaultRateLimiterFactory<K> implements RateLimiterFactory<K> {
         if (fromCache != null) {
             return fromCache;
         }
-        final RateLimiter rateLimiter = RateContext.isBottomUpTraversal() ?
+        final RateLimiter rateLimiter = RateContext.IS_BOTTOM_UP_TRAVERSAL ?
                 new RateLimiterCompositeBottomUp<>(key, rootNode, rateLimiterProvider) :
                 new RateLimiterComposite<>(key, rootNode, rateLimiterProvider);
         keyToRateLimiterMap.put(key, rateLimiter);

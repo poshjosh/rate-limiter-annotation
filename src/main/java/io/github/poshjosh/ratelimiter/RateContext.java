@@ -10,16 +10,14 @@ import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.GenericDeclaration;
 import java.util.*;
 
 final class RateContext<R> {
 
     private static final Logger LOG = LoggerFactory.getLogger(RateContext.class);
 
-    static boolean isBottomUpTraversal() {
-        return true; // Bottom-up traversal performs better, as of the last tests.
-    }
+    // Bottom-up traversal performs better, as of the last tests.
+    static final boolean IS_BOTTOM_UP_TRAVERSAL = true;
 
     static <K> RateContext<K> of(
             MatcherProvider<K> matcherProvider,
@@ -52,7 +50,7 @@ final class RateContext<R> {
         return rateContext;
     }
     private static boolean hasLimitsInTree(Node<RateConfig> node) {
-        return hasLimits(node) || (isBottomUpTraversal() ?
+        return hasLimits(node) || (IS_BOTTOM_UP_TRAVERSAL ?
                 anyParentHasLimits(node) : anyChildHasLimits(node));
     }
     private static boolean anyParentHasLimits(Node<RateConfig> node) {
@@ -90,14 +88,6 @@ final class RateContext<R> {
     public boolean hasMatcher() {
         return !Matcher.matchNone().equals(mainMatcher) ||
                 subMatchers.stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
-    }
-
-    public boolean isGroupSource() {
-        return rateConfig.getSource().isGroupType();
-    }
-
-    public boolean isGenericDeclarationSource() {
-        return rateConfig.getSource().getSource() instanceof GenericDeclaration;
     }
 
     public String getId() {

@@ -2,7 +2,7 @@ package io.github.poshjosh.ratelimiter;
 
 import java.util.function.BiConsumer;
 
-class PermitAcquiringVisitor implements BiConsumer<String, RateLimiter> {
+final class PermitAcquiringVisitor implements BiConsumer<String, RateLimiter> {
     private final int permits;
 
     private double totalTimeSpent = 0;

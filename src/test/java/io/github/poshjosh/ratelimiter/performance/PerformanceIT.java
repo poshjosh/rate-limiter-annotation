@@ -8,7 +8,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static io.github.poshjosh.ratelimiter.performance.Helpers.*;
@@ -38,7 +40,9 @@ abstract class PerformanceIT {
         final Usage recordedUsage = usageBookmark.current();
 
         // Generally -> duration = no. of classes x 4,   memory = no. of classes x 350k
-        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(412, 36_050_000));
+        assertUsageLessOrEqualToLimit(
+                "annotationProcessShouldConsumeLimitedTimeAndMemory()",
+                recordedUsage, Usage.of(412, 36_050_000));
     }
 
     @Test
@@ -63,7 +67,9 @@ abstract class PerformanceIT {
         final Usage bookmark = Usage.bookmark();
         rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage recordedUsage = bookmark.current();
-        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(30, 30_000));
+        assertUsageLessOrEqualToLimit(
+                "firstCallToGet_shouldConsumeLimitedTimeAndMemory()",
+                recordedUsage, Usage.of(30, 30_000));
     }
 
     @Test
@@ -73,7 +79,9 @@ abstract class PerformanceIT {
         final Usage bookmark = Usage.bookmark();
         rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage recordedUsage = bookmark.current();
-        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(3, 3_00));
+        assertUsageLessOrEqualToLimit(
+                "secondCallToGet_shouldConsumeLimitedTimeAndMemory()",
+                recordedUsage, Usage.of(3, 3_00));
     }
 
     @Test
@@ -88,7 +96,9 @@ abstract class PerformanceIT {
             rateLimiterFactory.getRateLimiter(method);
         }
         final Usage recordedUsage = bookmark.current();
-        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(count/10, 50_000 * count));
+        assertUsageLessOrEqualToLimit(
+                "get_shouldConsumeLimitedTimeAndMemory()",
+                recordedUsage, Usage.of(count/10, 50_000 * count));
     }
 
     @Test
@@ -103,12 +113,20 @@ abstract class PerformanceIT {
 
         final Usage recordedUsage = usageBookmark.current();
 
-        assertUsageLessOrEqualToLimit(recordedUsage, Usage.of(20, 200));
+        assertUsageLessOrEqualToLimit(
+                "tryConsume_shouldConsumeLimitedTimeAndMemory()",
+                recordedUsage, Usage.of(20, 200));
     }
 
     private void resourceLimitingShouldConsumeLimitedTimeAndMemory(
-            String key, Usage usageLimit, int iterations, int intervalMillis)
+            String rateId, Usage usageLimit, int iterations, int intervalMillis)
             throws InterruptedException{
+        final Map<String, Object> args = new LinkedHashMap<>();
+        args.put("rateId", rateId);
+        args.put("usageLimit", usageLimit);
+        args.put("iterations", iterations);
+        args.put("intervalMillis", intervalMillis);
+        final String method = "resourceLimitingShouldConsumeLimitedTimeAndMemory(" + args + ")";
 
         final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory();
 
@@ -116,7 +134,7 @@ abstract class PerformanceIT {
 
         int successCount = 0;
         for (int i = 0; i < iterations; i++) {
-            if(rateLimiterFactory.getRateLimiter(key).tryAcquire(1)) {
+            if(rateLimiterFactory.getRateLimiter(rateId).tryAcquire(1)) {
                 ++successCount;
             }
             waitFor(intervalMillis);
@@ -127,10 +145,11 @@ abstract class PerformanceIT {
         final Usage recordedUsage = Usage.of(_curr.getDuration() - totalIntervalMillis, _curr.getMemory());
 
         System.out.println("Rate limited: " + successCount + " of " + iterations);
-        assertUsageLessOrEqualToLimit(recordedUsage, usageLimit);
+        assertUsageLessOrEqualToLimit(method, recordedUsage, usageLimit);
     }
 
-    private void assertUsageLessOrEqualToLimit(Usage recordedUsage, Usage usageLimit) {
+    private void assertUsageLessOrEqualToLimit(String key, Usage recordedUsage, Usage usageLimit) {
+        System.out.println("\n" + key);
         System.out.println("   Recorded " + recordedUsage);
         System.out.println("Max Allowed " + usageLimit);
         assertFalse(recordedUsage.isAnyUsageGreaterThan(usageLimit),
