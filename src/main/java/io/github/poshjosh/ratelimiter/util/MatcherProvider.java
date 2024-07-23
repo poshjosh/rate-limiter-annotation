@@ -9,5 +9,5 @@ public interface MatcherProvider<INPUT> {
         return new DefaultMatcherProvider<>();
     }
     Matcher<INPUT> createMainMatcher(RateConfig rateConfig);
-    List<Matcher<INPUT>> createSubMatchers(RateConfig rateConfig);
+    List<Matcher<INPUT>> createLimitMatchers(RateConfig rateConfig);
 }

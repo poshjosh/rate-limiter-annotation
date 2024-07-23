@@ -58,7 +58,7 @@ class MatcherProviderTest {
     @Test
     void createSubMatchers_givenNoRateCondition_shouldReturnEmpty() {
         RateConfig rateConfig = RateConfig.of(Rates.empty());
-        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
     }
 
@@ -67,7 +67,7 @@ class MatcherProviderTest {
         Rates rates = new Rates();
         rates.setRateCondition("sys.time.elapsed>=PT0S");
         RateConfig rateConfig = RateConfig.of(rates);
-        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
     }
 
@@ -76,7 +76,7 @@ class MatcherProviderTest {
         List<Rate> rateList = Arrays.asList(Rate.ofDays(1), Rate.ofDays(2));
         Rates rates = Rates.of(Operator.OR, "sys.time.elapsed>=PT0S", rateList);
         RateConfig rateConfig = RateConfig.of(rates);
-        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertEquals(rateList.size(), matchers.size());
     }
 
@@ -87,7 +87,7 @@ class MatcherProviderTest {
         rates.setDuration(Duration.ofSeconds(1));
         rates.setRateCondition("sys.time.elapsed>=PT0S");
         RateConfig rateConfig = RateConfig.of(rates);
-        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
     }
 
@@ -95,7 +95,7 @@ class MatcherProviderTest {
     void createSubMatchers_givenOneNonGlobalRateCondition_shouldReturnOne() {
         String nodeName = "test-node-name";
         RateConfig rateConfig = givenRateConfigWithConditions(nodeName, "", "sys.time.elapsed>=PT0S");
-        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertEquals(1, matchers.size());
     }
 

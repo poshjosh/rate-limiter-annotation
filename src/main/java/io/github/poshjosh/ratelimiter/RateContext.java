@@ -28,24 +28,24 @@ final class RateContext<R> {
             return null;
         }
         Matcher<K> mainMatcher;
-        List<Matcher<K>> subMatchers;
+        List<Matcher<K>> limitMatchers;
         if(!hasLimitsInTree(node) && !rateConfig.shouldDelegateToParent()) {
             LOG.debug("No limits specified for group, so no matcher will be created for: {}",
                     node.getName());
             mainMatcher = Matcher.matchNone();
-            subMatchers = Collections.emptyList();
+            limitMatchers = Collections.emptyList();
         } else {
             mainMatcher = matcherProvider.createMainMatcher(rateConfig);
-            subMatchers = matcherProvider.createSubMatchers(rateConfig);
+            limitMatchers = matcherProvider.createLimitMatchers(rateConfig);
             // Tag:Rule:number-of-matchers-must-equal-number-of-rates
-            if (subMatchers.size() != rateConfig.getRates().subLimitSize()) {
+            if (limitMatchers.size() != rateConfig.getRates().subLimitSize()) {
                 throw new IllegalStateException(
                         String.format("Number of Matchers: %s is not equal to number of rates: %s",
-                                subMatchers.size(), rateConfig.getRates().subLimitSize()));
+                                limitMatchers.size(), rateConfig.getRates().subLimitSize()));
             }
         }
         final RateContext<K> rateContext =
-                new RateContext<>(rateConfig, mainMatcher, subMatchers);
+                new RateContext<>(rateConfig, mainMatcher, limitMatchers);
         LOG.trace("{}", rateContext);
         return rateContext;
     }
@@ -76,18 +76,18 @@ final class RateContext<R> {
     /**
      * Matchers for rate conditions specific to each rate.
      */
-    private final List<Matcher<R>> subMatchers;
+    private final List<Matcher<R>> limitMatchers;
 
     private RateContext(RateConfig rateConfig,
-            Matcher<R> mainMatcher, List<Matcher<R>> subMatchers) {
+            Matcher<R> mainMatcher, List<Matcher<R>> limitMatchers) {
         this.rateConfig = Objects.requireNonNull(rateConfig);
         this.mainMatcher = Objects.requireNonNull(mainMatcher);
-        this.subMatchers = Collections.unmodifiableList(new ArrayList<>(subMatchers));
+        this.limitMatchers = Collections.unmodifiableList(new ArrayList<>(limitMatchers));
     }
 
     public boolean hasMatcher() {
         return !Matcher.matchNone().equals(mainMatcher) ||
-                subMatchers.stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
+                limitMatchers.stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
     }
 
     public String getId() {
@@ -118,8 +118,8 @@ final class RateContext<R> {
 
     public Matcher<R> getMainMatcher() { return mainMatcher; }
 
-    public List<Matcher<R>> getSubMatchers() {
-        return subMatchers;
+    public List<Matcher<R>> getLimitMatchers() {
+        return limitMatchers;
     }
 
     public RateConfig getRateConfig() {
@@ -133,15 +133,15 @@ final class RateContext<R> {
             return false;
         RateContext<?> that = (RateContext<?>) o;
         return rateConfig.equals(that.rateConfig) && mainMatcher.equals(that.mainMatcher)
-                && subMatchers.equals(that.subMatchers);
+                && limitMatchers.equals(that.limitMatchers);
     }
 
     @Override public int hashCode() {
-        return Objects.hash(rateConfig, mainMatcher, subMatchers);
+        return Objects.hash(rateConfig, mainMatcher, limitMatchers);
     }
 
     @Override public String toString() {
         return "RateContext{config=" + rateConfig +
-                ", mainMatcher=" + mainMatcher + ", subMatchers=" + subMatchers + '}';
+                ", mainMatcher=" + mainMatcher + ", limitMatchers=" + limitMatchers + '}';
     }
 }

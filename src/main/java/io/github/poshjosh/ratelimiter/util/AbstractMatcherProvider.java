@@ -19,7 +19,7 @@ public abstract class AbstractMatcherProvider<INPUT> implements MatcherProvider<
     }
 
     @Override
-    public List<Matcher<INPUT>> createSubMatchers(RateConfig rateConfig) {
+    public List<Matcher<INPUT>> createLimitMatchers(RateConfig rateConfig) {
         List<Rate> subLimits = rateConfig.getRates().getSubLimits();
         if (subLimits.isEmpty()) {
             return Collections.emptyList();

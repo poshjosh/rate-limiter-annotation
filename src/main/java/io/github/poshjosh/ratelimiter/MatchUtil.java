@@ -32,7 +32,7 @@ final class MatchUtil {
         }
         final String mainMatch = match(node, key);
         if (context.hasSubConditions()) {
-            final int count = context.getSubMatchers().size();
+            final int count = context.getLimitMatchers().size();
             int matchCount = 0;
             for(int i = 0; i < count; i++) {
                 final String match = matchAt(node, key, i, mainMatch);
@@ -95,7 +95,7 @@ final class MatchUtil {
 
         final RateContext<K> context = node.requireValue();
 
-        final Matcher<K> matcher = context.getSubMatchers().get(i);
+        final Matcher<K> matcher = context.getLimitMatchers().get(i);
 
         final String match = matcher.match(toMatch);
 
@@ -117,7 +117,7 @@ final class MatchUtil {
             return false;
         }
         if (context.hasSubConditions()) {
-            return matchCount >= context.getSubMatchers().size();
+            return matchCount >= context.getLimitMatchers().size();
         } else {
             return matchCount >= 1;
         }

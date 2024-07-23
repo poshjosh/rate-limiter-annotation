@@ -13,6 +13,10 @@ public interface RateLimiterFactory<K> {
 
     RateLimiterFactory<Object> NO_OP = new RateLimiterFactory<Object>() {
         @Override
+        public RateLimiter createRateLimiter(Object key) {
+            return RateLimiter.NO_LIMIT;
+        }
+        @Override
         public RateLimiter getRateLimiterOrDefault(Object key, RateLimiter resultIfNone) {
             return resultIfNone;
         }
@@ -83,16 +87,20 @@ public interface RateLimiterFactory<K> {
     }
 
 
-    default Optional<RateLimiter> getRateLimiterOptional(K key) {
-        return Optional.ofNullable(getRateLimiterOrDefault(key, null)); 
-    }
+    RateLimiter createRateLimiter(K key);
     
     RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone);
     
     default RateLimiterFactory<K> andThen(RateLimiterFactory<K> after) {
         Objects.requireNonNull(after);
         return new RateLimiterFactory<K>() {
-            @Override 
+            @Override
+            public RateLimiter createRateLimiter(K key) {
+                final RateLimiter l = RateLimiterFactory.this.createRateLimiter(key);
+                final RateLimiter r = after.createRateLimiter(key);
+                return RateLimiters.of(l, r);
+            }
+            @Override
             public RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone) {
                 final RateLimiter l = RateLimiterFactory.this.getRateLimiterOrDefault(key, resultIfNone);
                 final RateLimiter r = after.getRateLimiterOrDefault(key, resultIfNone);
