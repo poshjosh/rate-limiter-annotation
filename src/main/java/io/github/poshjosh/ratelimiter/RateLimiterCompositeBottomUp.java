@@ -8,7 +8,6 @@ import io.github.poshjosh.ratelimiter.util.Operator;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
-import java.util.function.Predicate;
 
 /**
  * In bottom-up traversal, if we traverse all the branches in the tree,
@@ -24,17 +23,11 @@ final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
     private final RateLimiterProvider rateLimiterProvider;
 
     RateLimiterCompositeBottomUp (K key,
-            Node<RateContext<K>> rootNode,
+            Node<RateContext<K>>[] leafNodes,
             RateLimiterProvider rateLimiterProvider) {
         this.key = Objects.requireNonNull(key);
-        this.leafNodes = collectLeafs(rootNode);
+        this.leafNodes = Objects.requireNonNull(leafNodes);
         this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
-    }
-    private static <R> Node<RateContext<R>> [] collectLeafs(Node<RateContext<R>> node) {
-        Set<Node<RateContext<R>>> leafNodes = new LinkedHashSet<>();
-        Predicate<Node<RateContext<R>>> test = n -> n.isLeaf() && n.hasValue();
-        node.getRoot().visitAll(test, leafNodes::add);
-        return leafNodes.toArray(new Node[0]);
     }
 
     @Override
@@ -54,9 +47,8 @@ final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
     @Override
     public Bandwidth getBandwidth() {
         List<Bandwidth> bandwidths = new ArrayList<>();
-        BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) -> {
-            bandwidths.add(rateLimiter.getBandwidth());
-        };
+        BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) ->
+                bandwidths.add(rateLimiter.getBandwidth());
         visitNodesBottomUp(visitor);
         // For multiple Bandwidths conjugated with Operator.OR, the composed Bandwidth
         // succeeds only when all Bandwidths succeed. This is the case here.
@@ -94,9 +86,8 @@ final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
                 .append(Integer.toHexString(hashCode()))
                 .append("{");
         final int lengthBeforeVisit = builder.length();
-        BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) -> {
-            builder.append("\n\tmatch=").append(match).append(", limiter=").append(rateLimiter);
-        };
+        BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) ->
+                builder.append("\n\tmatch=").append(match).append(", limiter=").append(rateLimiter);
         visitNodesBottomUp(visitor);
         if (builder.length() > lengthBeforeVisit) {
             builder.append('\n');
