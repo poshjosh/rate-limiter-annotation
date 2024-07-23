@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 
 public abstract class AbstractMatcherProvider<INPUT> implements MatcherProvider<INPUT> {
 
-    private final ExpressionMatcher<INPUT, Object> expressionMatcher;
+    private final ExpressionMatcher<INPUT> expressionMatcher;
 
-    protected AbstractMatcherProvider(ExpressionMatcher<INPUT, Object> expressionMatcher) {
+    protected AbstractMatcherProvider(ExpressionMatcher<INPUT> expressionMatcher) {
         this.expressionMatcher = Objects.requireNonNull(expressionMatcher);
     }
 
