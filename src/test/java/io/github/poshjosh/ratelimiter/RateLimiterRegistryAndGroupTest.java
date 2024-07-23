@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class RateLimiterFactoryAndGroupTest {
+class RateLimiterRegistryAndGroupTest {
     private static final String AND_RATE_GROUP = "and-rate-group";
     private static final int MIN = 1;
     private static final int MAX = 2;
@@ -45,35 +45,35 @@ class RateLimiterFactoryAndGroupTest {
 
     @Test
     void andGroupClass_shouldBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = givenLimiterFactoryHavingAndGroup();
+        RateLimiterRegistry<Object> limiterRegistry = givenLimiterRegistryHavingAndGroup();
         Class<?> clazz = RateLimitGroupClass1.class;
-        assertTrue(limiterFactory.getRateLimiter(clazz).tryAcquire(MAX));
-        assertFalse(limiterFactory.getRateLimiter(clazz).tryAcquire());
+        assertTrue(limiterRegistry.getClassRateLimiter(clazz).tryAcquire(MAX));
+        assertFalse(limiterRegistry.getClassRateLimiter(clazz).tryAcquire());
     }
 
     @Test
     void andGroupMethod_shouldBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = givenLimiterFactoryHavingAndGroup();
+        RateLimiterRegistry<Object> limiterRegistry = givenLimiterRegistryHavingAndGroup();
         Method method = RateLimitGroupClass2.getRateLimitedMethod();
-        assertTrue(limiterFactory.getRateLimiter(method).tryAcquire(MAX));
-        assertFalse(limiterFactory.getRateLimiter(method).tryAcquire());
+        assertTrue(limiterRegistry.getMethodRateLimiter(method).tryAcquire(MAX));
+        assertFalse(limiterRegistry.getMethodRateLimiter(method).tryAcquire());
     }
 
     @Test
     void andGroupName_shouldBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = givenLimiterFactoryHavingAndGroup();
-        assertTrue(limiterFactory.getRateLimiter(AND_RATE_GROUP).tryAcquire(MAX));
-        assertFalse(limiterFactory.getRateLimiter(AND_RATE_GROUP).tryAcquire());
+        RateLimiterRegistry<Object> limiterRegistry = givenLimiterRegistryHavingAndGroup();
+        assertTrue(limiterRegistry.getRateLimiter(AND_RATE_GROUP).tryAcquire(MAX));
+        assertFalse(limiterRegistry.getRateLimiter(AND_RATE_GROUP).tryAcquire());
     }
 
     @Test
     void andGroupAnnotation_shouldNotBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = givenLimiterFactoryHavingAndGroup();
-        assertTrue(limiterFactory.getRateLimiter(RateLimitGroup.class).tryAcquire(Integer.MAX_VALUE));
+        RateLimiterRegistry<Object> limiterRegistry = givenLimiterRegistryHavingAndGroup();
+        assertTrue(limiterRegistry.getClassRateLimiter(RateLimitGroup.class).tryAcquire(Integer.MAX_VALUE));
     }
 
-    private RateLimiterFactory<Object> givenLimiterFactoryHavingAndGroup() {
+    private RateLimiterRegistry<Object> givenLimiterRegistryHavingAndGroup() {
         // The classes should not be in order, as is expected in real situations
-        return RateLimiterFactory.of(RateLimitGroupClass1.class, RateLimitGroup.class, RateLimitGroupClass2.class);
+        return RateLimiterRegistry.of(RateLimitGroupClass1.class, RateLimitGroup.class, RateLimitGroupClass2.class);
     }
 }

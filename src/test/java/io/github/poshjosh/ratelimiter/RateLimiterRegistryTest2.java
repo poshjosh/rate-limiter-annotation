@@ -13,7 +13,7 @@ import java.time.Duration;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-class RateLimiterFactoryTest {
+class RateLimiterRegistryTest2 {
 
     final String key = "0";
 
@@ -37,7 +37,7 @@ class RateLimiterFactoryTest {
 
     @Test
     void shouldReturnClassOnlyRateLimiterGivenClass() {
-        RateLimiter limiter = RateLimiterFactory.getLimiter(ResourceWithClassAndMethodRates.class);
+        RateLimiter limiter = RateLimiterRegistry.getLimiter(ResourceWithClassAndMethodRates.class);
         assertThat(limiter).isNotNull();
         assertThat(limiter.tryAcquire(1)).isTrue();
         assertThat(limiter.tryAcquire(1)).isFalse();
@@ -45,7 +45,7 @@ class RateLimiterFactoryTest {
 
     @Test
     void shouldReturnMethodAndDeclaringClassRateLimiterGivenMethod() {
-        RateLimiter limiter = RateLimiterFactory.getLimiter(
+        RateLimiter limiter = RateLimiterRegistry.getLimiter(
                 ResourceWithClassAndMethodRates.class, ResourceWithClassAndMethodRates.getRateLimitedMethod());
         assertThat(limiter).isNotNull();
         assertThat(limiter.tryAcquire(1)).isTrue();
@@ -54,7 +54,7 @@ class RateLimiterFactoryTest {
 
     @Test
     void shouldReturnMethodOnlyRateLimiterGivenMethodRateId() {
-        RateLimiter limiter = RateLimiterFactory.getLimiter(
+        RateLimiter limiter = RateLimiterRegistry.getLimiter(
                 ResourceWithClassAndMethodRates.class, "smile");
         assertThat(limiter).isNotNull();
         assertThat(limiter.tryAcquire(2)).isTrue();
@@ -79,7 +79,7 @@ class RateLimiterFactoryTest {
     // limiting before the class limit is reached
     @Test
     void shouldUseMethodRateGivenMethodOfResourceWithClassRateLargerThanMethodRate() {
-        RateLimiter limiter = RateLimiterFactory.getLimiter(
+        RateLimiter limiter = RateLimiterRegistry.getLimiter(
                 ResourceWithClassRateLargerThanMethodRate.class,
                 ResourceWithClassRateLargerThanMethodRate.getRateLimitedMethod());
         assertThat(limiter).isNotNull();
@@ -101,7 +101,7 @@ class RateLimiterFactoryTest {
 
     @Test
     void shouldUseClassRateGivenMethodOfResourceWithOnlyClassRate() {
-        RateLimiter limiter = RateLimiterFactory.getLimiter(
+        RateLimiter limiter = RateLimiterRegistry.getLimiter(
                 ResourceWithOnlyClassRate.class,
                 ResourceWithOnlyClassRate.getMethodLimitedByClassRate());
         assertThat(limiter).isNotNull();
@@ -113,59 +113,59 @@ class RateLimiterFactoryTest {
     @ValueSource(longs = {2_000, 100})
     void shouldNotBeAffectedByLongInitialDelay() throws InterruptedException {
         final long duration = 100;
-        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(2, duration));
+        RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(2, duration));
         Thread.sleep(duration + 1);
-        assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
+        assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
     }
 
     @ParameterizedTest
     @ValueSource(longs = {2_000, 100})
     void shouldExceedLimitAfterLongInitialDelay(long duration) throws InterruptedException {
-        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(1, duration));
+        RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(1, duration));
         Thread.sleep(duration + 10);
-        assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
-        assertFalse(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Capable of acquiring additional permit");
+        assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
+        assertFalse(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Capable of acquiring additional permit");
     }
 
     @Test
     void veryLargeLimitShouldNotBeAffectedByDuration() {
         final long duration = 1;
-        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(Long.MAX_VALUE, duration));
+        RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(Long.MAX_VALUE, duration));
         for (int i = 0; i < 100; i++) {
-            assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
     }
 
     @Test
     void immediateConsumeShouldSucceed() {
-        RateLimiterFactory<String> RateLimiterFactory = perSecondRateLimiter(1);
-        assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
+        RateLimiterRegistry<String> RateLimiterRegistry = perSecondRateLimiter(1);
+        assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
     }
 
     @Test
     void testConsumeParameterValidation() {
-        RateLimiterFactory<String> RateLimiterFactory = perSecondRateLimiter(999);
-        assertThrowsRuntimeException(() -> RateLimiterFactory.getRateLimiter(key).tryAcquire(-1));
+        RateLimiterRegistry<String> RateLimiterRegistry = perSecondRateLimiter(999);
+        assertThrowsRuntimeException(() -> RateLimiterRegistry.getRateLimiter(key).tryAcquire(-1));
         if (!supportsNullKeys) {
-            assertThrowsRuntimeException(() -> RateLimiterFactory.getRateLimiter(null).tryAcquire());
+            assertThrowsRuntimeException(() -> RateLimiterRegistry.getRateLimiter((String)null).tryAcquire());
         }
     }
 
-    protected <T> RateLimiterFactory<T> perSecondRateLimiter(long amount) {
-        return getRateLimiterFactory(getRate(amount, durationMillis));
+    protected <T> RateLimiterRegistry<T> perSecondRateLimiter(long amount) {
+        return getRateLimiterRegistry(getRate(amount, durationMillis));
     }
 
     @Test
     void testNewInstanceParameterValidation() {
-        assertThrowsRuntimeException(() -> getRateLimiterFactory(getRate(-1, 1)));
-        assertThrowsRuntimeException(() -> getRateLimiterFactory(getRate(1, -1)));
+        assertThrowsRuntimeException(() -> getRateLimiterRegistry(getRate(-1, 1)));
+        assertThrowsRuntimeException(() -> getRateLimiterRegistry(getRate(1, -1)));
     }
 
     @ParameterizedTest
     @ValueSource(longs = {1, 2, 4})
     void shouldResetWhenLimitNotExceededWithinDuration(long limit) throws InterruptedException{
         final long duration = 2000;
-        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(limit, duration));
+        RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(limit, duration));
 
         //long startMillis = 0;
 
@@ -173,10 +173,10 @@ class RateLimiterFactoryTest {
         for (; i < limit; i++) {
             //System.out.println(i);
             //startMillis = System.currentTimeMillis();
-            assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
         //System.out.println(i);
-        assertFalse(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
+        assertFalse(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
 
         // Works but is a bit flaky
         //Thread.sleep(duration - (System.currentTimeMillis() - startMillis) + 1); // Leads to reset
@@ -185,30 +185,30 @@ class RateLimiterFactoryTest {
         i = 0;
         for (; i < limit; i++) {
             //System.out.println(i);
-            assertTrue(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
         //System.out.println(i);
-        assertFalse(RateLimiterFactory.getRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
+        assertFalse(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
     }
 
     @Test
     void shouldResetWhenAtThreshold() throws Exception{
-        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(1, 0));
-        RateLimiterFactory.getRateLimiter(key).tryAcquire();
+        RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(1, 0));
+        RateLimiterRegistry.getRateLimiter(key).tryAcquire();
 
         // Simulate some time before the next recording
         // This way we can have a reset
         Thread.sleep(durationMillis + 500);
 
-        RateLimiterFactory.getRateLimiter(key).tryAcquire();
+        RateLimiterRegistry.getRateLimiter(key).tryAcquire();
     }
 
     @Test
     void shouldFailWhenLimitExceeded() {
-        RateLimiterFactory<String> RateLimiterFactory = getRateLimiterFactory(getRate(2, 1000));
-        assertThat(RateLimiterFactory.getRateLimiter(key).tryAcquire()).isTrue();
-        assertThat(RateLimiterFactory.getRateLimiter(key).tryAcquire()).isTrue();
-        assertThat(RateLimiterFactory.getRateLimiter(key).tryAcquire()).isFalse();
+        RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(2, 1000));
+        assertThat(RateLimiterRegistry.getRateLimiter(key).tryAcquire()).isTrue();
+        assertThat(RateLimiterRegistry.getRateLimiter(key).tryAcquire()).isTrue();
+        assertThat(RateLimiterRegistry.getRateLimiter(key).tryAcquire()).isFalse();
     }
 
     static void assertTrue(boolean expression, String message) {
@@ -223,8 +223,8 @@ class RateLimiterFactoryTest {
         assertThrows(RuntimeException.class, executable);
     }
 
-    public <T> RateLimiterFactory<T> getRateLimiterFactory(Rate limit) {
-        return RateLimiterFactory.of(key, limit);
+    public <T> RateLimiterRegistry<T> getRateLimiterRegistry(Rate limit) {
+        return RateLimiterRegistry.of(key, limit);
     }
 
     protected Rate getRate(long permits, long durationMillis) {

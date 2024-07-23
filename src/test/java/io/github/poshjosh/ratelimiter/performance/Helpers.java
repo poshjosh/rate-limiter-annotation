@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.performance;
 
-import io.github.poshjosh.ratelimiter.RateLimiterFactory;
+import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 
 import java.lang.reflect.Method;
@@ -13,12 +13,12 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class Helpers {
 
-    static RateLimiterFactory givenRateLimiterFactory() {
-        return givenRateLimiterFactory(annotatedClasses());
+    static RateLimiterRegistry givenRateLimiterRegistry() {
+        return givenRateLimiterRegistry(annotatedClasses());
     }
 
-    static RateLimiterFactory givenRateLimiterFactory(List<Class<?>> classList) {
-        return RateLimiterFactory.of(classList.toArray(new Class[0]));
+    static RateLimiterRegistry givenRateLimiterRegistry(List<Class<?>> classList) {
+        return RateLimiterRegistry.of(classList.toArray(new Class[0]));
     }
 
     static List<Method> annotatedClassMethods() {

@@ -63,13 +63,13 @@ class DynamicRateLimiting {
 
     public static void main(String... args) {
 
-        RateLimiterFactory<String> rateLimiterFactory = RateLimiterFactory
+        RateLimiterRegistry<String> rateLimiterRegistry = RateLimiterRegistry
                 .of(ResourceA.class, ResourceB.class);
 
-        rateLimiterFactory.getLimiter("resource-a").tryAcquire(); // true
-        rateLimiterFactory.getLimiter("resource-a").tryAcquire(); // false
+        rateLimiterRegistry.getLimiter("resource-a").tryAcquire(); // true
+        rateLimiterRegistry.getLimiter("resource-a").tryAcquire(); // false
 
-        rateLimiterFactory.getLimiter("resource-b").tryAcquire(); // false
+        rateLimiterRegistry.getLimiter("resource-b").tryAcquire(); // false
     }
 }
 ```
@@ -79,14 +79,14 @@ class DynamicRateLimiting {
 
 ```java
 import io.github.poshjosh.ratelimiter.RateLimiter;
-import io.github.poshjosh.ratelimiter.RateLimiterFactory;
+import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
 
     static class RateLimitedResource {
 
-        RateLimiter rateLimiter = RateLimiterFactory.getLimiter(RateLimitedResource.class, "smile");
+        RateLimiter rateLimiter = RateLimiterRegistry.getLimiter(RateLimitedResource.class, "smile");
 
         // Limited to 3 invocations every second
         @Rate(id = "smile", permits = 3) String smile() {
@@ -154,7 +154,7 @@ public class WithCustomBandwidthStore {
                 .classes(MyRateLimitedClass.class)
                 .store(store)
                 .build();
-        return RateLimiterFactory.of(context).getRateLimiter("ID");
+        return RateLimiterRegistry.of(context).getRateLimiter("ID");
     }
 }
 ```

@@ -67,30 +67,24 @@ class RateLimiterRegistryTest {
     @ValueSource(classes = { ClassWithLimits.class, ClassWithGroupLimits.class })
     void getRateLimiter_shouldReturnRateLimiter_whenRegistryHasClassWithLimits(Class<?> clazz) {
         RateLimiterRegistry registry = givenRegistryHavingClass(clazz);
-        assertTrue(registry.getRateLimiter(clazz).isPresent());
+        assertTrue(registry.getClassRateLimiterOptional(clazz).isPresent());
     }
 
     @Test
     void getRateLimiter_shouldReturnEmpty_whenRegistryHasClassWithNoLimits() {
         Class<?> clazz = ClassWithNoLimits.class;
         RateLimiterRegistry registry = givenRegistryHavingClass(clazz);
-        assertFalse(registry.getRateLimiter(clazz).isPresent());
+        assertFalse(registry.getClassRateLimiterOptional(clazz).isPresent());
     }
 
     @Test
     void shouldCreateRateLimiterWhenOnlyPackagesSpecified() {
-        RateLimiterFactory<Object> factory = givenRegistryForPackage("dummy-package")
-                .createRateLimiterFactory();
-        assertNotNull(factory);
-        assertNotNull(factory.getRateLimiter(ID));
+        assertNotNull(givenRegistryForPackage("dummy-package").getRateLimiter(ID));
     }
 
     @Test
     void shouldCreateRateLimiterWhenOnlyClassesSpecified() {
-        RateLimiterFactory<Object> factory = givenRegistryHavingClass(ClassWithNoLimits.class)
-                .createRateLimiterFactory();
-        assertNotNull(factory);
-        assertNotNull(factory.getRateLimiter(ID));
+        assertNotNull(givenRegistryHavingClass(ClassWithNoLimits.class).getRateLimiter(ID));
     }
 
     @Test
@@ -98,9 +92,7 @@ class RateLimiterRegistryTest {
         RateLimiterContext<Object> context = RateLimiterContext.builder()
                 .rates(Collections.singletonMap(ID, Rates.of(Rate.ofSeconds(1))))
                 .build();
-        RateLimiterFactory<Object> factory = RateLimiterRegistry.of(context).createRateLimiterFactory();
-        assertNotNull(factory);
-        assertNotNull(factory.getRateLimiter(ID));
+        assertNotNull(RateLimiterRegistry.of(context).getRateLimiter(ID));
     }
 
     @Test
@@ -114,9 +106,7 @@ class RateLimiterRegistryTest {
         RateLimiterContext<Object> context = RateLimiterContext.builder()
                 .properties(properties)
                 .build();
-        RateLimiterFactory<Object> factory = RateLimiterRegistry.of(context).createRateLimiterFactory();
-        assertNotNull(factory);
-        assertNotNull(factory.getRateLimiter(ID));
+        assertNotNull(RateLimiterRegistry.of(context).getRateLimiter(ID));
     }
 
     private RateLimiterRegistry givenRegistry() {

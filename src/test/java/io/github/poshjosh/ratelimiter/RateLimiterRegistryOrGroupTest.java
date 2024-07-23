@@ -14,7 +14,7 @@ import java.lang.reflect.Method;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class RateLimiterFactoryOrGroupTest {
+class RateLimiterRegistryOrGroupTest {
     private static final String OR_RATE_GROUP = "or-rate-group";
     private static final int MIN = 1;
     private static final int MAX = 2;
@@ -45,35 +45,35 @@ class RateLimiterFactoryOrGroupTest {
 
     @Test
     void orGroupClass_shouldBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
+        RateLimiterRegistry<Object> limiterRegistry = givenRateLimiterRegistryHavingOrGroup();
         Class<?> clazz = RateLimitGroupClass1.class;
-        assertTrue(limiterFactory.getRateLimiter(clazz).tryAcquire(MIN));
-        assertFalse(limiterFactory.getRateLimiter(clazz).tryAcquire());
+        assertTrue(limiterRegistry.getClassRateLimiter(clazz).tryAcquire(MIN));
+        assertFalse(limiterRegistry.getClassRateLimiter(clazz).tryAcquire());
     }
 
     @Test
     void orGroupMethod_shouldBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
+        RateLimiterRegistry<Object> limiterRegistry = givenRateLimiterRegistryHavingOrGroup();
         Method method = RateLimitGroupClass2.getRateLimitedMethod();
-        assertTrue(limiterFactory.getRateLimiter(method).tryAcquire(MIN));
-        assertFalse(limiterFactory.getRateLimiter(method).tryAcquire());
+        assertTrue(limiterRegistry.getMethodRateLimiter(method).tryAcquire(MIN));
+        assertFalse(limiterRegistry.getMethodRateLimiter(method).tryAcquire());
     }
 
     @Test
     void orGroupName_shouldBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
-        assertTrue(limiterFactory.getRateLimiter(OR_RATE_GROUP).tryAcquire(MIN));
-        assertFalse(limiterFactory.getRateLimiter(OR_RATE_GROUP).tryAcquire());
+        RateLimiterRegistry<Object> limiterRegistry = givenRateLimiterRegistryHavingOrGroup();
+        assertTrue(limiterRegistry.getRateLimiter(OR_RATE_GROUP).tryAcquire(MIN));
+        assertFalse(limiterRegistry.getRateLimiter(OR_RATE_GROUP).tryAcquire());
     }
 
     @Test
     void orGroupAnnotation_shouldNotBeRateLimited() {
-        RateLimiterFactory<Object> limiterFactory = givenRateLimiterFactoryHavingOrGroup();
-        assertTrue(limiterFactory.getRateLimiter(RateLimitGroup.class).tryAcquire(Integer.MAX_VALUE));
+        RateLimiterRegistry<Object> limiterRegistry = givenRateLimiterRegistryHavingOrGroup();
+        assertTrue(limiterRegistry.getClassRateLimiter(RateLimitGroup.class).tryAcquire(Integer.MAX_VALUE));
     }
 
-    private RateLimiterFactory<Object> givenRateLimiterFactoryHavingOrGroup() {
+    private RateLimiterRegistry<Object> givenRateLimiterRegistryHavingOrGroup() {
         // The classes should not be in order, as is expected in real situations
-        return RateLimiterFactory.of(RateLimitGroupClass1.class, RateLimitGroup.class, RateLimitGroupClass2.class);
+        return RateLimiterRegistry.of(RateLimitGroupClass1.class, RateLimitGroup.class, RateLimitGroupClass2.class);
     }
 }

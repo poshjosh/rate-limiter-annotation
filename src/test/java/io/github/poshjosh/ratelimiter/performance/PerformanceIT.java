@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter.performance;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
-import io.github.poshjosh.ratelimiter.RateLimiterFactory;
+import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
 import io.github.poshjosh.ratelimiter.performance.dummyclasses.dummyclasses0.RateLimitedClass0;
 import org.junit.jupiter.api.Test;
 
@@ -32,7 +32,7 @@ abstract class PerformanceIT {
 
         final Usage usageBookmark = Usage.bookmark();
 
-        givenRateLimiterFactory();
+        givenRateLimiterRegistry();
 
         final Usage recordedUsage = usageBookmark.current();
 
@@ -60,9 +60,9 @@ abstract class PerformanceIT {
 
     @Test
     void firstCallToGet_shouldConsumeLimitedTimeAndMemory() {
-        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory(annotatedClasses());
+        final RateLimiterRegistry<String> rateLimiterRegistry = givenRateLimiterRegistry(annotatedClasses());
         final Usage bookmark = Usage.bookmark();
-        rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        rateLimiterRegistry.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage recordedUsage = bookmark.current();
         assertUsageLessOrEqualToLimit(
                 "firstCallToGet_shouldConsumeLimitedTimeAndMemory()",
@@ -71,10 +71,10 @@ abstract class PerformanceIT {
 
     @Test
     void secondCallToGet_shouldConsumeLimitedTimeAndMemory() {
-        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory();
-        rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        final RateLimiterRegistry<String> rateLimiterRegistry = givenRateLimiterRegistry();
+        rateLimiterRegistry.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage bookmark = Usage.bookmark();
-        rateLimiterFactory.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        rateLimiterRegistry.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage recordedUsage = bookmark.current();
         assertUsageLessOrEqualToLimit(
                 "secondCallToGet_shouldConsumeLimitedTimeAndMemory()",
@@ -84,13 +84,13 @@ abstract class PerformanceIT {
     @Test
     void get_shouldConsumeLimitedTimeAndMemory() throws InterruptedException {
         garbageCollectAndWaitABit();
-        final RateLimiterFactory<Object> rateLimiterFactory = givenRateLimiterFactory();
+        final RateLimiterRegistry<Object> rateLimiterRegistry = givenRateLimiterRegistry();
         final List<Method> methods = annotatedClassMethods();
         final int count = methods.size();
         final Usage bookmark = Usage.bookmark();
         for(int i = 0; i < count; i++) {
             final Method method = methods.get(i);
-            rateLimiterFactory.getRateLimiter(method);
+            rateLimiterRegistry.getMethodRateLimiter(method);
         }
         final Usage recordedUsage = bookmark.current();
         assertUsageLessOrEqualToLimit(
@@ -101,7 +101,7 @@ abstract class PerformanceIT {
     @Test
     void tryConsume_shouldConsumeLimitedTimeAndMemory() {
 
-        final RateLimiter rateLimiter = givenRateLimiterFactory()
+        final RateLimiter rateLimiter = givenRateLimiterRegistry()
                 .getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
 
         final Usage usageBookmark = Usage.bookmark();
@@ -125,13 +125,13 @@ abstract class PerformanceIT {
         args.put("intervalMillis", intervalMillis);
         final String method = "resourceLimitingShouldConsumeLimitedTimeAndMemory(" + args + ")";
 
-        final RateLimiterFactory<String> rateLimiterFactory = givenRateLimiterFactory();
+        final RateLimiterRegistry<String> rateLimiterRegistry = givenRateLimiterRegistry();
 
         final Usage usageBookmark = Usage.bookmark();
 
         int successCount = 0;
         for (int i = 0; i < iterations; i++) {
-            if(rateLimiterFactory.getRateLimiter(rateId).tryAcquire(1)) {
+            if(rateLimiterRegistry.getRateLimiter(rateId).tryAcquire(1)) {
                 ++successCount;
             }
             waitFor(intervalMillis);

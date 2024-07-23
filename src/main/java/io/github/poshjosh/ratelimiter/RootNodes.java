@@ -21,7 +21,12 @@ class RootNodes<K> {
     }
 
     private final Node<RateContext<K>> propertiesRootNode;
+    private final Node<RateContext<K>>[] propertiesLeafNodes;
+    private final boolean hasProperties;
+
     private final Node<RateContext<K>> annotationsRootNode;
+    private final Node<RateContext<K>>[] annotationsLeafNodes;
+    private final boolean hasAnnotations;
 
     private RootNodes(RateLimiterContext<K> context) {
 
@@ -60,9 +65,8 @@ class RootNodes<K> {
         Predicate<Node<RateConfig>> anyNodeInTreeIsRateLimited =
                 node -> node.anyMatch(isNodeRateLimited);
 
-        Function<Node<RateConfig>, RateContext<K>> transformer = currentNode -> {
-            return RateContext.of(context.getMatcherProvider(), currentNode);
-        };
+        Function<Node<RateConfig>, RateContext<K>> transformer = currentNode ->
+                RateContext.of(context.getMatcherProvider(), currentNode);
 
         annotationsRootNode = annoRoot.retainAll(anyNodeInTreeIsRateLimited)
                 .orElseGet(() -> Node.of("root.annotations"))
@@ -78,6 +82,23 @@ class RootNodes<K> {
                 .getRoot().transform(transformer);
 
         LOG.debug("PROPERTIES SOURCED NODES:\n{}", propertiesRootNode);
+
+        hasProperties = !propertiesRootNode.isEmptyNode() && propertiesRootNode.size() > 0;
+        hasAnnotations = !annotationsRootNode.isEmptyNode() && annotationsRootNode.size() > 0;
+
+        if (RateContext.IS_BOTTOM_UP_TRAVERSAL) {
+            propertiesLeafNodes = collectLeafs(propertiesRootNode);
+            annotationsLeafNodes = collectLeafs(annotationsRootNode);
+        } else {
+            propertiesLeafNodes = null;
+            annotationsLeafNodes = null;
+        }
+    }
+    private <R> Node<RateContext<R>> [] collectLeafs(Node<RateContext<R>> node) {
+        Set<Node<RateContext<R>>> leafNodes = new LinkedHashSet<>();
+        Predicate<Node<RateContext<R>>> test = n -> n.isLeaf() && n.hasValue();
+        node.getRoot().visitAll(test, leafNodes::add);
+        return leafNodes.toArray(new Node[0]);
     }
 
     private RateProcessor<Class<?>> getClassRateProcessor() {
@@ -92,12 +113,28 @@ class RootNodes<K> {
         return RateProcessor.ofProperties();
     }
 
+    public boolean hasProperties() {
+        return hasProperties;
+    }
+
+    public boolean hasAnnotations() {
+        return hasAnnotations;
+    }
+
     public Node<RateContext<K>> getPropertiesRootNode() {
         return propertiesRootNode;
     }
 
     public Node<RateContext<K>> getAnnotationsRootNode() {
         return annotationsRootNode;
+    }
+
+    public Node<RateContext<K>>[] getPropertiesLeafNodes() {
+        return propertiesLeafNodes;
+    }
+
+    public Node<RateContext<K>>[] getAnnotationsLeafNodes() {
+        return annotationsLeafNodes;
     }
 
     private static final class RateConfigCollector implements RateProcessor.NodeConsumer {

@@ -46,18 +46,24 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     }
 
     @Override
-    public RateLimiterFactory<K> createRateLimiterFactory() {
-        return RateLimiterFactoryCreator.create(context, rootNodes);
+    public RateLimiter getRateLimiterOrUnlimited(K key) {
+        final RateLimiter rateLimiter = getRateLimiterOrNull(key);
+        return rateLimiter == null ? RateLimiter.NO_LIMIT : rateLimiter;
     }
 
     @Override
-    public Optional<RateLimiter> getRateLimiter(Class<?> clazz) {
-        return getOrCreateRateLimiter(clazz);
+    public Optional<RateLimiter> getRateLimiterOptional(K key) {
+        return Optional.ofNullable(getRateLimiterOrNull(key));
     }
 
     @Override
-    public Optional<RateLimiter> getRateLimiter(Method method) {
-        return getOrCreateRateLimiter(method);
+    public Optional<RateLimiter> getClassRateLimiterOptional(Class<?> clazz) {
+        return Optional.ofNullable(getGenericRateLimiterOrNull(clazz));
+    }
+
+    @Override
+    public Optional<RateLimiter> getMethodRateLimiterOptional(Method method) {
+        return Optional.ofNullable(getGenericRateLimiterOrNull(method));
     }
 
     @Override
@@ -71,30 +77,90 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return getRateContext(id).filter(RateContext::hasMatcher).isPresent();
     }
 
-    private Optional<RateLimiter> getOrCreateRateLimiter(GenericDeclaration source) {
-        final String rateId = RateId.of(source);
-        RateContext<K> context = getRateContext(rateId)
-                .orElseGet(() -> addRateContextToAnnotationsRoot(source).orElse(null));
-        if (context == null) {
-            return Optional.empty();
+    private RateLimiter getRateLimiterOrNull(K key) {
+        final RateLimiter fromCache = getRateLimiterFromCacheOrNull(key);
+        if (fromCache != null) {
+            return fromCache;
         }
-        return getRateLimiter(rateId, context);
+        if (!context.isRateLimited()) {
+            return null;
+        }
+        if (!rootNodes.hasProperties() && !rootNodes.hasAnnotations()) {
+            return null;
+        }
+
+        final RateLimiter rateLimiter;
+        if (!rootNodes.hasProperties()) {
+            rateLimiter = createAnnotationsRateLimiter(key);
+        } else if (!rootNodes.hasAnnotations()) {
+            rateLimiter = createPropertisRateLimiter(key);
+        } else {
+            // Properties take precedence over annotations
+            rateLimiter = RateLimiters.of(
+                    createPropertisRateLimiter(key), createAnnotationsRateLimiter(key));
+        }
+        return addRateLimiterToCache(key, rateLimiter);
     }
 
-    private Optional<RateLimiter> getRateLimiter(String key, RateContext<K> rateContext) {
-        // This is faster, but will not work if the @Rate annotation is not
-        // present on the class or method. (e.g. it is present on a @RateGroup)
-        //if (!rateContext.getRates().hasLimitsSet())
+    private RateLimiter createPropertisRateLimiter(K key){
+        if (RateContext.IS_BOTTOM_UP_TRAVERSAL) {
+            return new RateLimiterCompositeBottomUp<>(key,
+                    rootNodes.getPropertiesLeafNodes(), context.getRateLimiterProvider());
+        }
+        return new RateLimiterComposite<>(key,
+                rootNodes.getPropertiesRootNode(), context.getRateLimiterProvider());
+    }
+
+    private RateLimiter createAnnotationsRateLimiter(K key){
+        if (RateContext.IS_BOTTOM_UP_TRAVERSAL) {
+            return new RateLimiterCompositeBottomUp<>(key,
+                    rootNodes.getAnnotationsLeafNodes(), context.getRateLimiterProvider());
+        }
+        return new RateLimiterComposite<>(key,
+                rootNodes.getAnnotationsRootNode(), context.getRateLimiterProvider());
+    }
+
+    private RateLimiter getGenericRateLimiterOrNull(GenericDeclaration source) {
+        final RateLimiter fromCache = getRateLimiterFromCacheOrNull(source);
+        if (fromCache != null) {
+            return fromCache;
+        }
+        final String rateId = RateId.of(source);
+        final RateContext<K> rateContext = getRateContext(rateId)
+                .orElseGet(() -> addRateContextToAnnotationsRoot(source).orElse(null));
+        if (rateContext == null) {
+            return null;
+        }
+        final RateLimiter rateLimiter = getRateLimiterOrNull(rateId, rateContext);
+        return addRateLimiterToCache(source, rateLimiter);
+    }
+
+    private RateLimiter getRateLimiterOrNull(String key, RateContext<K> rateContext) {
         if (!rateContext.getSource().isRateLimited()) {
-            return Optional.empty();
+            return null;
         }
         final Rates rates = rateContext.getRatesWithParentRatesAsFallback();
-        return Optional.of(context.getRateLimiterProvider().getRateLimiter(key, rates));
+        return context.getRateLimiterProvider().getRateLimiter(key, rates);
+    }
+
+    private Map<Object, RateLimiter> _keyToRateLimiterMap;
+    private RateLimiter getRateLimiterFromCacheOrNull(Object key) {
+        return _keyToRateLimiterMap == null ? null : _keyToRateLimiterMap.get(key);
+    }
+    private RateLimiter addRateLimiterToCache(Object key, RateLimiter rateLimiter) {
+        if (rateLimiter == null) {
+            return null;
+        }
+        if (_keyToRateLimiterMap == null) {
+            _keyToRateLimiterMap = new WeakHashMap<>();
+        }
+        _keyToRateLimiterMap.put(key, rateLimiter);
+        return rateLimiter;
     }
 
     private Optional<RateContext<K>> addRateContextToAnnotationsRoot(GenericDeclaration source) {
         Node<RateContext<K>> parent = rootNodes.getAnnotationsRootNode();
-        return createNode(source, null)
+        return createNode(source)
                 .map(node -> toRateContextNode(parent, node).requireValue());
     }
     private Optional<RateContext<K>> getRateContext(String id) {
@@ -121,10 +187,9 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return RateContext.of(context.getMatcherProvider(), node);
     }
 
-    private Optional<Node<RateConfig>> createNode(
-            GenericDeclaration source, Node<RateConfig> parent) {
-        return createRateConfig(source, parent == null ? null : parent.requireValue())
-                .map(rateConfig -> Node.of(rateConfig.getId(), rateConfig, parent));
+    private Optional<Node<RateConfig>> createNode(GenericDeclaration source) {
+        return createRateConfig(source, null)
+                .map(rateConfig -> Node.of(rateConfig.getId(), rateConfig, null));
     }
 
     private Optional<RateConfig> createRateConfig(GenericDeclaration source, RateConfig parent) {

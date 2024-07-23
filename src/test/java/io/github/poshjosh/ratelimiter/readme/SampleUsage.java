@@ -1,14 +1,14 @@
 package io.github.poshjosh.ratelimiter.readme;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
-import io.github.poshjosh.ratelimiter.RateLimiterFactory;
+import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
 
     static class RateLimitedResource {
 
-        RateLimiter rateLimiter = RateLimiterFactory
+        RateLimiter rateLimiter = RateLimiterRegistry
                 .getLimiter(RateLimitedResource.class, "smile");
 
         // Limited to 3 invocations every second

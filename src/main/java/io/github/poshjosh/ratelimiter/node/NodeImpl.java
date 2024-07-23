@@ -22,7 +22,7 @@ import java.util.function.*;
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 13, 2017 3:36:07 PM
  */
-final class NodeImpl<V> implements Node<V> {
+final class NodeImpl<V> implements MutableNode<V> {
 
     private final String name;
     
@@ -41,15 +41,17 @@ final class NodeImpl<V> implements Node<V> {
             if(this.equals(parent)) {
                 throw new IllegalArgumentException("A node may not be parent to itself");
             }
-            if(this.parent instanceof NodeImpl) {
-                ((NodeImpl)this.parent).addChild(NodeImpl.this);
+            if(this.parent instanceof MutableNode) {
+                ((MutableNode<V>)this.parent).addChild(NodeImpl.this);
             }else{
-                throw new IllegalArgumentException();
+                throw new IllegalArgumentException(
+                        "Parent node must be an instance of MutableNode");
             }
         }
     }
 
-    boolean addChild(Node<V> child) {
+    @Override
+    public boolean addChild(Node<V> child) {
         final Object ref = child.getParentOrDefault(null);
         if(Objects.equals(ref, this)) {
             if(!this.children.contains(child)) {
