@@ -92,7 +92,7 @@ class RateLimiterRegistryTest {
         RateLimiterContext<Object> context = RateLimiterContext.builder()
                 .rates(Collections.singletonMap(ID, Rates.of(Rate.ofSeconds(1))))
                 .build();
-        assertNotNull(RateLimiterRegistry.of(context).getRateLimiter(ID));
+        assertNotNull(RateLimiterRegistries.of(context).getRateLimiter(ID));
     }
 
     @Test
@@ -106,7 +106,7 @@ class RateLimiterRegistryTest {
         RateLimiterContext<Object> context = RateLimiterContext.builder()
                 .properties(properties)
                 .build();
-        assertNotNull(RateLimiterRegistry.of(context).getRateLimiter(ID));
+        assertNotNull(RateLimiterRegistries.of(context).getRateLimiter(ID));
     }
 
     private RateLimiterRegistry givenRegistry() {
@@ -116,11 +116,11 @@ class RateLimiterRegistryTest {
     private RateLimiterRegistry givenRegistryForPackage(String packageName) {
         RateLimiterContext context = RateLimiterContext.builder()
                 .packages(packageName).build();
-        return RateLimiterRegistry.of(context);
+        return RateLimiterRegistries.of(context);
     }
 
     private RateLimiterRegistry givenRegistryHavingClass(Class<?> clazz) {
         RateLimiterContext context = RateLimiterContext.builder().classes(clazz).build();
-        return RateLimiterRegistry.of(context);
+        return RateLimiterRegistries.of(context);
     }
 }

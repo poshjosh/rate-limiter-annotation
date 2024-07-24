@@ -3,10 +3,7 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
-import io.github.poshjosh.ratelimiter.util.MatcherProvider;
-import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
-import io.github.poshjosh.ratelimiter.util.Ticker;
+import io.github.poshjosh.ratelimiter.util.*;
 
 import java.util.*;
 
@@ -72,7 +69,7 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
         if (ticker == null) {
             // To maintain a synchronized time between distributed services,
             // prefer the time since epoch.
-            setTicker(Ticker.SYSTEM_EPOCH_MILLIS);
+            setTicker(Tickers.SYSTEM_EPOCH_MILLIS);
         }
 
         if (rateLimiterProvider == null) {
@@ -80,8 +77,8 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
             // If you want to convert Rate to Bandwidth in a different way, then
             // implement your own RateLimiterProvider and pass it to the builder.
             final RateToBandwidthConverter rateToBandwidthConverter =
-                    RateToBandwidthConverter.ofDefaults(ticker);
-            setRateLimiterProvider(RateLimiterProvider.of(
+                    RateToBandwidthConverter.of(ticker);
+            setRateLimiterProvider(RateLimiterProviders.of(
                     rateToBandwidthConverter, store, ticker));
         }
         return this;

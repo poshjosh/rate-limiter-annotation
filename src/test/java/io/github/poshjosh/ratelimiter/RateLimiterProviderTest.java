@@ -14,8 +14,8 @@ class RateLimiterProviderTest {
     // TODO - Mock these, but first make sure each has its own unit tests
     final RateToBandwidthConverter rateToBandwidthConverter = RateToBandwidthConverter.ofDefaults();
     final BandwidthsStore<String> bandwidthsStore = BandwidthsStore.ofDefaults();
-    final Ticker ticker = Ticker.ofDefaults();
-    final RateLimiterProvider rateLimiterProvider = RateLimiterProvider.of(
+    final Ticker ticker = Tickers.ofDefaults();
+    final RateLimiterProvider rateLimiterProvider = RateLimiterProviders.of(
             rateToBandwidthConverter, bandwidthsStore, ticker
     );
 

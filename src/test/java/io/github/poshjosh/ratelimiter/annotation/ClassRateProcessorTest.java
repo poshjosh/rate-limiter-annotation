@@ -14,7 +14,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
 
-    final RateProcessor<Class<?>> rateProcessor = RateProcessor.ofDefaults();
+    final RateProcessor<Class<?>> rateProcessor = RateProcessors.ofDefaults();
 
     @Rate(2)
     @Retention(RetentionPolicy.RUNTIME)

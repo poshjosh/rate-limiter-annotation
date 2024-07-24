@@ -38,7 +38,7 @@ class RateLimiterRegistryTest2 {
 
     @Test
     void shouldReturnClassOnlyRateLimiterGivenClass() {
-        RateLimiter limiter = RateLimiterRegistry.getLimiter(ResourceWithClassAndMethodRates.class);
+        RateLimiter limiter = RateLimiterRegistries.getLimiter(ResourceWithClassAndMethodRates.class);
         assertThat(limiter).isNotNull();
         assertThat(limiter.tryAcquire(1)).isTrue();
         assertThat(limiter.tryAcquire(1)).isFalse();
@@ -46,7 +46,7 @@ class RateLimiterRegistryTest2 {
 
     @Test
     void shouldReturnMethodAndDeclaringClassRateLimiterGivenMethod() {
-        RateLimiter limiter = RateLimiterRegistry.getLimiter(
+        RateLimiter limiter = RateLimiterRegistries.getLimiter(
                 ResourceWithClassAndMethodRates.class, ResourceWithClassAndMethodRates.getRateLimitedMethod());
         assertThat(limiter).isNotNull();
         assertThat(limiter.tryAcquire(1)).isTrue();
@@ -55,7 +55,7 @@ class RateLimiterRegistryTest2 {
 
     @Test
     void shouldReturnMethodOnlyRateLimiterGivenMethodRateId() {
-        RateLimiter limiter = RateLimiterRegistry.getLimiter(
+        RateLimiter limiter = RateLimiterRegistries.getLimiter(
                 ResourceWithClassAndMethodRates.class, "smile");
         assertThat(limiter).isNotNull();
         assertThat(limiter.tryAcquire(2)).isTrue();
@@ -80,7 +80,7 @@ class RateLimiterRegistryTest2 {
     // limiting before the class limit is reached
     @Test
     void shouldUseMethodRateGivenMethodOfResourceWithClassRateLargerThanMethodRate() {
-        RateLimiter limiter = RateLimiterRegistry.getLimiter(
+        RateLimiter limiter = RateLimiterRegistries.getLimiter(
                 ResourceWithClassRateLargerThanMethodRate.class,
                 ResourceWithClassRateLargerThanMethodRate.getRateLimitedMethod());
         assertThat(limiter).isNotNull();
@@ -102,7 +102,7 @@ class RateLimiterRegistryTest2 {
 
     @Test
     void shouldUseClassRateGivenMethodOfResourceWithOnlyClassRate() {
-        RateLimiter limiter = RateLimiterRegistry.getLimiter(
+        RateLimiter limiter = RateLimiterRegistries.getLimiter(
                 ResourceWithOnlyClassRate.class,
                 ResourceWithOnlyClassRate.getMethodLimitedByClassRate());
         assertThat(limiter).isNotNull();
@@ -225,7 +225,7 @@ class RateLimiterRegistryTest2 {
     }
 
     public <T> RateLimiterRegistry<T> getRateLimiterRegistry(Rate limit) {
-        return RateLimiterRegistry.of(key, limit);
+        return RateLimiterRegistries.of(key, limit);
     }
 
     protected Rate getRate(long permits, long durationMillis) {

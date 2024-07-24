@@ -66,7 +66,7 @@ class NodeTest {
     @Test
     void nodeCreatedWithAParent_shouldAddCreatedNodeToTheTreeOfThatParent() {
         Node<Integer> root = TestNode.breadthFirst().getRoot();
-        Node<Integer> node = Node.of("OneHundred", 100, root);
+        Node<Integer> node = Nodes.of("OneHundred", 100, root);
         assertEquals(root, node.getRoot());
     }
 }

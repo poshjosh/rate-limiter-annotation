@@ -23,7 +23,7 @@ class RateProcessorTest {
 
       List<Class<?>> classList = Arrays.asList(Resource1.class, Resource2.class, Resource3.class);
 
-      Node<RateConfig> rootNode = RateProcessor.ofDefaults().processAll(new HashSet<>(classList));
+      Node<RateConfig> rootNode = RateProcessors.ofDefaults().processAll(new HashSet<>(classList));
 
       // The root node plus one rate limited class i.e Resource1
       assertEquals(2, rootNode.size());

@@ -13,11 +13,7 @@ public interface ClassesInPackageFinder {
     interface ClassFilter extends Predicate<Class<?>> { }
 
     static ClassesInPackageFinder ofDefaults() {
-        return of(Thread.currentThread().getContextClassLoader());
-    }
-
-    static ClassesInPackageFinder of(ClassLoader classLoader) {
-        return new DefaultClassesInPackageFinder(classLoader);
+        return new DefaultClassesInPackageFinder(Thread.currentThread().getContextClassLoader());
     }
 
     default List<Class<?>> findClasses(String packageName) {

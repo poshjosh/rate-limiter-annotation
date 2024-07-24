@@ -8,11 +8,11 @@ public class TestNode {
 
     public static Node<Integer> breadthFirst(Integer... numbers) {
         int i = 0;
-        Node<Integer> parent = Node.of("parent", numbers[i++]);
-        Node<Integer> son = Node.of("son", numbers[i++], parent);
-        Node<Integer> daughter = Node.of("daughter", numbers[i++], parent);
-        Node<Integer> grandSon = Node.of("grand-son", numbers[i++], son);
-        Node<Integer> grandDaughter = Node.of("grand-daughter", numbers[i++], son);
+        Node<Integer> parent = Nodes.of("parent", numbers[i++]);
+        Node<Integer> son = Nodes.of("son", numbers[i++], parent);
+        Node<Integer> daughter = Nodes.of("daughter", numbers[i++], parent);
+        Node<Integer> grandSon = Nodes.of("grand-son", numbers[i++], son);
+        Node<Integer> grandDaughter = Nodes.of("grand-daughter", numbers[i++], son);
         return parent;
     }
 
@@ -22,11 +22,11 @@ public class TestNode {
 
     public static Node<Integer> depthFirst(Integer... numbers) {
         int i = 0;
-        Node<Integer> parent = Node.of("parent", numbers[i++]);
-        Node<Integer> son = Node.of("son", numbers[i++], parent);
-        Node<Integer> grandSon = Node.of("grand-son", numbers[i++], son);
-        Node<Integer> grandDaughter = Node.of("grand-daughter", numbers[i++], son);
-        Node<Integer> daughter = Node.of("daughter", numbers[i++], parent);
+        Node<Integer> parent = Nodes.of("parent", numbers[i++]);
+        Node<Integer> son = Nodes.of("son", numbers[i++], parent);
+        Node<Integer> grandSon = Nodes.of("grand-son", numbers[i++], son);
+        Node<Integer> grandDaughter = Nodes.of("grand-daughter", numbers[i++], son);
+        Node<Integer> daughter = Nodes.of("daughter", numbers[i++], parent);
         return parent;
     }
 }

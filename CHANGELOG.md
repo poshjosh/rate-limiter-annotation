@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.7.2](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.7.2) ] - 2024-7-26
+
+### Added
+
+- Changes from [rate-limiter v0.7.2](https://github.com/poshjosh/rate-limiter/blob/v0.7.2/CHANGELOG.md)
+
+### Moved
+
+- Static factory methods from `.annotation.RateProcessor` to `.annotation.RateProcessors`.
+- Static factory methods from `.node.Node` to `.node.Nodes`.
+- Static factory methods from `.RateLimiterProvider` to `.RateLimiterProviders`.
+- Static factory methods from `.RateLimiterRegistry` to `.RateLimiterRegistries`.
+
 ## [ [0.7.1](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.7.1) ] - 2024-01-26
 
 ### Added

@@ -79,14 +79,15 @@ class DynamicRateLimiting {
 
 ```java
 import io.github.poshjosh.ratelimiter.RateLimiter;
-import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
+import io.github.poshjosh.ratelimiter.RateLimiterRegistries;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 
 public class SampleUsage {
 
     static class RateLimitedResource {
 
-        RateLimiter rateLimiter = RateLimiterRegistry.getLimiter(RateLimitedResource.class, "smile");
+        RateLimiter rateLimiter = RateLimiterRegistries.getLimiter(RateLimitedResource.class,
+                "smile");
 
         // Limited to 3 invocations every second
         @Rate(id = "smile", permits = 3) String smile() {

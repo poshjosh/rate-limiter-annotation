@@ -17,7 +17,6 @@
 package io.github.poshjosh.ratelimiter.node;
 
 import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
-import io.github.poshjosh.ratelimiter.model.RateConfig;
 
 import java.util.Collections;
 import java.util.List;
@@ -30,34 +29,8 @@ import java.util.function.*;
  * @param <V> The type of the value returned by this node
  */
 public interface Node<V> {
-
-    Node<Object> EMPTY = new EmptyNode<>();
-
-    @SuppressWarnings("unchecked")
     static <T> Node<T> empty() {
-        return (Node<T>)EMPTY;
-    }
-
-    static <T> Node<T> ofDefaultRoot() {
-        return of("root");
-    }
-
-    static <T> Node<T> of(String name) {
-        return of(name, null);
-    }
-
-    static <T> Node<T> of(String name, T value) {
-        return of(name, value, null);
-    }
-
-    static <T> Node<T> of(String name, Node<T> parent) {
-        return of(name, null, parent);
-    }
-
-    static <T> Node<T> ofDefaultParent(String name, T value) { return of(name, value, ofDefaultRoot()); }
-
-    static <T> Node<T> of(String name, T value, Node<T> parent) {
-        return new NodeImpl(name, value, parent);
+        return Nodes.empty();
     }
 
     default boolean anyMatch(Predicate<Node<V>> test) {
@@ -151,7 +124,7 @@ public interface Node<V> {
      * @see #transform(Predicate, Node, Function, Function)
      */
     default <T> Node<T> transform(Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
-        return transform(Node.of(getName()), nameConverter, valueConverter);
+        return transform(Nodes.of(getName()), nameConverter, valueConverter);
     }
 
     /**
@@ -182,13 +155,13 @@ public interface Node<V> {
         }
         final String newName = nameConverter.apply(this);
         final T newValue = valueConverter.apply(this);
-        final Node<T> newNode = Node.of(newName, newValue, newParent);
+        final Node<T> newNode = Nodes.of(newName, newValue, newParent);
         getChildren().forEach(child -> child.transform(test, newNode, nameConverter, valueConverter));
         return Optional.of(newNode);
     }
 
     default boolean isEmptyNode() {
-        return this == EMPTY;
+        return this == Nodes.EMPTY;
     }
 
     default boolean isRoot() {

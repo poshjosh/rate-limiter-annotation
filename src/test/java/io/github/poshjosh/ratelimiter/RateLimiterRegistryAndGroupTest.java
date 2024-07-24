@@ -74,6 +74,6 @@ class RateLimiterRegistryAndGroupTest {
 
     private RateLimiterRegistry<Object> givenLimiterRegistryHavingAndGroup() {
         // The classes should not be in order, as is expected in real situations
-        return RateLimiterRegistry.of(RateLimitGroupClass1.class, RateLimitGroup.class, RateLimitGroupClass2.class);
+        return RateLimiterRegistries.of(RateLimitGroupClass1.class, RateLimitGroup.class, RateLimitGroupClass2.class);
     }
 }

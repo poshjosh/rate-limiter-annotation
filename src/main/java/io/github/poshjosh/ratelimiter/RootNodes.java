@@ -1,9 +1,11 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
+import io.github.poshjosh.ratelimiter.annotation.RateProcessors;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.node.Node;
+import io.github.poshjosh.ratelimiter.node.Nodes;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,10 +34,10 @@ class RootNodes<K> {
 
         RateConfigCollector propertyConfigs = new RateConfigCollector();
         Node<RateConfig> propRoot = getPropertyRateProcessor()
-                .process(Node.of("root.properties"), propertyConfigs, context.getProperties());
+                .process(Nodes.of("root.properties"), propertyConfigs, context.getProperties());
 
         Node<RateConfig> annoRoot = getClassRateProcessor()
-                .processAll(Node.of("root.annotations"),
+                .processAll(Nodes.of("root.annotations"),
                         (src, node) -> {}, context.getTargetClasses());
 
         List<String> transferredToAnnotations = new ArrayList<>();
@@ -69,7 +71,7 @@ class RootNodes<K> {
                 RateContext.of(context.getMatcherProvider(), currentNode);
 
         annotationsRootNode = annoRoot.retainAll(anyNodeInTreeIsRateLimited)
-                .orElseGet(() -> Node.of("root.annotations"))
+                .orElseGet(() -> Nodes.of("root.annotations"))
                 .getRoot().transform(transformer);
 
         LOG.debug("ANNOTATION SOURCED NODES:\n{}", annotationsRootNode);
@@ -78,7 +80,7 @@ class RootNodes<K> {
                 node -> !transferredToAnnotations.contains(node.getName());
 
         propertiesRootNode = propRoot.retainAll(nodesNotTransferred)
-                .orElseGet(() -> Node.of("root.properties"))
+                .orElseGet(() -> Nodes.of("root.properties"))
                 .getRoot().transform(transformer);
 
         LOG.debug("PROPERTIES SOURCED NODES:\n{}", propertiesRootNode);
@@ -106,11 +108,11 @@ class RootNodes<K> {
         // This is because, any of the nodes may have its rate limit related info, specified
         // via properties. Such a node needs to be accepted at this point as property
         // sourced rate limited data will later be transferred to class/method nodes
-        return RateProcessor.ofClass(source -> true);
+        return RateProcessors.ofClass(source -> true);
     }
 
     private RateProcessor<RateLimitProperties> getPropertyRateProcessor() {
-        return RateProcessor.ofProperties();
+        return RateProcessors.ofProperties();
     }
 
     public boolean hasProperties() {

@@ -28,7 +28,7 @@ final class RateSourceMatcher<INPUT> implements Matcher<INPUT> {
     private String doMatch(Object input, boolean annotationClassDetermined) {
 
         if (input == null) {
-            return Matcher.NO_MATCH;
+            return Matchers.NO_MATCH;
         }
 
         if (input instanceof Class) {
@@ -71,7 +71,7 @@ final class RateSourceMatcher<INPUT> implements Matcher<INPUT> {
 //            }
         }
 
-        return Matcher.NO_MATCH;
+        return Matchers.NO_MATCH;
     }
 
     private Class<?> getRateGroupClassOrDefaultForClass(Class<?> clazz, Class<?> resultIfNone) {

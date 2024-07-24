@@ -28,10 +28,10 @@ public abstract class AbstractMatcherProvider<INPUT> implements MatcherProvider<
             return createExpressionMatcher(subLimits.get(0).getRateCondition())
                     .map(Collections::singletonList)
                     // Tag:Rule:number-of-matchers-must-equal-number-of-rates
-                    .orElse(Collections.singletonList(Matcher.matchNone()));
+                    .orElse(Collections.singletonList(Matchers.matchNone()));
         }
         return subLimits.stream()
-                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(Matcher.matchNone()))
+                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(Matchers.matchNone()))
                 .collect(Collectors.toList());
     }
 

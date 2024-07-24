@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
+import io.github.poshjosh.ratelimiter.util.Matchers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +106,7 @@ final class MatchUtil {
         }
 
         if (!Matcher.isMatch(match)) {
-            return Matcher.NO_MATCH;
+            return Matchers.NO_MATCH;
         }
 
         return Matcher.composeResults(mainMatch, match);

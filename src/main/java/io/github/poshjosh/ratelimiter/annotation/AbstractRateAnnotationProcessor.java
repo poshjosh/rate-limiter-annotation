@@ -6,6 +6,7 @@ import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.node.Node;
+import io.github.poshjosh.ratelimiter.node.Nodes;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.Rates;
@@ -47,13 +48,13 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
     }
 
     /**
-     * @return The processed node or {@link Node#EMPTY}
+     * @return The processed node or {@link Nodes#EMPTY}
      */
     protected Node<RateConfig> doProcess(Node<RateConfig> root, NodeConsumer consumer, S source){
         
         if (!sourceTest.test(source)) {
             LOG.trace("Skipping: {}", source);
-            return Node.empty();
+            return Nodes.empty();
         }
 
         final Node<RateConfig> group = findOrCreateGroup(root, source).orElse(null);
@@ -62,7 +63,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
 
         final Node<RateConfig> node;
         if (isGroupDefinition(source)) {
-            node = Node.empty(); // group has been created no need to also create a node
+            node = Nodes.empty(); // group has been created no need to also create a node
         } else {
             node = createNodeForElement(root, parentNode, source);
         }
@@ -130,7 +131,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
         final Rates rates = annotationConverter.convert(rateSource);
         checkRateGroupOperator(rates.getOperator(), rates);
         final RateConfig rootConfig = root.getValueOrDefault(null);
-        return Node.of(rateSource.getId(), RateConfig.of(rateSource, rates, rootConfig), root);
+        return Nodes.of(rateSource.getId(), RateConfig.of(rateSource, rates, rootConfig), root);
     }
 
     private Node<RateConfig> createNodeForElement(
@@ -139,7 +140,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
         requireUniqueName(root, source, rateSource.getId());
         final Rates rates = annotationConverter.convert(rateSource);
         final RateConfig parentConfig = parentNode.getValueOrDefault(null);
-        return Node.of(rateSource.getId(), RateConfig.of(rateSource, rates, parentConfig), parentNode);
+        return Nodes.of(rateSource.getId(), RateConfig.of(rateSource, rates, parentConfig), parentNode);
     }
 
     private String requireUniqueName(Node<RateConfig> root, Object source, String name) {

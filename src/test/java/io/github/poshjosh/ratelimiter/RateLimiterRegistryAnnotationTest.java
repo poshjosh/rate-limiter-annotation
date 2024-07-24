@@ -338,6 +338,6 @@ class RateLimiterRegistryAnnotationTest {
     }
 
     private RateLimiterRegistry<Object> newRateLimiterRegistry(Class<?>... classes) {
-        return RateLimiterRegistry.of(classes);
+        return RateLimiterRegistries.of(classes);
     }
 }

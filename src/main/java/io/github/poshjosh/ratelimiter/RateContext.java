@@ -7,6 +7,7 @@ import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
+import io.github.poshjosh.ratelimiter.util.Matchers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +33,7 @@ final class RateContext<R> {
         if(!hasLimitsInTree(node) && !rateConfig.shouldDelegateToParent()) {
             LOG.debug("No limits specified for group, so no matcher will be created for: {}",
                     node.getName());
-            mainMatcher = Matcher.matchNone();
+            mainMatcher = Matchers.matchNone();
             limitMatchers = Collections.emptyList();
         } else {
             mainMatcher = matcherProvider.createMainMatcher(rateConfig);
@@ -86,8 +87,8 @@ final class RateContext<R> {
     }
 
     public boolean hasMatcher() {
-        return !Matcher.matchNone().equals(mainMatcher) ||
-                limitMatchers.stream().anyMatch(matcher -> !Matcher.matchNone().equals(matcher));
+        return !Matchers.matchNone().equals(mainMatcher) ||
+                limitMatchers.stream().anyMatch(matcher -> !Matchers.matchNone().equals(matcher));
     }
 
     public String getId() {

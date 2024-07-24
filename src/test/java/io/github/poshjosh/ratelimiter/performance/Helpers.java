@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.performance;
 
+import io.github.poshjosh.ratelimiter.RateLimiterRegistries;
 import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
 import io.github.poshjosh.ratelimiter.util.ClassesInPackageFinder;
 
@@ -18,7 +19,7 @@ public class Helpers {
     }
 
     static RateLimiterRegistry givenRateLimiterRegistry(List<Class<?>> classList) {
-        return RateLimiterRegistry.of(classList.toArray(new Class[0]));
+        return RateLimiterRegistries.of(classList.toArray(new Class[0]));
     }
 
     static List<Method> annotatedClassMethods() {

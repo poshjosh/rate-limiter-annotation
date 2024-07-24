@@ -1,12 +1,12 @@
 package io.github.poshjosh.ratelimiter.util;
 
-import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
+import io.github.poshjosh.ratelimiter.expression.ExpressionMatchers;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 
 final class DefaultMatcherProvider<INPUT> extends AbstractMatcherProvider<INPUT> {
 
     DefaultMatcherProvider() {
-        super(ExpressionMatcher.ofDefault());
+        super(ExpressionMatchers.ofDefaults());
     }
 
     @Override
@@ -14,7 +14,7 @@ final class DefaultMatcherProvider<INPUT> extends AbstractMatcherProvider<INPUT>
         final Matcher<INPUT> expressionMatcher = createExpressionMatcher(
                 rateConfig.getRates().getRateCondition()).orElse(null);
         if (isMatchNone(rateConfig, expressionMatcher != null)) {
-            return Matcher.matchNone();
+            return Matchers.matchNone();
         }
         return andSourceMatcher(expressionMatcher, rateConfig);
     }

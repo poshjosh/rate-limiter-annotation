@@ -7,6 +7,7 @@ import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
+import io.github.poshjosh.ratelimiter.node.Nodes;
 
 import java.lang.reflect.GenericDeclaration;
 import java.lang.reflect.Method;
@@ -48,7 +49,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     @Override
     public RateLimiter getRateLimiterOrUnlimited(K key) {
         final RateLimiter rateLimiter = getRateLimiterOrNull(key);
-        return rateLimiter == null ? RateLimiter.NO_LIMIT : rateLimiter;
+        return rateLimiter == null ? RateLimiters.NO_LIMIT : rateLimiter;
     }
 
     @Override
@@ -180,7 +181,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
             Node<RateContext<K>> parent,
             Node<RateConfig> node) {
         // Child nodes are automatically added to the specified parent.
-        return Node.of(node.getName(), toRateContext(node), parent);
+        return Nodes.of(node.getName(), toRateContext(node), parent);
     }
 
     private RateContext<K> toRateContext(Node<RateConfig> node) {
@@ -189,7 +190,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
 
     private Optional<Node<RateConfig>> createNode(GenericDeclaration source) {
         return createRateConfig(source, null)
-                .map(rateConfig -> Node.of(rateConfig.getId(), rateConfig, null));
+                .map(rateConfig -> Nodes.of(rateConfig.getId(), rateConfig, null));
     }
 
     private Optional<RateConfig> createRateConfig(GenericDeclaration source, RateConfig parent) {

@@ -76,7 +76,7 @@ final class NodeImpl<V> implements MutableNode<V> {
 
     @Override
     public Node<V> copyTo(Node<V> parent) {
-        final Node<V> newNode = Node.of(name, value, parent);
+        final Node<V> newNode = Nodes.of(name, value, parent);
         children.forEach(child -> child.copyTo(newNode));
         return newNode;
     }

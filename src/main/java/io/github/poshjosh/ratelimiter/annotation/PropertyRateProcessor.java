@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
+import io.github.poshjosh.ratelimiter.node.Nodes;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 
 import java.util.LinkedHashMap;
@@ -43,7 +44,7 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
             Rates rates = entry.getValue();
             RateSource rateSource = new PropertyRateSource(name, rates.hasLimitsSet(), source);
             RateConfig parentConfig = parent.getValueOrDefault(null);
-            Node<RateConfig> node = Node.of(name, RateConfig.of(rateSource, rates, parentConfig), parent);
+            Node<RateConfig> node = Nodes.of(name, RateConfig.of(rateSource, rates, parentConfig), parent);
             nodeConsumer.accept(rates, node);
         }
     }
