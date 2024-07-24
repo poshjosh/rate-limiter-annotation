@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.Rates;
@@ -48,7 +49,7 @@ final class DefaultRateLimiterProvider implements RateLimiterProvider {
 
     private RateLimiter createRateLimiter(String key, Rate rate) {
         final Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rate);
-        if (Bandwidth.UNLIMITED.equals(bandwidth)) {
+        if (Bandwidths.UNLIMITED.equals(bandwidth)) {
             return RateLimiter.NO_LIMIT;
         }
         return RateLimiter.of(bandwidth, ticker);
@@ -56,7 +57,7 @@ final class DefaultRateLimiterProvider implements RateLimiterProvider {
 
     private RateLimiter createRateLimiter(String key, Rates rates) {
         final Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rates);
-        if (Bandwidth.UNLIMITED.equals(bandwidth)) {
+        if (Bandwidths.UNLIMITED.equals(bandwidth)) {
             return RateLimiter.NO_LIMIT;
         }
         return RateLimiter.of(bandwidth, ticker);

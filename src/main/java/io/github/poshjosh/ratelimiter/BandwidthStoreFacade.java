@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.Rates;
@@ -30,7 +31,7 @@ final class BandwidthStoreFacade<K> {
 
     Bandwidth getOrCreateBandwidth(K key, Rate rate) {
         if (!rate.isSet()) {
-            return Bandwidth.UNLIMITED;
+            return Bandwidths.UNLIMITED;
         }
         // Bandwidth coming from store will not have auto-save if
         // deserialized from a local machine.
@@ -44,7 +45,7 @@ final class BandwidthStoreFacade<K> {
 
     Bandwidth getOrCreateBandwidth(K key, Rates rates) {
         if (!rates.isSet()) {
-            return Bandwidth.UNLIMITED;
+            return Bandwidths.UNLIMITED;
         }
         // Bandwidth coming from store will not have auto-save if
         // deserialized from a local machine.
