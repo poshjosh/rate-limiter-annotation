@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthFactories;
 import io.github.poshjosh.ratelimiter.bandwidths.BandwidthFactory;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import org.junit.jupiter.api.Test;
@@ -19,7 +20,7 @@ class RateLimiterRegistryTest2 {
 
     final int durationMillis = 2000;
 
-    private final Class<? extends BandwidthFactory> factoryClass = BandwidthFactory.AllOrNothing.class;
+    private final Class<? extends BandwidthFactory> factoryClass = BandwidthFactories.AllOrNothing.class;
     private final boolean supportsNullKeys = true;
 
     @io.github.poshjosh.ratelimiter.annotations.Rate(1)

@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter.annotations;
 
+import io.github.poshjosh.ratelimiter.bandwidths.BandwidthFactories;
 import io.github.poshjosh.ratelimiter.bandwidths.BandwidthFactory;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 
@@ -91,7 +92,7 @@ public @interface Rate {
      *
      * @return a {@link BandwidthFactory} class for creating {@link Bandwidth}s
      */
-    Class<? extends BandwidthFactory> factoryClass() default BandwidthFactory.Default.class;
+    Class<? extends BandwidthFactory> factoryClass() default BandwidthFactories.Default.class;
 
     @Documented
     @Retention(RetentionPolicy.RUNTIME)
