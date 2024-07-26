@@ -79,28 +79,21 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     }
 
     private RateLimiter getRateLimiterOrNull(K key) {
-        final RateLimiter fromCache = getRateLimiterFromCacheOrNull(key);
-        if (fromCache != null) {
-            return fromCache;
-        }
         if (!context.isRateLimited()) {
             return null;
         }
         if (!rootNodes.hasProperties() && !rootNodes.hasAnnotations()) {
             return null;
         }
-
-        final RateLimiter rateLimiter;
         if (!rootNodes.hasProperties()) {
-            rateLimiter = createAnnotationsRateLimiter(key);
-        } else if (!rootNodes.hasAnnotations()) {
-            rateLimiter = createPropertisRateLimiter(key);
-        } else {
-            // Properties take precedence over annotations
-            rateLimiter = RateLimiters.of(
-                    createPropertisRateLimiter(key), createAnnotationsRateLimiter(key));
+            return createAnnotationsRateLimiter(key);
         }
-        return addRateLimiterToCache(key, rateLimiter);
+
+        if (!rootNodes.hasAnnotations()) {
+            return createPropertisRateLimiter(key);
+        }
+        // Properties take precedence over annotations
+        return RateLimiters.of(createPropertisRateLimiter(key), createAnnotationsRateLimiter(key));
     }
 
     private RateLimiter createPropertisRateLimiter(K key){
@@ -122,18 +115,13 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     }
 
     private RateLimiter getGenericRateLimiterOrNull(GenericDeclaration source) {
-        final RateLimiter fromCache = getRateLimiterFromCacheOrNull(source);
-        if (fromCache != null) {
-            return fromCache;
-        }
         final String rateId = RateId.of(source);
         final RateContext<K> rateContext = getRateContext(rateId)
                 .orElseGet(() -> addRateContextToAnnotationsRoot(source).orElse(null));
         if (rateContext == null) {
             return null;
         }
-        final RateLimiter rateLimiter = getRateLimiterOrNull(rateId, rateContext);
-        return addRateLimiterToCache(source, rateLimiter);
+        return getRateLimiterOrNull(rateId, rateContext);
     }
 
     private RateLimiter getRateLimiterOrNull(String key, RateContext<K> rateContext) {
@@ -142,21 +130,6 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         }
         final Rates rates = rateContext.getRatesWithParentRatesAsFallback();
         return context.getRateLimiterProvider().getRateLimiter(key, rates);
-    }
-
-    private Map<Object, RateLimiter> _keyToRateLimiterMap;
-    private RateLimiter getRateLimiterFromCacheOrNull(Object key) {
-        return _keyToRateLimiterMap == null ? null : _keyToRateLimiterMap.get(key);
-    }
-    private RateLimiter addRateLimiterToCache(Object key, RateLimiter rateLimiter) {
-        if (rateLimiter == null) {
-            return null;
-        }
-        if (_keyToRateLimiterMap == null) {
-            _keyToRateLimiterMap = new WeakHashMap<>();
-        }
-        _keyToRateLimiterMap.put(key, rateLimiter);
-        return rateLimiter;
     }
 
     private Optional<RateContext<K>> addRateContextToAnnotationsRoot(GenericDeclaration source) {
@@ -189,16 +162,16 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     }
 
     private Optional<Node<RateConfig>> createNode(GenericDeclaration source) {
-        return createRateConfig(source, null)
-                .map(rateConfig -> Nodes.of(rateConfig.getId(), rateConfig, null));
+        return createRateConfig(source)
+                .map(rateConfig -> Nodes.of(rateConfig.getId(), rateConfig));
     }
 
-    private Optional<RateConfig> createRateConfig(GenericDeclaration source, RateConfig parent) {
+    private Optional<RateConfig> createRateConfig(GenericDeclaration source) {
         RateSource rateSource = JavaRateSource.of(source);
         if (!rateSource.isRateLimited()) {
             return Optional.empty();
         }
         Rates rates = annotationConverter.convert(rateSource);
-        return Optional.of(RateConfig.of(rateSource, rates, parent));
+        return Optional.of(RateConfig.of(rateSource, rates));
     }
 }

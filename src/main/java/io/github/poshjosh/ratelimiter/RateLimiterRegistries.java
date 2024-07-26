@@ -58,4 +58,8 @@ public interface RateLimiterRegistries {
         return new DefaultRateLimiterRegistry<>(
                 context, RootNodes.of(context), AnnotationConverter.ofDefaults());
     }
+
+    static <K> RateLimiterRegistry<K> ofCaching(RateLimiterRegistry<K> registry) {
+        return new CachingRateLimiterRegistry<>(registry);
+    }
 }

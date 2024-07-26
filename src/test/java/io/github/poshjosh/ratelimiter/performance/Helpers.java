@@ -19,7 +19,9 @@ public class Helpers {
     }
 
     static RateLimiterRegistry givenRateLimiterRegistry(List<Class<?>> classList) {
-        return RateLimiterRegistries.of(classList.toArray(new Class[0]));
+        final RateLimiterRegistry<?> registry = RateLimiterRegistries.of(classList.toArray(new Class[0]));
+        // Caching should make tests faster
+        return RateLimiterRegistries.ofCaching(registry);
     }
 
     static List<Method> annotatedClassMethods() {

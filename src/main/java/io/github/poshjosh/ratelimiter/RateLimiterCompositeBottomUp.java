@@ -1,12 +1,8 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
-import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.Operator;
 
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 /**
@@ -17,45 +13,19 @@ import java.util.function.BiConsumer;
  * We stop after the current branch once we find a match.
  * @param <K>
  */
-final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
-    private final K key;
+final class RateLimiterCompositeBottomUp<K>
+        extends AbstractRateLimiterComposite<K>
+        implements RateLimiter {
     private final Node<RateContext<K>>[] leafNodes;
-    private final RateLimiterProvider rateLimiterProvider;
 
     RateLimiterCompositeBottomUp (K key,
             Node<RateContext<K>>[] leafNodes,
             RateLimiterProvider rateLimiterProvider) {
-        this.key = Objects.requireNonNull(key);
+        super(key, rateLimiterProvider);
         this.leafNodes = Objects.requireNonNull(leafNodes);
-        this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
     }
 
-    @Override
-    public double acquire(int permits) {
-        PermitAcquiringVisitor visitor = new PermitAcquiringVisitor(permits);
-        visitNodesBottomUp(visitor);
-        return visitor.getTotalTimeSpent();
-    }
-
-    @Override
-    public boolean tryAcquire(int permits, long timeout, TimeUnit unit) {
-        PermitAttemptingVisitor visitor = new PermitAttemptingVisitor(permits, timeout, unit);
-        visitNodesBottomUp(visitor);
-        return visitor.isNoLimitExceeded();
-    }
-
-    @Override
-    public Bandwidth getBandwidth() {
-        List<Bandwidth> bandwidths = new ArrayList<>();
-        BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) ->
-                bandwidths.add(rateLimiter.getBandwidth());
-        visitNodesBottomUp(visitor);
-        // For multiple Bandwidths conjugated with Operator.OR, the composed Bandwidth
-        // succeeds only when all Bandwidths succeed. This is the case here.
-        return Bandwidths.of(Operator.OR, bandwidths.toArray(new Bandwidth[0]));
-    }
-
-    private void visitNodesBottomUp(BiConsumer<String, RateLimiter> visitor) {
+    protected void visitNodes(BiConsumer<String, RateLimiter> visitor) {
         for (Node<RateContext<K>> node : leafNodes) {
             boolean atLeastOneNodeInBranchMatched = false;
             do {
@@ -72,27 +42,5 @@ final class RateLimiterCompositeBottomUp<K> implements RateLimiter {
                 break;
             }
         }
-    }
-
-    private boolean matchesRateLimiters(
-            Node<RateContext<K>> node, BiConsumer<String, RateLimiter> visitor) {
-        return MatchUtil.matchesRateLimiters(node, key, rateLimiterProvider, visitor);
-    }
-
-    @Override
-    public String toString() {
-        final StringBuilder builder = new StringBuilder()
-                .append("RateLimiterCompositeBottomUp@")
-                .append(Integer.toHexString(hashCode()))
-                .append("{");
-        final int lengthBeforeVisit = builder.length();
-        BiConsumer<String, RateLimiter> visitor = (match, rateLimiter) ->
-                builder.append("\n\tmatch=").append(match).append(", limiter=").append(rateLimiter);
-        visitNodesBottomUp(visitor);
-        if (builder.length() > lengthBeforeVisit) {
-            builder.append('\n');
-        }
-        builder.append("}");
-        return builder.toString();
     }
 }

@@ -11,7 +11,6 @@
 <!--    <logger name="io.github.poshjosh.ratelimiter.bandwidths.DefaultRateToBandwidthConverter" level="trace"/>-->
 <!--    <logger name="io.github.poshjosh.ratelimiter.RateContext" level="trace"/>-->
 <!--    <logger name="io.github.poshjosh.ratelimiter.RateLimiterComposite" level="trace"/>-->
-<!--    <logger name="io.github.poshjosh.ratelimiter.MatchUtil" level="trace"/>-->
 
     <root level="info">
         <appender-ref ref="STDOUT"/>

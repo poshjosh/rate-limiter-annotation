@@ -83,7 +83,7 @@ final class RateContext<R> {
             Matcher<R> mainMatcher, List<Matcher<R>> limitMatchers) {
         this.rateConfig = Objects.requireNonNull(rateConfig);
         this.mainMatcher = Objects.requireNonNull(mainMatcher);
-        this.limitMatchers = Collections.unmodifiableList(new ArrayList<>(limitMatchers));
+        this.limitMatchers = Objects.requireNonNull(limitMatchers);
     }
 
     public boolean hasMatcher() {
