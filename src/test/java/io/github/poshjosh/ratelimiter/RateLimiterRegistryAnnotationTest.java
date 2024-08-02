@@ -216,7 +216,7 @@ class RateLimiterRegistryAnnotationTest {
     }
 
     @Rate(1)
-    @RateCondition("jvm.memory.free<1")
+    @RateCondition("jvm.memory.free < 1")
     static class ClassWithSeparateRateCondition { }
 
     @Test
@@ -227,7 +227,7 @@ class RateLimiterRegistryAnnotationTest {
         assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(permits=1, when="jvm.memory.free<0")
+    @Rate(permits=1, when="jvm.memory.free < 0")
     static class ClassWithWhenRateCondition { }
 
     @Test
@@ -239,7 +239,7 @@ class RateLimiterRegistryAnnotationTest {
     }
 
     @Rate(1)
-    @RateCondition("sys.time.elapsed>=PT0S")
+    @RateCondition("sys.time.elapsed >= PT0S")
     static class ClassWithRateConditionTrue { }
 
     @Test
@@ -250,7 +250,7 @@ class RateLimiterRegistryAnnotationTest {
         assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(permits=1, when="sys.time.elapsed>=PT0S")
+    @Rate(permits=1, when="sys.time.elapsed >= PT0S")
     static class ClassWithWhenRateConditionTrue { }
 
     @Test
@@ -261,7 +261,7 @@ class RateLimiterRegistryAnnotationTest {
         assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(permits = 1, condition = "sys.time.elapsed>=PT2S")
+    @Rate(permits = 1, condition = "sys.time.elapsed >= PT2S")
     static class ClassWithRateCondition { }
 
     @Test
@@ -300,7 +300,7 @@ class RateLimiterRegistryAnnotationTest {
     }
 
     @Rate(1)
-    @RateCondition("sys.time.elapsed!<PT0S") // We have had 0 secs, which may cause !<= to fail
+    @RateCondition("sys.time.elapsed !< PT0S") // We have had 0 secs, which may cause !<= to fail
     static class ClassWithNegationSeparateRateCondition { }
 
     @Test
@@ -311,7 +311,7 @@ class RateLimiterRegistryAnnotationTest {
         assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
     }
 
-    @Rate(permits=1, when="sys.time.elapsed!<PT0S") // We have had 0 secs, which may cause !<= to fail
+    @Rate(permits=1, when="sys.time.elapsed !< PT0S") // We have had 0 secs, which may cause !<= to fail
     static class ClassWithNegationWhenRateCondition { }
 
     @Test
@@ -324,8 +324,8 @@ class RateLimiterRegistryAnnotationTest {
 
     // This first Rate's condition will never evaluate to true,
     // as elapsed time will never be less than zero.
-    @Rate(permits=1, when="sys.time.elapsed<PT0S")
-    @Rate(permits=2, when="sys.time.elapsed>=PT0S")
+    @Rate(permits=1, when="sys.time.elapsed < PT0S")
+    @Rate(permits=2, when="sys.time.elapsed >= PT0S")
     static class ClassWithNonConjunctedRates { }
 
     @Test

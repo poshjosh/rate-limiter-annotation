@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 
 @Rate(1)
 @Rate(permits = 10, timeUnit = TimeUnit.MINUTES)
-@RateCondition("jvm.memory.available>100MB")
+@RateCondition("jvm.memory.available > 100MB")
 @RateGroup("rate-group-A")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.METHOD})

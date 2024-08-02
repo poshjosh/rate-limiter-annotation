@@ -48,7 +48,7 @@ class MatcherProviderTest {
         final int millis = 700;
         LocalDateTime time = LocalDateTime.now().plus(millis, ChronoUnit.MILLIS);
         String nodeName = "test-node-name";
-        RateConfig rateConfig = givenRateConfigWithConditions(nodeName, "sys.time>"+time, "");
+        RateConfig rateConfig = givenRateConfigWithConditions(nodeName, "sys.time > "+time, "");
         Matcher<String> matcher = matcherProvider.createMainMatcher(rateConfig);
         assertFalse(matcher.matches(nodeName));
         Thread.sleep(millis);
@@ -65,7 +65,7 @@ class MatcherProviderTest {
     @Test
     void createSubMatchers_givenOnlyGlobalRateCondition_shouldReturnEmpty() {
         Rates rates = new Rates();
-        rates.setRateCondition("sys.time.elapsed>=PT0S");
+        rates.setRateCondition("sys.time.elapsed >= PT0S");
         RateConfig rateConfig = RateConfig.of(rates);
         List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
@@ -74,7 +74,7 @@ class MatcherProviderTest {
     @Test
     void createSubMatchers_shouldReturnValidNumberOfMatchers() {
         List<Rate> rateList = Arrays.asList(Rate.ofDays(1), Rate.ofDays(2));
-        Rates rates = Rates.of(Operator.OR, "sys.time.elapsed>=PT0S", rateList);
+        Rates rates = Rates.of(Operator.OR, "sys.time.elapsed >= PT0S", rateList);
         RateConfig rateConfig = RateConfig.of(rates);
         List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertEquals(rateList.size(), matchers.size());
@@ -85,7 +85,7 @@ class MatcherProviderTest {
         Rates rates = new Rates();
         rates.setPermits(1);
         rates.setDuration(Duration.ofSeconds(1));
-        rates.setRateCondition("sys.time.elapsed>=PT0S");
+        rates.setRateCondition("sys.time.elapsed >= PT0S");
         RateConfig rateConfig = RateConfig.of(rates);
         List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
@@ -94,7 +94,7 @@ class MatcherProviderTest {
     @Test
     void createSubMatchers_givenOneNonGlobalRateCondition_shouldReturnOne() {
         String nodeName = "test-node-name";
-        RateConfig rateConfig = givenRateConfigWithConditions(nodeName, "", "sys.time.elapsed>=PT0S");
+        RateConfig rateConfig = givenRateConfigWithConditions(nodeName, "", "sys.time.elapsed >= PT0S");
         List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
         assertEquals(1, matchers.size());
     }

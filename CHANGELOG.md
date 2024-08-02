@@ -9,11 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
-## [ [0.7.2](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.7.2) ] - 2024-7-26
+## [ [0.8.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.8.0) ] - 2024-08-03
 
 ### Added
 
-- Changes from [rate-limiter v0.7.2](https://github.com/poshjosh/rate-limiter/blob/v0.7.2/CHANGELOG.md)
+- Changes from [rate-limiter v0.8.0](https://github.com/poshjosh/rate-limiter/blob/v0.8.0/CHANGELOG.md)
+
+### Changed
+
+- Expressions to require space around operators. For example:
+  use: `sys.time.elapsed > PT9S` not: `sys.time.elapsed>PT9S`.
 
 ### Moved
 

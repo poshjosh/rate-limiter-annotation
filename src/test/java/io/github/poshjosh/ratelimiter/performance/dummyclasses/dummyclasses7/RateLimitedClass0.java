@@ -14,7 +14,7 @@ public class RateLimitedClass0 {
     }
     private void method_3(boolean bval) {}
     @Rate(10)
-    @RateCondition("sys.time.elapsed>PT3S")
+    @RateCondition("sys.time.elapsed > PT3S")
     public String methodNumber4(Object a, Object b, Object c, Object d, Object e, Object f,
             Object g, Object h, Object i, Object j, Object k, Object l, Object m, Object n,
             Object o, Object p, Object q, Object r, Object s, Object t, Object u, Object v,

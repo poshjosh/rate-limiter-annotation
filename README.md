@@ -16,7 +16,7 @@ class RateLimitedResource {
     }
 
     // 2 permits per second only when system available memory is less than 1GB
-    @Rate(permits = 2, condition = "jvm.memory.available<1GB") 
+    @Rate(permits = 2, condition = "jvm.memory.available < 1GB") 
     public String greet(String who) {
         return "Hello " + who;
     }
@@ -58,7 +58,7 @@ class DynamicRateLimiting {
     static class ResourceA{}
     
     // Will be rate limited when system elapsed time is greater than 59 seconds
-    @Rate(id="resource-b", permits=5, condition="sys.time.elapsed>PT59S")
+    @Rate(id="resource-b", permits=5, condition="sys.time.elapsed > PT59S")
     static class ResourceB{}
 
     public static void main(String... args) {

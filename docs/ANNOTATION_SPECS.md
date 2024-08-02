@@ -11,7 +11,7 @@ import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 
 // 5 permits per second for users in role GUEST
-@Rate(permits = 5, condition = "web.request.user.role=GUEST")
+@Rate(permits = 5, condition = "web.request.user.role = GUEST")
 @interface MyRateGroup { }
 ``` 
 You could then use the above annotation for as many classes/methods that apply.
@@ -34,7 +34,7 @@ import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 
 // 1 permit per second when system memory is below 1GB
-@Rate(permits = 1, condition = "jvm.memory.free<1G")
+@Rate(permits = 1, condition = "jvm.memory.free < 1G")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
 public @interface GuestUserRate { }
@@ -58,7 +58,7 @@ Given the following rate groups:
 ```java
 // 1 request per second for requests whose locale is not either en_US or en_UK
 @Rate(1)
-@RateCondition("web.request.locale!=[en_US|en_UK]")
+@RateCondition("web.request.locale != [en_US|en_UK]")
 @RateGroup("class-group")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
@@ -66,7 +66,7 @@ Given the following rate groups:
 
 // 1 request per second for requests with the specified header
 @Rate(1)
-@RateCondition("web.request.header=X-Rate-Limited")
+@RateCondition("web.request.header = X-Rate-Limited")
 @RateGroup("method-group")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
