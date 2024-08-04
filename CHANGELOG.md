@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Changes from [rate-limiter v0.8.0](https://github.com/poshjosh/rate-limiter/blob/v0.8.0/CHANGELOG.md)
+- `.expression.Operator#IN`. Example use: `@Rate(permits=0, when="web.request.remote.address in io.github.ratelimiter.Bots.getBotIps()")`.
 
 ### Changed
 

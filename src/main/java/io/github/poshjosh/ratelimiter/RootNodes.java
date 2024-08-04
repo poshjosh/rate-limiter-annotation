@@ -32,7 +32,7 @@ class RootNodes<K> {
 
     private RootNodes(RateLimiterContext<K> context) {
 
-        RateConfigCollector propertyConfigs = new RateConfigCollector();
+        final RateConfigCollector propertyConfigs = new RateConfigCollector();
         Node<RateConfig> propRoot = getPropertyRateProcessor()
                 .process(Nodes.of("root.properties"), propertyConfigs, context.getProperties());
 
@@ -40,17 +40,18 @@ class RootNodes<K> {
                 .processAll(Nodes.of("root.annotations"),
                         (src, node) -> {}, context.getTargetClasses());
 
-        List<String> transferredToAnnotations = new ArrayList<>();
+        final List<String> transferredToAnnotations = new ArrayList<>();
         Function<Node<RateConfig>, RateConfig> overrideWithPropertyValue = node -> {
             if (node.isRoot()) {
                 return node.getValueOrDefault(null);
             }
-            RateConfig annotationConfig = node.requireValue();
-            return propertyConfigs.get(node.getName())
-                    .map(propertyConfig -> {
-                        transferredToAnnotations.add(node.getName());
-                        return propertyConfig.withSource(annotationConfig.getSource());
-                    }).orElse(annotationConfig);
+            final RateConfig annotationConfig = node.requireValue();
+            final RateConfig propertyConfig = propertyConfigs.getOrNull(node.getName());
+            if (propertyConfig == null) {
+                return annotationConfig;
+            }
+            transferredToAnnotations.add(node.getName());
+            return propertyConfig.withSource(annotationConfig.getSource());
         };
 
         annoRoot = annoRoot.transform(overrideWithPropertyValue);
@@ -59,9 +60,14 @@ class RootNodes<K> {
             if (node.isRoot()) {
                 return true;
             }
-            return transferredToAnnotations.contains(node.getName()) || node.getValueOptional()
-                    .map(RateConfig::getSource)
-                    .filter(RateSource::isRateLimited).isPresent();
+            if (transferredToAnnotations.contains(node.getName())) {
+                return true;
+            }
+            final RateConfig nodeValue = node.getValueOrDefault(null);
+            if (nodeValue == null) {
+                return false;
+            }
+            return nodeValue.getSource().isRateLimited();
         };
 
         Predicate<Node<RateConfig>> anyNodeInTreeIsRateLimited =
@@ -149,8 +155,8 @@ class RootNodes<K> {
             node.getValueOptional().ifPresent(
                     rateConfig -> nameToRateMap.putIfAbsent(node.getName(), rateConfig));
         }
-        public Optional<RateConfig> get(String name) {
-            return Optional.ofNullable(nameToRateMap.get(name));
+        public RateConfig getOrNull(String name) {
+            return nameToRateMap.get(name);
         }
     }
 }

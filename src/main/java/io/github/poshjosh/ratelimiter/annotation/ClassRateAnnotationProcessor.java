@@ -30,7 +30,7 @@ class ClassRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Class
         return JavaRateSource.of(element);
     }
 
-    // We override this here so we can process the class and its super classes
+    // We override this here, so we can process the class and its super classes
     @Override
     protected Node<RateConfig> doProcess(Node<RateConfig> root, NodeConsumer consumer, Class<?> source){
         final List<Class<?>> superClasses = new ArrayList<>();
@@ -57,10 +57,9 @@ class ClassRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Class
             if(initialState) { // The first successfully processed node is the base class
                 classNode = node;
             }else{
-                final Class<?> finalReference = source;
-                node.getValueOptional().ifPresent(nodeValue -> {
-                    superClasses.add(finalReference);
-                });
+                if (node.getValueOrDefault(null) != null) {
+                    superClasses.add(source);
+                }
             }
 
             source = source.getSuperclass();
@@ -91,9 +90,7 @@ class ClassRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Class
                 List<Node<RateConfig>> superClassMethodNodes = superClassNode.getChildren();
 
                 // Transfer method nodes from the super class
-                superClassMethodNodes.forEach(node -> {
-                    node.copyTo(classNode);
-                });
+                superClassMethodNodes.forEach(node -> node.copyTo(classNode));
             }
         }
     }

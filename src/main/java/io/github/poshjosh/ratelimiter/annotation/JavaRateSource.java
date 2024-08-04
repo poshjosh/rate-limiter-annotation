@@ -39,7 +39,8 @@ public final class JavaRateSource {
         return new AnnotationRateSource(source);
     }
 
-    private static final RateProcessor.SourceFilter isRateLimited = RateProcessor.SourceFilter.ofRateLimited();
+    private static final RateProcessor.SourceFilter isRateLimited =
+            RateProcessor.SourceFilter.ofRateLimited();
 
     private static final class ClassRateSource extends AbstractRateSource {
         private final String id;

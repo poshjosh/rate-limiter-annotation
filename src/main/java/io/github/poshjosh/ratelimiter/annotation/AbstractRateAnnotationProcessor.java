@@ -57,7 +57,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
             return Nodes.empty();
         }
 
-        final Node<RateConfig> group = findOrCreateGroup(root, source).orElse(null);
+        final Node<RateConfig> group = findOrCreateGroupOrNull(root, source);
 
         final Node<RateConfig> parentNode = getParent(root, group, source);
 
@@ -89,30 +89,27 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
         return source instanceof Class && ((Class)source).isAnnotation();
     }
 
-    private Optional<Node<RateConfig>> findOrCreateGroup(Node<RateConfig> root, S source) {
+    private Node<RateConfig> findOrCreateGroupOrNull(Node<RateConfig> root, S source) {
 
         if (isGroupDefinition(source)) {
-            return Optional.of(findNodeForGroup(root, source)
-                    .orElseGet(() -> createNodeForGroup(root, source)));
+            return findNodeForGroup(root, source)
+                    .orElseGet(() -> createNodeForGroup(root, source));
         }
 
-        final Optional<Class<? extends Annotation>> groupSourceOptional =
-                resolveMetaAnnotationSource(source);
+        final Class<? extends Annotation> groupSource =
+                resolveMetaAnnotationSourceOrNull(source);
 
-        if (!groupSourceOptional.isPresent()) {
-            return Optional.empty();
+        if (groupSource == null) {
+            return null;
         }
-
-        final GenericDeclaration groupSource = groupSourceOptional.get();
-
-        return Optional.of(findNodeForGroup(root, groupSource)
-                .orElseGet(() -> createNodeForGroup(root, groupSource)));
+        return findNodeForGroup(root, groupSource)
+                .orElseGet(() -> createNodeForGroup(root, groupSource));
     }
-    private Optional<Class<? extends Annotation>> resolveMetaAnnotationSource(S source) {
+    private Class<? extends Annotation> resolveMetaAnnotationSourceOrNull(S source) {
         final Rate[] rateAnnotations = source.getAnnotationsByType(annotationConverter.getAnnotationType());
-        final Optional<Class<? extends Annotation>> metaAnnotationType = Util.getMetaAnnotationType(
+        final Class<? extends Annotation> metaAnnotationType = Util.getMetaAnnotationTypeOrNull(
                 source, annotationConverter.getAnnotationType());
-        if (rateAnnotations.length > 0 && metaAnnotationType.isPresent()) {
+        if (rateAnnotations.length > 0 && metaAnnotationType != null) {
             throw new AnnotationProcessingException(
                     "RateSource may not be annotated with @Rate both directly and indirectly (via meta annotation): " + source);
         }
@@ -139,17 +136,22 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
         final RateSource rateSource = toRateSource(source);
         requireUniqueName(root, source, rateSource.getId());
         final Rates rates = annotationConverter.convert(rateSource);
-        final RateConfig parentConfig = parentNode.getValueOrDefault(null);
+        final RateConfig parentConfig = parentNode == null ? null : parentNode.getValueOrDefault(null);
         return Nodes.of(rateSource.getId(), RateConfig.of(rateSource, rates, parentConfig), parentNode);
     }
 
     private String requireUniqueName(Node<RateConfig> root, Object source, String name) {
-        root.findFirstChild(child -> Objects.equals(name, child.getName()))
-                .ifPresent(child -> {
-                    final Object existingSource = child.getValueOptional()
-                            .map(RateConfig::getSource).orElse(null);
-                    throw new DuplicateNameException(name, existingSource, source);
-                });
+        final Node<RateConfig> child = root
+                .findFirstChild(node -> Objects.equals(name, node.getName()))
+                .orElse(null);
+        if (child != null) {
+            final RateConfig value = child.getValueOrDefault(null);
+            final RateSource existingSource = value == null ? null : value.getSource();
+            if (RateSource.NONE == existingSource) {
+                return name;
+            }
+            throw new DuplicateNameException(name, existingSource, source);
+        }
         return name;
     }
 

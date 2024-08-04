@@ -8,13 +8,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class PropertyRateSource implements RateSource {
+
+    public static RateSource of(RateLimitProperties source, String id) {
+        return new PropertyRateSource(id, source.getRateLimitConfigs().get(id).hasLimitsSet(), source);
+    }
+
     private final String id;
 
     private final boolean rateLimited;
 
     private final RateLimitProperties source;
 
-    public PropertyRateSource(String id, boolean rateLimited, RateLimitProperties source) {
+    private PropertyRateSource(String id, boolean rateLimited, RateLimitProperties source) {
         this.id = Objects.requireNonNull(id);
         this.rateLimited = rateLimited;
         this.source = Objects.requireNonNull(source);

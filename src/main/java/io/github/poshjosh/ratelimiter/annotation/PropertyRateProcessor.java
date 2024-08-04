@@ -24,35 +24,32 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
     private Node<RateConfig> addNodesToRoot(Node<RateConfig> rootNode, RateLimitProperties source,
             NodeConsumer nodeConsumer) {
         Map<String, Rates> limits = source.getRateLimitConfigs();
-        Map<String, Rates> configsWithoutParent = new LinkedHashMap<>(limits);
-        Rates rootNodeConfig = configsWithoutParent.remove(rootNode.getName());
+        Rates rootNodeConfig = limits.get(rootNode.getName());
         if (rootNodeConfig != null) {
             throw new IllegalStateException("The name: " + rootNode.getName()
                     + " is reserved, and may not be used to identify rates in "
                     + RateLimitProperties.class.getName());
         }
-        createNodes(rootNode, nodeConsumer, source, configsWithoutParent);
+        createNodes(rootNode, source, nodeConsumer);
         return rootNode;
     }
 
-    private void createNodes(Node<RateConfig> parent, NodeConsumer nodeConsumer,
-            RateLimitProperties source, Map<String, Rates> limits) {
-        Set<Map.Entry<String, Rates>> entrySet = limits.entrySet();
+    private void createNodes(
+            Node<RateConfig> parent,
+            RateLimitProperties source,
+            NodeConsumer nodeConsumer) {
+        final Set<Map.Entry<String, Rates>> entrySet = source.getRateLimitConfigs().entrySet();
         for (Map.Entry<String, Rates> entry : entrySet) {
-            String name = entry.getKey();
-            requireParentNameDoesNotMatchChild(parent.getName(), name);
-            Rates rates = entry.getValue();
-            RateSource rateSource = new PropertyRateSource(name, rates.hasLimitsSet(), source);
-            RateConfig parentConfig = parent.getValueOrDefault(null);
-            Node<RateConfig> node = Nodes.of(name, RateConfig.of(rateSource, rates, parentConfig), parent);
+            final String name = entry.getKey();
+            if (parent.getName().equals(name)) {
+                continue;
+            }
+            final Rates rates = entry.getValue();
+            final RateSource rateSource = PropertyRateSource.of(source, name);
+            final RateConfig parentConfig = parent.getValueOrDefault(null);
+            final Node<RateConfig> node = Nodes
+                    .of(name, RateConfig.of(rateSource, rates, parentConfig), parent);
             nodeConsumer.accept(rates, node);
-        }
-    }
-
-    private void requireParentNameDoesNotMatchChild(String parent, String child) {
-        if (Objects.equals(parent, child)) {
-            throw new IllegalStateException(
-                    "Parent and child nodes may not have the same name: " + parent);
         }
     }
 }

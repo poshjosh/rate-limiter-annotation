@@ -42,7 +42,8 @@ class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Meth
     }
 
     private Object source(Node<RateConfig> node) {
-        return node.getValueOptional().map(RateConfig::getSource).orElse(null);
+        final RateConfig value = node.getValueOrDefault(null);
+        return value == null ? null : value.getSource();
     }
 
     private boolean hasLimits(Node<RateConfig> node) {

@@ -8,7 +8,7 @@ import java.util.Optional;
 
 final class Util {
     private Util() { }
-    static <A extends Annotation> Optional<Class<? extends Annotation>> getMetaAnnotationType(
+    static <A extends Annotation> Class<? extends Annotation> getMetaAnnotationTypeOrNull(
             AnnotatedElement source, Class<A> type) {
         Annotation[] annotations = source.getAnnotations();
         A[] rates = null;
@@ -27,6 +27,6 @@ final class Util {
                                 "). Found more than one at: " + source);
             }
         }
-        return Optional.ofNullable(metaAnnotationType);
+        return metaAnnotationType;
     }
 }

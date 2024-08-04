@@ -40,6 +40,6 @@ final class RateLimitedSourceTest implements RateProcessor.SourceFilter {
         return source.getAnnotationsByType(Rate.class).length > 0;
     }
     private boolean hasRateMetaAnnotation(GenericDeclaration source) {
-        return Util.getMetaAnnotationType(source, Rate.class).isPresent();
+        return Util.getMetaAnnotationTypeOrNull(source, Rate.class) != null;
     }
 }
