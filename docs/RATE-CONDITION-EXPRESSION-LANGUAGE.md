@@ -8,13 +8,13 @@ An expression is of format `LHS` `OPERATOR` `RHS` e.g `jvm.thread.count.started 
 
 `LHS` = `jvm.thread.count`,  `OPERATOR` = `>`,  `RHS` = `99`
 
-| format                      | example                                             | description                                             |  
-|-----------------------------|-----------------------------------------------------|---------------------------------------------------------|
-| LHS = RHS                   | web.request.header = X-RateLimit-Limit              | true, when the X-RateLimit-Limit header exists          |  
-| LHS = {key = val}           | web.request.parameter = {limited=true}              | true, when request parameter limited equals true        |  
-| LHS = [A &#9122; B]         | web.request.user.role = [GUEST &#9122; RESTRICTED]  | true, when the user role is either GUEST or RESTRICTED  |
-| LHS = {key = [A &#9122; B]} | web.request.header = {name = [val_0 &#9122; val_1]} | true, when either val_0 or val_1 is set a header        |  
-| LHS = {key = [A & B]}       | web.request.header = {name = [val_0 & val_1]}       | true, when both val_0 and val_1 are set as headers      |  
+| format                   | example                                              | description                                                            |  
+|--------------------------|------------------------------------------------------|------------------------------------------------------------------------|
+| LHS = RHS                | jvm.thread.count < 22                                | true, when the jvm.thread.count is less than 22                        |  
+| LHS[key] = val           | sys.environment[limited] = true                      | true, when system environment named limited equals true                |  
+| LHS = [A &#9122; B]      | jvm.current.thread.state = [BLOCKED &#9122; WAITING] | true, when the current thread state is either BLOCKED or WAITING       |
+| LHS[key] = [A &#9122; B] | sys.environment[name] = [val_0 &#9122; val_1]        | true, when either val_0 or val_1 is value of system environment `name` |  
+| LHS[key] = [A & B]       | sys.property[name] = [val_0 & val_1]                 | true, when both val_0 and val_1 are values of system property `name`   |  
 
 Example:
 

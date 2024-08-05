@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
-## [ [0.8.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.8.0) ] - 2024-08-03
+## [ [0.8.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.8.0) ] - 2024-08-05
 
 ### Added
 
@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Expressions to require space around operators. For example:
   use: `sys.time.elapsed > PT9S` not: `sys.time.elapsed>PT9S`.
+- Expressions. Simply format `sys.property = {name = value}` to `sys.propery[name] = value`.
 
 ### Moved
 
