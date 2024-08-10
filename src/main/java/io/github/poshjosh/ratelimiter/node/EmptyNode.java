@@ -2,7 +2,6 @@ package io.github.poshjosh.ratelimiter.node;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -18,8 +17,9 @@ final class EmptyNode<V> implements Node<V>{
     }
 
     @Override
-    public Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest) {
-        return Optional.empty();
+    public Node<V> findFirstOrDefault(
+            Node<V> offset, Predicate<Node<V>> nodeTest, Node<V> resultIfNone) {
+        return resultIfNone;
     }
 
     public boolean hasChildren() { return false; }

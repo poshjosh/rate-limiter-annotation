@@ -202,16 +202,22 @@ public interface Node<V> {
         return target;
     }
 
-    default Optional<Node<V>> findFirstChild() {
-        return findFirstChild(node -> true);
-    }
-
     default Optional<Node<V>> findFirstChild(Predicate<Node<V>> nodeTest) {
         
         return this.findFirst(this, nodeTest);
     }
 
-    Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest);
+    default Node<V> findFirstChildOrDefault(
+            Predicate<Node<V>> nodeTest, Node<V> resultIfNone) {
+        return this.findFirstOrDefault(this, nodeTest, resultIfNone);
+    }
+
+    default Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest) {
+        return Optional.ofNullable(findFirstOrDefault(offset, nodeTest, null));
+    }
+
+    Node<V> findFirstOrDefault(Node<V> offset, Predicate<Node<V>> nodeTest, Node<V> resultIfNone);
+
 
     boolean hasChildren();
 
