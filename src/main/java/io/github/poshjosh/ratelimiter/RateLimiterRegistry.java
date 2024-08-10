@@ -1,11 +1,19 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateId;
+import io.github.poshjosh.ratelimiter.model.Rate;
+import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
 
 public interface RateLimiterRegistry<K> {
+
+    default RateLimiterRegistry<K> register(String id, Rate rate) {
+        return register(id, Rates.of(rate));
+    }
+
+    RateLimiterRegistry<K> register(String id, Rates rates);
 
     RateLimiterRegistry<K> register(Class<?> source);
 

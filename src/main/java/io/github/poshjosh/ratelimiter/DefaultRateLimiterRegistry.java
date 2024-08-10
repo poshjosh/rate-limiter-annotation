@@ -29,11 +29,20 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     }
 
     @Override
+    public RateLimiterRegistry<K> register(String id, Rates rates) {
+        if (isRegistered(id)) {
+            return this;
+        }
+        addToPropertiesRoot(id, rates);
+        return this;
+    }
+
+    @Override
     public RateLimiterRegistry<K> register(Class<?> source) {
         if (isRegistered(source)) {
             return this;
         }
-        addRateContextToAnnotationsRoot(source);
+        addToAnnotationsRoot(source);
         return this;
     }
 
@@ -42,7 +51,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         if (isRegistered(source)) {
             return this;
         }
-        addRateContextToAnnotationsRoot(source);
+        addToAnnotationsRoot(source);
         return this;
     }
 
@@ -124,7 +133,8 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         final String rateId = RateId.of(source);
         RateContext<K> rateContext = getRateContextOrNull(rateId);
         if (rateContext == null) {
-            rateContext = addRateContextToAnnotationsRoot(source);
+            final Node<RateContext<K>> added = addToAnnotationsRoot(source);
+            rateContext = added == null ? null : added.requireValue();
         }
         if (rateContext == null) {
             return null;
@@ -140,12 +150,26 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return context.getRateLimiterProvider().getRateLimiter(key, rates);
     }
 
-    private RateContext<K> addRateContextToAnnotationsRoot(GenericDeclaration source) {
-        final Node<RateConfig> node = createNodeOrNull(source);
+    private Node<RateContext<K>> addToPropertiesRoot(String id, Rates rates) {
+        final RateSource rateSource = RateSource.of(id, rates.isSet());
+        final Node<RateConfig> node = createNodeOrNull(rateSource, rates);
         if (node == null) {
             return null;
         }
-        return toRateContextNode(rootNodes.getAnnotationsRootNode(), node).requireValue();
+        return toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
+    }
+
+    private Node<RateContext<K>> addToAnnotationsRoot(GenericDeclaration source) {
+        final RateSource rateSource = JavaRateSource.of(source);
+        if (!rateSource.isRateLimited()) {
+            return null;
+        }
+        final Rates rates = annotationConverter.convert(rateSource);
+        final Node<RateConfig> node = createNodeOrNull(rateSource, rates);
+        if (node == null) {
+            return null;
+        }
+        return toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
     }
 
     private RateContext<K> getRateContextOrNull(String id) {
@@ -177,24 +201,10 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return RateContext.of(context.getMatcherProvider(), node);
     }
 
-    private Node<RateConfig> createNodeOrNull(GenericDeclaration source) {
-        final RateConfig rateConfig = createRateConfigOrNull(source);
-        if (rateConfig == null) {
-            return null;
-        }
-        return Nodes.of(rateConfig.getId(), rateConfig);
-    }
-
-    private RateConfig createRateConfigOrNull(GenericDeclaration source) {
-        final RateSource rateSource = JavaRateSource.of(source);
+    private Node<RateConfig> createNodeOrNull(RateSource rateSource, Rates rates) {
         if (!rateSource.isRateLimited()) {
             return null;
         }
-        final Rates rates = annotationConverter.convert(rateSource);
-        return createRateConfigOrNull(rateSource, rates);
-    }
-
-    private RateConfig createRateConfigOrNull(RateSource rateSource, Rates rates) {
-        return RateConfig.of(rateSource, rates);
+        return Nodes.of(rateSource.getId(), RateConfig.of(rateSource, rates));
     }
 }

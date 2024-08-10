@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateId;
+import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -28,6 +29,10 @@ final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         }
         rateLimiterCache.put(key, rateLimiter);
         return rateLimiter;
+    }
+
+    @Override public RateLimiterRegistry<K> register(String id, Rates rates) {
+        return delegate.register(id, rates);
     }
 
     @Override public RateLimiterRegistry<K> register(Class<?> source) {
