@@ -10,7 +10,7 @@ import java.util.Optional;
 public final class PropertyRateSource implements RateSource {
 
     public static RateSource of(RateLimitProperties source, String id) {
-        return new PropertyRateSource(id, source.getRateLimitConfigs().get(id).hasLimitsSet(), source);
+        return new PropertyRateSource(id, source.getRateLimitConfigs().get(id).isSet(), source);
     }
 
     private final String id;

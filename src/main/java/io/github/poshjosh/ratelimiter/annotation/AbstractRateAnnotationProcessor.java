@@ -156,7 +156,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
     }
 
     private void checkRateGroupOperator(Operator operator, Rates rates) {
-        if (rates.hasLimitsSet()) {
+        if (rates.isSet()) {
             return;
         }
         if (!Operator.NONE.equals(operator)) {

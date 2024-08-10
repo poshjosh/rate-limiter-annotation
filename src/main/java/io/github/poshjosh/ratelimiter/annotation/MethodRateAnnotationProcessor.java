@@ -51,7 +51,7 @@ class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Meth
         if (rateConfig == null) {
             return false;
         }
-        return rateConfig.getRates().hasLimitsSet();
+        return rateConfig.getRates().isSet();
     }
 
     private Optional<Node<RateConfig>> getDeclaringClassNode(Node<RateConfig> root, Method method) {

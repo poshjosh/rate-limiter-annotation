@@ -30,7 +30,7 @@ class AnnotationConverterTest {
     @Test
     void convert_givenClassWithZeroRates_shouldReturnEmptyRates() {
         Rates rates = annotationConverter.convert(JavaRateSource.of(ClassWithZeroRates.class));
-        assertFalse(rates.hasLimitsSet());
+        assertFalse(rates.isSet());
         assertEquals(Operator.NONE, rates.getOperator());
 //        System.out.println("AnnotationConverterTest\n" + rates);
         assertTrue(rates.getRateCondition() == null || rates.getRateCondition().isEmpty());
