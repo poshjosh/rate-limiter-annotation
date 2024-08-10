@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 -
 
+## [ [0.8.1](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.8.1) ] - 2024-08-16
+
+### Added
+
+- Direct registration of Rates using Method `RateLimiterRegistry#register(String, Rates)`
+
 ## [ [0.8.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.8.0) ] - 2024-08-05
 
 ### Added
