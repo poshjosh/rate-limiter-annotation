@@ -74,7 +74,7 @@ public interface RateLimiterContext<K> {
          * @param store For storing bandwidths
          * @return this builder
          */
-        Builder<K> store(BandwidthsStore<?> store);
+        Builder<K> store(BandwidthsStore<String> store);
 
         /**
          * <p><b>Not mandatory</b></p>

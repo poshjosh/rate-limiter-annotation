@@ -3,7 +3,7 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.Rates;
 
-public interface RateLimiterProvider {
+public interface RateLimiterProvider extends BandwidthProvider {
     static RateLimiterProvider ofDefaults() {
         return RateLimiterProviders.ofDefaults();
     }

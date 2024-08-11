@@ -11,7 +11,7 @@ public interface RateLimiterProviders {
         return of(RateToBandwidthConverter.of(ticker), BandwidthsStore.ofDefaults(), ticker);
     }
 
-    static RateLimiterProvider of(RateToBandwidthConverter converter, BandwidthsStore<?> store,
+    static RateLimiterProvider of(RateToBandwidthConverter converter, BandwidthsStore<String> store,
             Ticker ticker) {
         return new DefaultRateLimiterProvider(converter, store, ticker);
     }

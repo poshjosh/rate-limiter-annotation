@@ -1,23 +1,15 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.Rates;
-import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
-import io.github.poshjosh.ratelimiter.util.*;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class RateLimiterProviderTest {
 
-    // TODO - Mock these, but first make sure each has its own unit tests
-    final RateToBandwidthConverter rateToBandwidthConverter = RateToBandwidthConverter.ofDefaults();
-    final BandwidthsStore<String> bandwidthsStore = BandwidthsStore.ofDefaults();
-    final Ticker ticker = Tickers.ofDefaults();
-    final RateLimiterProvider rateLimiterProvider = RateLimiterProviders.of(
-            rateToBandwidthConverter, bandwidthsStore, ticker
-    );
+    // TODO - Mock this
+    final RateLimiterProvider rateLimiterProvider = RateLimiterProviders.ofDefaults();
 
     @Test
     void getLimiters_shouldReturnValidRateLimiter() {

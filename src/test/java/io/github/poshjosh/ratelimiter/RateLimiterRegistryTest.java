@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.annotation.RateId;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.Rates;
@@ -125,6 +126,18 @@ class RateLimiterRegistryTest {
         RateLimiterRegistry registry = givenRegistryHavingRates(id, Rates.none());
         //System.out.println(registry.getRateLimiterOrUnlimited(id));
         assertFalse(registry.getRateLimiterOptional(id).isPresent());
+    }
+
+    @Test
+    void isWithinLimit_andTryAcquire() {
+        final Class<ClassWithLimits> clazz = ClassWithLimits.class;
+        final String key = RateId.of(clazz);
+        RateLimiterRegistry<String> registry = givenRegistryHavingClass(clazz);
+        assertTrue(registry.isWithinLimit(key));
+        assertTrue(registry.tryAcquire(key, 10));
+        assertFalse(registry.isWithinLimit(key));
+        assertFalse(registry.tryAcquire(key, 1));
+        assertFalse(registry.isWithinLimit(key));
     }
 
     @Test

@@ -10,19 +10,17 @@ import io.github.poshjosh.ratelimiter.util.Ticker;
 
 import java.util.*;
 
-final class DefaultRateLimiterProvider implements RateLimiterProvider {
+class DefaultRateLimiterProvider extends DefaultBandwidthProvider implements RateLimiterProvider {
 
-    private final BandwidthStoreFacade bandwidthStoreFacade;
     private final Ticker ticker;
 
     private final Map<Object, RateLimiter> keyToRateLimiterMap;
 
     DefaultRateLimiterProvider(
             RateToBandwidthConverter rateToBandwidthConverter,
-            BandwidthsStore<?> bandwidthStore,
+            BandwidthsStore<String> bandwidthStore,
             Ticker ticker) {
-        this.bandwidthStoreFacade =
-                new BandwidthStoreFacade<>(rateToBandwidthConverter, bandwidthStore);
+        super(rateToBandwidthConverter, bandwidthStore);
         this.ticker = Objects.requireNonNull(ticker);
         this.keyToRateLimiterMap = new WeakHashMap<>();
     }
@@ -48,7 +46,7 @@ final class DefaultRateLimiterProvider implements RateLimiterProvider {
     }
 
     private RateLimiter createRateLimiter(String key, Rate rate) {
-        final Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rate);
+        final Bandwidth bandwidth = getBandwidth(key, rate);
         if (Bandwidths.UNLIMITED.equals(bandwidth)) {
             return RateLimiters.NO_LIMIT;
         }
@@ -56,7 +54,7 @@ final class DefaultRateLimiterProvider implements RateLimiterProvider {
     }
 
     private RateLimiter createRateLimiter(String key, Rates rates) {
-        final Bandwidth bandwidth = bandwidthStoreFacade.getOrCreateBandwidth(key, rates);
+        final Bandwidth bandwidth = getBandwidth(key, rates);
         if (Bandwidths.UNLIMITED.equals(bandwidth)) {
             return RateLimiters.NO_LIMIT;
         }

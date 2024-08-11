@@ -6,8 +6,15 @@ import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 public interface RateLimiterRegistry<K> {
+
+    boolean isWithinLimit(K key);
+    default boolean tryAcquire(K key, int permits) {
+        return tryAcquire(key, permits, 0, TimeUnit.MICROSECONDS);
+    }
+    boolean tryAcquire(K key, int permits, long timeout, TimeUnit timeUnit);
 
     default RateLimiterRegistry<K> register(String id, Rate rate) {
         return register(id, Rates.of(rate));

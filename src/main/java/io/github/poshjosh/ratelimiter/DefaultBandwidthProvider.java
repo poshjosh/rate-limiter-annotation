@@ -13,23 +13,24 @@ import java.util.Objects;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
-final class BandwidthStoreFacade<K> {
+class DefaultBandwidthProvider implements BandwidthProvider {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BandwidthStoreFacade.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultBandwidthProvider.class);
 
     private final RateToBandwidthConverter rateToBandwidthConverter;
-    private final BandwidthsStore<K> store;
+    private final BandwidthsStore<String> store;
 
     private final ReadWriteLock storeLock = new ReentrantReadWriteLock();
 
-    BandwidthStoreFacade(
+    DefaultBandwidthProvider(
             RateToBandwidthConverter rateToBandwidthConverter,
-            BandwidthsStore<K> bandwidthsStore) {
+            BandwidthsStore<String> bandwidthsStore) {
         this.rateToBandwidthConverter = Objects.requireNonNull(rateToBandwidthConverter);
         this.store = Objects.requireNonNull(bandwidthsStore);
     }
 
-    Bandwidth getOrCreateBandwidth(K key, Rate rate) {
+    @Override
+    public Bandwidth getBandwidth(String key, Rate rate) {
         if (!rate.isSet()) {
             return Bandwidths.UNLIMITED;
         }
@@ -43,7 +44,8 @@ final class BandwidthStoreFacade<K> {
         return withAutoSave(key, bandwidth);
     }
 
-    Bandwidth getOrCreateBandwidth(K key, Rates rates) {
+    @Override
+    public Bandwidth getBandwidth(String key, Rates rates) {
         if (!rates.isSet()) {
             return Bandwidths.UNLIMITED;
         }
@@ -57,14 +59,14 @@ final class BandwidthStoreFacade<K> {
         return withAutoSave(key, bandwidth);
     }
 
-    private Bandwidth withAutoSave(K key, Bandwidth bandwidth) {
+    private Bandwidth withAutoSave(String key, Bandwidth bandwidth) {
         if (bandwidth instanceof BandwidthWrapper) {
             return bandwidth;
         }
         return new BandwidthWrapper(bandwidth) {
             @Override public long reserveEarliestAvailable(int permits, long nowMicros) {
                 final long result = super.reserveEarliestAvailable(permits, nowMicros);
-                BandwidthStoreFacade.this.saveBandwidthToStore(key, bandwidth);
+                DefaultBandwidthProvider.this.saveBandwidthToStore(key, bandwidth);
                 return result;
             }
             @Override public String toString() {
@@ -73,7 +75,7 @@ final class BandwidthStoreFacade<K> {
         };
     }
 
-    private Bandwidth getBandwidthFromStore(K key) {
+    private Bandwidth getBandwidthFromStore(String key) {
         try{
             storeLock.readLock().lock();
             return store.get(key);
@@ -82,7 +84,7 @@ final class BandwidthStoreFacade<K> {
         }
     }
 
-    private void saveBandwidthToStore(K key, Bandwidth bandwidth) {
+    private void saveBandwidthToStore(String key, Bandwidth bandwidth) {
         try {
             storeLock.writeLock().lock();
             store.put(key, bandwidth);

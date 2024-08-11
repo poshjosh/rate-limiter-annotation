@@ -61,7 +61,7 @@ final class RateLimiterContextBuilder<K> implements RateLimiterContext.Builder<K
     }
 
     @Override
-    public RateLimiterContext.Builder<K> store(BandwidthsStore<?> store) {
+    public RateLimiterContext.Builder<K> store(BandwidthsStore<String> store) {
         context.setStore(store);
         return this;
     }

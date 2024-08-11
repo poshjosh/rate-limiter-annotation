@@ -15,7 +15,7 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
 
     private RateLimiterProvider rateLimiterProvider;
 
-    private BandwidthsStore<?> store;
+    private BandwidthsStore<String> store;
 
     private Ticker ticker;
 
@@ -160,11 +160,11 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
         this.rateLimiterProvider = rateLimiterProvider;
     }
 
-    @Override public BandwidthsStore<?> getStore() {
+    @Override public BandwidthsStore<String> getStore() {
         return store;
     }
 
-    public void setStore(BandwidthsStore<?> store) {
+    public void setStore(BandwidthsStore<String> store) {
         this.store = store;
     }
 

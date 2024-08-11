@@ -3,7 +3,6 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessors;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
-import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.node.Nodes;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
@@ -22,13 +21,8 @@ class RootNodes<K> {
         return new RootNodes<>(context);
     }
 
-    private final Node<RateContext<K>> propertiesRootNode;
-    private final Node<RateContext<K>>[] propertiesLeafNodes;
-    private final boolean hasProperties;
-
-    private final Node<RateContext<K>> annotationsRootNode;
-    private final Node<RateContext<K>>[] annotationsLeafNodes;
-    private final boolean hasAnnotations;
+    private final Node<MatchContext<K>> propertiesRootNode;
+    private final Node<MatchContext<K>> annotationsRootNode;
 
     private RootNodes(RateLimiterContext<K> context) {
 
@@ -73,8 +67,8 @@ class RootNodes<K> {
         Predicate<Node<RateConfig>> anyNodeInTreeIsRateLimited =
                 node -> node.anyMatch(isNodeRateLimited);
 
-        Function<Node<RateConfig>, RateContext<K>> transformer = currentNode ->
-                RateContext.of(context.getMatcherProvider(), currentNode);
+        Function<Node<RateConfig>, MatchContext<K>> transformer = currentNode ->
+                MatchContexts.of(context.getMatcherProvider(), currentNode);
 
         annotationsRootNode = annoRoot.retainAll(anyNodeInTreeIsRateLimited)
                 .orElseGet(() -> Nodes.of("root.annotations"))
@@ -90,23 +84,6 @@ class RootNodes<K> {
                 .getRoot().transform(transformer);
 
         LOG.debug("PROPERTIES SOURCED NODES:\n{}", propertiesRootNode);
-
-        hasProperties = !propertiesRootNode.isEmptyNode() && propertiesRootNode.size() > 0;
-        hasAnnotations = !annotationsRootNode.isEmptyNode() && annotationsRootNode.size() > 0;
-
-        if (RateContext.IS_BOTTOM_UP_TRAVERSAL) {
-            propertiesLeafNodes = collectLeafs(propertiesRootNode);
-            annotationsLeafNodes = collectLeafs(annotationsRootNode);
-        } else {
-            propertiesLeafNodes = null;
-            annotationsLeafNodes = null;
-        }
-    }
-    private <R> Node<RateContext<R>> [] collectLeafs(Node<RateContext<R>> node) {
-        Set<Node<RateContext<R>>> leafNodes = new LinkedHashSet<>();
-        Predicate<Node<RateContext<R>>> test = n -> n.isLeaf() && n.hasValue();
-        node.getRoot().visitAll(test, leafNodes::add);
-        return leafNodes.toArray(new Node[0]);
     }
 
     private RateProcessor<Class<?>> getClassRateProcessor() {
@@ -122,27 +99,19 @@ class RootNodes<K> {
     }
 
     public boolean hasProperties() {
-        return hasProperties;
+        return !propertiesRootNode.isEmptyNode() && propertiesRootNode.size() > 0;
     }
 
     public boolean hasAnnotations() {
-        return hasAnnotations;
+        return !annotationsRootNode.isEmptyNode() && annotationsRootNode.size() > 0;
     }
 
-    public Node<RateContext<K>> getPropertiesRootNode() {
+    public Node<MatchContext<K>> getPropertiesRootNode() {
         return propertiesRootNode;
     }
 
-    public Node<RateContext<K>> getAnnotationsRootNode() {
+    public Node<MatchContext<K>> getAnnotationsRootNode() {
         return annotationsRootNode;
-    }
-
-    public Node<RateContext<K>>[] getPropertiesLeafNodes() {
-        return propertiesLeafNodes;
-    }
-
-    public Node<RateContext<K>>[] getAnnotationsLeafNodes() {
-        return annotationsLeafNodes;
     }
 
     private static final class RateConfigCollector implements RateProcessor.NodeConsumer {

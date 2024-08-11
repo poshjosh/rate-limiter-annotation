@@ -9,8 +9,8 @@
 
     <logger name="io.github.poshjosh.ratelimiter" level="info"/>
 <!--    <logger name="io.github.poshjosh.ratelimiter.bandwidths.DefaultRateToBandwidthConverter" level="trace"/>-->
-<!--    <logger name="io.github.poshjosh.ratelimiter.RateContext" level="trace"/>-->
-<!--    <logger name="io.github.poshjosh.ratelimiter.RateLimiterComposite" level="trace"/>-->
+<!--    <logger name="io.github.poshjosh.ratelimiter.MatchContext" level="trace"/>-->
+<!--    <logger name="io.github.poshjosh.ratelimiter.NodeRateLimiter" level="trace"/>-->
 
     <root level="info">
         <appender-ref ref="STDOUT"/>

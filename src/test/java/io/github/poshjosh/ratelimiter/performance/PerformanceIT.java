@@ -131,9 +131,12 @@ abstract class PerformanceIT {
 
         int successCount = 0;
         for (int i = 0; i < iterations; i++) {
-            if(rateLimiterRegistry.getRateLimiter(rateId).tryAcquire(1)) {
+            if (rateLimiterRegistry.tryAcquire(rateId, 1)) {
                 ++successCount;
             }
+//            if(rateLimiterRegistry.getRateLimiter(rateId).tryAcquire(1)) {
+//                ++successCount;
+//            }
             waitFor(intervalMillis);
         }
 

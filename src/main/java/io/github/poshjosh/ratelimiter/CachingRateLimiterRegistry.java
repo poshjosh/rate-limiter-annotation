@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.WeakHashMap;
+import java.util.concurrent.TimeUnit;
 
 final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     private final RateLimiterRegistry<K> delegate;
@@ -29,6 +30,14 @@ final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         }
         rateLimiterCache.put(key, rateLimiter);
         return rateLimiter;
+    }
+
+    @Override public boolean isWithinLimit(K key) {
+        return delegate.isWithinLimit(key);
+    }
+
+    @Override public boolean tryAcquire(K key, int permits, long timeout, TimeUnit timeUnit) {
+        return delegate.tryAcquire(key, permits, timeout, timeUnit);
     }
 
     @Override public RateLimiterRegistry<K> register(String id, Rates rates) {
