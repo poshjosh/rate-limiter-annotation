@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -112,8 +113,8 @@ class DefaultBandwidthProvider implements BandwidthProvider {
             return delegate.reserveEarliestAvailable(permits, nowMicros);
         }
         @Override
-        public double getPermitsPerSecond() {
-            return delegate.getPermitsPerSecond();
+        public double getPermitsPer(TimeUnit timeUnit) {
+            return delegate.getPermitsPer(timeUnit);
         }
         @Override public boolean equals(Object o) { return delegate.equals(o); }
         @Override public int hashCode() { return delegate.hashCode(); }
