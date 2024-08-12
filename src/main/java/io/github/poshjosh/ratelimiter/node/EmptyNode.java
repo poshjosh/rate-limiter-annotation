@@ -10,6 +10,11 @@ final class EmptyNode<V> implements Node<V>{
     EmptyNode() {}
 
     @Override
+    public int size() {
+        return 1;
+    }
+
+    @Override
     public void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer, int depth) {
         if (depth > 0 && filter.test(this)) {
             consumer.accept(this);

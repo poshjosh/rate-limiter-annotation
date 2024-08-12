@@ -14,22 +14,22 @@ import java.util.concurrent.TimeUnit;
 
 public class MatchVisitors {
 
-    static MatchContext.MatchVisitor<Double> permitAcquiring(
+    static MatchVisitor<Double> permitAcquiring(
             RateLimiterProvider rateLimiterProvider, int permits) {
         return new PermitAcquiringVisitor(rateLimiterProvider, permits);
     }
 
-    static MatchContext.MatchVisitor<Boolean> permitAttempting(
+    static MatchVisitor<Boolean> permitAttempting(
             RateLimiterProvider rateLimiterProvider, int permits, long timeout, TimeUnit timeUnit) {
         return new PermitAttemptingVisitor(rateLimiterProvider, permits, timeout, timeUnit);
     }
 
-    static MatchContext.MatchVisitor<Boolean> limitChecking(
+    static MatchVisitor<Boolean> limitChecking(
             RateLimiterProvider rateLimiterProvider, Ticker ticker) {
         return new LimitCheckingVisitor(rateLimiterProvider, ticker);
     }
 
-    static MatchContext.MatchVisitor<Bandwidth> bandwidthCollecting(
+    static MatchVisitor<Bandwidth> bandwidthCollecting(
             RateLimiterProvider rateLimiterProvider) {
         return new BandwidthCollectingVisitor(rateLimiterProvider);
     }
@@ -93,7 +93,7 @@ public class MatchVisitors {
     }
 
     private static final class LimitCheckingVisitor
-            implements MatchContext.MatchVisitor<Boolean> {
+            implements MatchVisitor<Boolean> {
         private boolean limitExceeded = false;
 
         private final RateLimiterProvider rateLimiterProvider;
@@ -124,7 +124,7 @@ public class MatchVisitors {
     }
 
     private static final class BandwidthCollectingVisitor
-            implements MatchContext.MatchVisitor<Bandwidth> {
+            implements MatchVisitor<Bandwidth> {
         private final List<Bandwidth> bandwidths = new ArrayList<>();
 
         private final RateLimiterProvider rateLimiterProvider;
@@ -148,7 +148,7 @@ public class MatchVisitors {
         }
     }
 
-    abstract static class MatchingRateLimiterVisitor<R> implements MatchContext.MatchVisitor<R> {
+    abstract static class MatchingRateLimiterVisitor<R> implements MatchVisitor<R> {
 
         private final RateLimiterProvider rateLimiterProvider;
         MatchingRateLimiterVisitor(RateLimiterProvider rateLimiterProvider) {

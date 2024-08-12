@@ -6,6 +6,7 @@ import io.github.poshjosh.ratelimiter.annotation.JavaRateSource;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
+import io.github.poshjosh.ratelimiter.node.MutableNode;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.node.Nodes;
 import io.github.poshjosh.ratelimiter.util.Ticker;
@@ -28,6 +29,8 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         this.context = Objects.requireNonNull(context);
         this.annotationConverter = Objects.requireNonNull(annotationConverter);
         this.rootNodes = Objects.requireNonNull(rootNodes);
+        ((MutableNode)this.rootNodes.getPropertiesRootNode()).collectLeafs();
+        ((MutableNode)this.rootNodes.getAnnotationsRootNode()).collectLeafs();
     }
 
     public boolean isWithinLimit(K key) {
@@ -202,7 +205,10 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         if (node == null) {
             return null;
         }
-        return toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
+        Node<MatchContext<K>> result = toRateContextNode(rootNodes.getPropertiesRootNode(), node);
+        // We need to call this each time we add a child node.
+        ((MutableNode)rootNodes.getPropertiesRootNode()).collectLeafs();
+        return result;
     }
 
     private Node<MatchContext<K>> addToAnnotationsRoot(GenericDeclaration source) {
@@ -215,7 +221,10 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         if (node == null) {
             return null;
         }
-        return toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
+        Node<MatchContext<K>> result = toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
+        // We need to call this each time we add a child node.
+        ((MutableNode)rootNodes.getAnnotationsRootNode()).collectLeafs();
+        return result;
     }
 
     private MatchContext<K> getRateContextOrNull(String id) {

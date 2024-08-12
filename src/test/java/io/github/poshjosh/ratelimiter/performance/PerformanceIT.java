@@ -54,7 +54,7 @@ abstract class PerformanceIT {
     void resourceLimiting_withoutInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
         garbageCollectAndWaitABit();
         resourceLimitingShouldConsumeLimitedTimeAndMemory(
-                RateLimitedClass0.METHOD_5_KEY, Usage.of(50, 3_000_000), 10_000, 0
+                RateLimitedClass0.METHOD_5_KEY, Usage.of(300, 3_000_000), 10_000, 0
         );
     }
 

@@ -15,12 +15,6 @@ final class MatchContext<INPUT> {
 
     private static final Logger LOG = LoggerFactory.getLogger(MatchContext.class);
 
-    interface MatchVisitor<MATCH_RESULT> {
-        void visit(String match, Rate rate);
-        void visit(String match, Rates rates);
-        MATCH_RESULT getResult();
-    }
-
     private final RateConfig rateConfig;
 
     /**
@@ -40,12 +34,12 @@ final class MatchContext<INPUT> {
         this.limitMatchers = Objects.requireNonNull(limitMatchers);
     }
 
-    public boolean matches(INPUT key, MatchVisitor matchVisitor) {
+    public boolean matches(INPUT key, MatchVisitor<?> matchVisitor) {
         final int matchCount = visitMatching(key, matchVisitor);
         return isMatchSuccessful(matchCount);
     }
 
-    private int visitMatching(INPUT key, MatchVisitor matchVisitor) {
+    private int visitMatching(INPUT key, MatchVisitor<?> matchVisitor) {
         final String mainMatch = match(key);
         if (hasSubConditions()) {
             final int count = getLimitMatchers().size();

@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.model.RateConfig;
+import io.github.poshjosh.ratelimiter.node.MutableNode;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
@@ -10,13 +11,12 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 
 public final class MatchContexts {
 
     private static final Logger LOG = LoggerFactory.getLogger(MatchContexts.class);
 
-    // Bottom-up traversal performs better, as of the last tests.
+    // Bottom-up traversal consumes about 7x less memory, as of the last tests.
     private static final boolean IS_BOTTOM_UP_TRAVERSAL = true;
 
     static <K> MatchContext<K> of(
@@ -69,18 +69,18 @@ public final class MatchContexts {
     static <K> void visitNodes(
             Node<MatchContext<K>> rootNode,
             K toMatch,
-            MatchContext.MatchVisitor<?> matchVisitor) {
+            MatchVisitor<?> matchVisitor) {
         if (IS_BOTTOM_UP_TRAVERSAL) {
-            visitNodesBottomUp(rootNode, toMatch, matchVisitor);
+            visitNodesBottomUp(((MutableNode)rootNode).getCollectLeafs(), toMatch, matchVisitor);
         } else {
             visitNodesTopDown(rootNode, toMatch, matchVisitor);
         }
     }
 
-    private static <K> void visitNodesTopDown(
+    static <K> void visitNodesTopDown(
             Node<MatchContext<K>> rootNode,
             K toMatch,
-            MatchContext.MatchVisitor<?> matchVisitor) {
+            MatchVisitor<?> matchVisitor) {
         AtomicBoolean matchFound = new AtomicBoolean(false);
         AtomicBoolean firstLeafAfterMatch = new AtomicBoolean(false);
         rootNode.visitAll(
@@ -98,11 +98,9 @@ public final class MatchContexts {
     }
 
     private static <K> void visitNodesBottomUp(
-            Node<MatchContext<K>> rootNode,
+            Node<MatchContext<K>>[] leafNodes,
             K toMatch,
-            MatchContext.MatchVisitor<?> matchVisitor) {
-        // We can, but should not pre-collect leafs, because nodes could be added/removed
-        final Node<MatchContext<K>>[] leafNodes = collectLeafs(rootNode);
+            MatchVisitor<?> matchVisitor) {
         for (Node<MatchContext<K>> node : leafNodes) {
             boolean atLeastOneNodeInBranchMatched = false;
             do {
@@ -121,17 +119,10 @@ public final class MatchContexts {
         }
     }
 
-    private static <K> Node<MatchContext<K>> [] collectLeafs(Node<MatchContext<K>> node) {
-        Set<Node<MatchContext<K>>> leafNodes = new LinkedHashSet<>();
-        Predicate<Node<MatchContext<K>>> test = n -> n.isLeaf() && n.hasValue();
-        node.getRoot().visitAll(test, leafNodes::add);
-        return leafNodes.toArray(new Node[0]);
-    }
-
     private static <K> boolean matches(
             K toMatch,
             Node<MatchContext<K>> node,
-            MatchContext.MatchVisitor matchVisitor) {
+            MatchVisitor<?> matchVisitor) {
         final MatchContext<K> matchContext = node == null ? null : node.getValueOrDefault(null);
         if (matchContext == null) {
             return false;

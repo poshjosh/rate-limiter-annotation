@@ -17,6 +17,7 @@
 package io.github.poshjosh.ratelimiter.node;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
 
 /**
@@ -65,13 +66,26 @@ final class NodeImpl<V> implements MutableNode<V> {
 
         return false;
     }
-    private List<Node<V>> children() {
-        return _children == null ? Collections.emptyList() : _children;
+
+    @Override
+    public boolean anyChildMatch(Predicate<Node<V>> test) {
+        return children().stream().anyMatch(child -> child.anyMatch(test));
     }
 
     @Override
-    public boolean anyMatch(Predicate<Node<V>> test) {
-        return test.test(this) || children().stream().anyMatch(child -> child.anyMatch(test));
+    public int size() {
+        if (isLeaf()) {
+            return 1;
+        }
+        int size = 1;
+        for (Node<V> child : children()) {
+            size += child.size();
+        }
+        return size;
+    }
+
+    private List<Node<V>> children() {
+        return _children == null ? Collections.emptyList() : _children;
     }
 
     @Override
@@ -105,6 +119,37 @@ final class NodeImpl<V> implements MutableNode<V> {
         return found == null ? resultIfNone : found;
     }
 
+    private Node<V>[] leafs;
+    /**
+     * Get leaf child nodes (excluding root node, or {@link Nodes#EMPTY}).
+     * @return leaf child nodes (excluding root node, or {@link Nodes#EMPTY})..
+     * @see #isLeaf()
+     * @see #isRoot()
+     * @see #isEmptyNode()
+     */
+    public Node<V>[] collectLeafs() {
+        Set<Node<V>> leafNodes = new LinkedHashSet<>();
+        Predicate<Node<V>> test = n -> n.isLeaf() && !n.isRoot() && !n.isEmptyNode();
+        visitAll(test, leafNodes::add);
+        leafs = leafNodes.toArray(new Node[0]);
+        return leafs;
+    }
+
+    /**
+     * Get leaf child nodes, earlier collected via method {@link #collectLeafs()}, or fail.
+     * @return leaf child nodes, earlier collected via method {@link #collectLeafs()}, or fail.
+     * @see #collectLeafs()
+     * @throws UnsupportedOperationException if {@link #collectLeafs()} was not earlier called.
+     */
+    @Override
+    public Node<V>[] getCollectLeafs() throws UnsupportedOperationException {
+        if (leafs == null) {
+            throw new UnsupportedOperationException(
+                    "#collectLeafs() must have been called, before calling getCollectedLeafs()");
+        }
+        return leafs;
+    }
+
     @Override
     public String getName() {
         return name;
@@ -134,7 +179,7 @@ final class NodeImpl<V> implements MutableNode<V> {
     }
 
     /**
-     * @return An <b>un-modifiable</b> list view of this node's children
+     * @return An unmodifiable list of this node's children
      */
     @Override
     public List<Node<V>> getChildren() {
@@ -168,9 +213,6 @@ final class NodeImpl<V> implements MutableNode<V> {
             return false;
         }
         if (!Objects.equals(this.value, other.value)) {
-            return false;
-        }
-        if (size() != other.size()) {
             return false;
         }
         if (!Objects.equals(this.parent, other.parent)) {

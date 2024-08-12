@@ -18,9 +18,7 @@ package io.github.poshjosh.ratelimiter.node;
 
 import io.github.poshjosh.ratelimiter.annotation.exceptions.NodeValueAbsentException;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
 
@@ -34,22 +32,21 @@ public interface Node<V> {
     }
 
     default boolean anyMatch(Predicate<Node<V>> test) {
-        return test.test(this) || getChildren().stream().anyMatch(child -> child.anyMatch(test));
+        return test.test(this) || anyChildMatch(test);
+    }
+
+    default boolean anyChildMatch(Predicate<Node<V>> test) {
+        return getChildren().stream().anyMatch(child -> child.anyMatch(test));
     }
 
     default int size() {
+        if (isLeaf()) {
+            return 1;
+        }
         AtomicInteger sum = new AtomicInteger();
         Consumer<Node<V>> consumer = e -> sum.incrementAndGet();
         this.visitAll(consumer);
         return sum.get();
-    }
-
-    default List<Node<V>> getSiblings() {
-        Node<V> parent = getParentOrDefault(null);
-        if (parent == null) { // is root
-            return Collections.emptyList();
-        }
-        return parent.getChildren();
     }
 
     default void visitAll(Consumer<Node<V>> consumer) {
@@ -228,7 +225,7 @@ public interface Node<V> {
     }
 
     /**
-     * @return An <b>un-modifiable</b> list view of this node's children
+     * @return An unmodifiable list of this node's children
      */
     List<Node<V>> getChildren();
 

@@ -12,7 +12,7 @@ class NodeRateLimiter<K> implements RateLimiter {
     static <K> boolean isWithinLimit(
             RateLimiterProvider rateLimiterProvider, Node<MatchContext<K>> rootNode,
             K key, Ticker ticker) {
-        final MatchContext.MatchVisitor<Boolean> visitor =
+        final MatchVisitor<Boolean> visitor =
                 MatchVisitors.limitChecking(rateLimiterProvider, ticker);
         MatchContexts.visitNodes(rootNode, key, visitor);
         return visitor.getResult();
@@ -21,7 +21,7 @@ class NodeRateLimiter<K> implements RateLimiter {
     static <K> double acquire(
             RateLimiterProvider rateLimiterProvider, Node<MatchContext<K>> rootNode,
             K key, int permits) {
-        final MatchContext.MatchVisitor<Double> visitor =
+        final MatchVisitor<Double> visitor =
                 MatchVisitors.permitAcquiring(rateLimiterProvider, permits);
         MatchContexts.visitNodes(rootNode, key, visitor);
         return visitor.getResult();
@@ -30,7 +30,7 @@ class NodeRateLimiter<K> implements RateLimiter {
     static <K> boolean tryAcquire(
             RateLimiterProvider rateLimiterProvider, Node<MatchContext<K>> rootNode,
             K key, int permits, long timeout, TimeUnit timeUnit) {
-        final MatchContext.MatchVisitor<Boolean> visitor =
+        final MatchVisitor<Boolean> visitor =
                 MatchVisitors.permitAttempting(rateLimiterProvider, permits, timeout, timeUnit);
         MatchContexts.visitNodes(rootNode, key, visitor);
         return visitor.getResult();
@@ -49,7 +49,7 @@ class NodeRateLimiter<K> implements RateLimiter {
 
     @Override
     public Bandwidth getBandwidth() {
-        final MatchContext.MatchVisitor<Bandwidth> visitor =
+        final MatchVisitor<Bandwidth> visitor =
                 MatchVisitors.bandwidthCollecting(rateLimiterProvider);
         MatchContexts.visitNodes(rootNode, key, visitor);
         return visitor.getResult();
@@ -73,7 +73,7 @@ class NodeRateLimiter<K> implements RateLimiter {
                 .append(Integer.toHexString(hashCode()))
                 .append('{');
         final int lengthBeforeVisit = builder.length();
-        final MatchContext.MatchVisitor<StringBuilder> visitor =
+        final MatchVisitor<StringBuilder> visitor =
                 new MatchVisitors.MatchingRateLimiterVisitor<StringBuilder>(rateLimiterProvider) {
                     @Override
                     protected void visit(String match, RateLimiter rateLimiter) {

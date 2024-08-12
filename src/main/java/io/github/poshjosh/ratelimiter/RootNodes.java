@@ -86,6 +86,26 @@ class RootNodes<K> {
         LOG.debug("PROPERTIES SOURCED NODES:\n{}", propertiesRootNode);
     }
 
+    public boolean hasProperties() {
+        // TODO - Find out why this led to x100 increase in memory usage
+//        return !propertiesRootNode.isEmptyNode() && propertiesRootNode.hasChildren();
+        return !propertiesRootNode.isEmptyNode() && propertiesRootNode.size() > 0;
+    }
+
+    public boolean hasAnnotations() {
+        // TODO - Find out why this led to x100 increase in memory usage
+//        return !annotationsRootNode.isEmptyNode() && annotationsRootNode.hasChildren();
+        return !annotationsRootNode.isEmptyNode() && annotationsRootNode.size() > 0;
+    }
+
+    public Node<MatchContext<K>> getPropertiesRootNode() {
+        return propertiesRootNode;
+    }
+
+    public Node<MatchContext<K>> getAnnotationsRootNode() {
+        return annotationsRootNode;
+    }
+
     private RateProcessor<Class<?>> getClassRateProcessor() {
         // We accept all class/method  nodes, even those without rate limit related annotations
         // This is because, any of the nodes may have its rate limit related info, specified
@@ -96,22 +116,6 @@ class RootNodes<K> {
 
     private RateProcessor<RateLimitProperties> getPropertyRateProcessor() {
         return RateProcessors.ofProperties();
-    }
-
-    public boolean hasProperties() {
-        return !propertiesRootNode.isEmptyNode() && propertiesRootNode.size() > 0;
-    }
-
-    public boolean hasAnnotations() {
-        return !annotationsRootNode.isEmptyNode() && annotationsRootNode.size() > 0;
-    }
-
-    public Node<MatchContext<K>> getPropertiesRootNode() {
-        return propertiesRootNode;
-    }
-
-    public Node<MatchContext<K>> getAnnotationsRootNode() {
-        return annotationsRootNode;
     }
 
     private static final class RateConfigCollector implements RateProcessor.NodeConsumer {

@@ -24,11 +24,11 @@ class DepthFirstVisitorTest {
 
     @Test
     void shouldVisitDepthFirst() {
-        List<Integer> values = Arrays.asList(1, 2, 3, 4, 5);
-        Node<Integer> node = TestNode.depthFirst(values.toArray(new Integer[0]));
-        List<Integer> collected = new ArrayList<>(values.size());
+        final Integer [] values = TestNode.values();
+        Node<Integer> node = TestNode.depthFirst();
+        List<Integer> collected = new ArrayList<>(values.length);
         Consumer<Node<Integer>> consumer = e -> collected.add(e.getValueOrDefault(0));
         DepthFirstVisitor.visitAll(node, consumer);
-        assertEquals(values, collected);
+        assertEquals(Arrays.asList(values), collected);
     }
 }

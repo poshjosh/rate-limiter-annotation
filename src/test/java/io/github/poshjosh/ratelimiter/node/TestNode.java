@@ -2,11 +2,15 @@ package io.github.poshjosh.ratelimiter.node;
 
 public class TestNode {
 
-    public static Node<Integer> breadthFirst() {
-        return breadthFirst(0, 1, 2, 3, 4);
+    private static final Integer [] numbers = new Integer[]{0, 1, 2, 3, 4};
+
+    public static Integer [] values() {
+        Integer [] copy = new Integer[numbers.length];
+        System.arraycopy(numbers, 0, copy, 0, numbers.length);
+        return copy;
     }
 
-    public static Node<Integer> breadthFirst(Integer... numbers) {
+    public static Node<Integer> breadthFirst() {
         int i = 0;
         Node<Integer> parent = Nodes.of("parent", numbers[i++]);
         Node<Integer> son = Nodes.of("son", numbers[i++], parent);
@@ -17,10 +21,6 @@ public class TestNode {
     }
 
     public static Node<Integer> depthFirst() {
-        return breadthFirst(0, 1, 2, 3, 4);
-    }
-
-    public static Node<Integer> depthFirst(Integer... numbers) {
         int i = 0;
         Node<Integer> parent = Nodes.of("parent", numbers[i++]);
         Node<Integer> son = Nodes.of("son", numbers[i++], parent);

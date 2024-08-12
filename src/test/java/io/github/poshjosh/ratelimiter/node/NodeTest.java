@@ -69,4 +69,25 @@ class NodeTest {
         Node<Integer> node = Nodes.of("OneHundred", 100, root);
         assertEquals(root, node.getRoot());
     }
+
+    @Test
+    void size() {
+        Node<Integer> root = TestNode.breadthFirst().getRoot();
+        assertEquals(TestNode.values().length, root.size());
+        Nodes.of("leaf", root);
+        assertEquals(TestNode.values().length + 1, root.size());
+    }
+
+
+    @Test
+    void childlessRootNodeHasSizeOne() {
+        Node<Integer> root = Nodes.of("root");
+        assertEquals(1, root.size());
+    }
+
+    @Test
+    void emptyNodeHasSizeOne() {
+        Node<Integer> root = Nodes.empty();
+        assertEquals(1, root.size());
+    }
 }
