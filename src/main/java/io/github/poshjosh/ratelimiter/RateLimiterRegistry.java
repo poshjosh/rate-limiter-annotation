@@ -16,6 +16,16 @@ public interface RateLimiterRegistry<K> {
     }
     boolean tryAcquire(K key, int permits, long timeout, TimeUnit timeUnit);
 
+    default RateLimiterRegistry<K> deregister(Class<?> source) {
+        return deregister(RateId.of(source));
+    }
+
+    default RateLimiterRegistry<K> deregister(Method source) {
+        return deregister(RateId.of(source));
+    }
+
+    RateLimiterRegistry<K> deregister(String id);
+
     default RateLimiterRegistry<K> register(String id, Rate rate) {
         return register(id, Rates.of(rate));
     }

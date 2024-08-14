@@ -17,7 +17,6 @@ import java.lang.annotation.Target;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -40,43 +39,59 @@ class RateLimiterRegistryTest {
 
     @ParameterizedTest
     @ValueSource(classes = { ClassWithLimits.class, ClassWithGroupLimits.class })
+    void deregister_shouldDeregisterClassWithLimits(Class<?> clazz) {
+        RateLimiterRegistry<?> registry = givenRegistry();
+        assertTrue(registry.register(clazz).isRegistered(clazz));
+        assertFalse(registry.deregister(RateId.of(clazz)).isRegistered(clazz));
+    }
+
+    @Test
+    void deregister_shouldDeregisterIdWithLimits() {
+        RateLimiterRegistry<?> registry = givenRegistry();
+        final String id = "test-id";
+        assertTrue(registry.register(id, Rate.ofSeconds(1)).isRegistered(id));
+        assertFalse(registry.deregister(id).isRegistered(id));
+    }
+    
+    @ParameterizedTest
+    @ValueSource(classes = { ClassWithLimits.class, ClassWithGroupLimits.class })
     void register_shouldRegisterClassWithLimits(Class<?> clazz) {
-        RateLimiterRegistry registry = givenRegistry();
+        RateLimiterRegistry<?> registry = givenRegistry();
         assertTrue(registry.register(clazz).isRegistered(clazz));
     }
 
     @Test
     void register_shouldRegisterIdWithLimits() {
         final String id = "test-id";
-        RateLimiterRegistry registry = givenRegistry();
+        RateLimiterRegistry<?> registry = givenRegistry();
         assertTrue(registry.register(id, Rate.ofSeconds(1)).isRegistered(id));
     }
 
     @Test
     void register_shouldNotRegisterClassWithNoLimits() {
         Class<?> clazz = ClassWithNoLimits.class;
-        RateLimiterRegistry registry = givenRegistry();
+        RateLimiterRegistry<?> registry = givenRegistry();
         assertFalse(registry.register(clazz).isRegistered(clazz));
     }
 
     @Test
     void register_shouldNotRegisterIdWithNoLimits() {
         final String id = "test-id";
-        RateLimiterRegistry registry = givenRegistry();
+        RateLimiterRegistry<?> registry = givenRegistry();
         assertFalse(registry.register(id, Rates.none()).isRegistered(id));
     }
 
     @ParameterizedTest
     @ValueSource(classes = { ClassWithLimits.class, ClassWithGroupLimits.class })
     void isRegistered_shouldReturnTrue_givenRegistryHasClassWithLimits(Class<?> clazz) {
-        RateLimiterRegistry registry = givenRegistryHavingClass(clazz);
+        RateLimiterRegistry<?> registry = givenRegistryHavingClass(clazz);
         assertTrue(registry.isRegistered(clazz));
     }
 
     @Test
     void isRegistered_shouldReturnTrue_givenRegistryHasIdWithLimits() {
         final String id = "test-id";
-        RateLimiterRegistry registry = givenRegistryHavingRates(id, Rates.of(Rate.ofSeconds(1)));
+        RateLimiterRegistry<?> registry = givenRegistryHavingRates(id, Rates.of(Rate.ofSeconds(1)));
         assertTrue(registry.isRegistered(id));
     }
 
@@ -84,7 +99,7 @@ class RateLimiterRegistryTest {
     @Test
     void isRegistered_shouldReturnFalse_givenRegistryHasClassWithNoLimits() {
         Class<?> clazz = ClassWithNoLimits.class;
-        RateLimiterRegistry registry = givenRegistryHavingClass(clazz);
+        RateLimiterRegistry<?> registry = givenRegistryHavingClass(clazz);
         assertFalse(registry.isRegistered(clazz));
     }
 
@@ -93,28 +108,28 @@ class RateLimiterRegistryTest {
     @Disabled
     void isRegistered_shouldReturnFalse_givenRegistryHasIdWithNoLimits() {
         final String id = "test-id";
-        RateLimiterRegistry registry = givenRegistryHavingRates(id, Rates.none());
+        RateLimiterRegistry<?> registry = givenRegistryHavingRates(id, Rates.none());
         assertFalse(registry.isRegistered(id));
     }
 
     @ParameterizedTest
     @ValueSource(classes = { ClassWithLimits.class, ClassWithGroupLimits.class })
     void getRateLimiter_shouldReturnRateLimiter_whenRegistryHasClassWithLimits(Class<?> clazz) {
-        RateLimiterRegistry registry = givenRegistryHavingClass(clazz);
+        RateLimiterRegistry<?> registry = givenRegistryHavingClass(clazz);
         assertTrue(registry.getClassRateLimiterOptional(clazz).isPresent());
     }
 
     @Test
     void getRateLimiter_shouldReturnRateLimiter_whenRegistryHasIdWithLimits() {
         final String id = "test-id";
-        RateLimiterRegistry registry = givenRegistryHavingRates(id, Rates.of(Rate.ofSeconds(1)));
+        RateLimiterRegistry<String> registry = givenRegistryHavingRates(id, Rates.of(Rate.ofSeconds(1)));
         assertTrue(registry.getRateLimiterOptional(id).isPresent());
     }
 
     @Test
     void getRateLimiter_shouldReturnEmpty_whenRegistryHasClassWithNoLimits() {
         Class<?> clazz = ClassWithNoLimits.class;
-        RateLimiterRegistry registry = givenRegistryHavingClass(clazz);
+        RateLimiterRegistry<?> registry = givenRegistryHavingClass(clazz);
         assertFalse(registry.getClassRateLimiterOptional(clazz).isPresent());
     }
 
@@ -123,7 +138,7 @@ class RateLimiterRegistryTest {
     @Disabled
     void getRateLimiter_shouldReturnEmpty_whenRegistryHasIdWithNoLimits() {
         final String id = "test-id";
-        RateLimiterRegistry registry = givenRegistryHavingRates(id, Rates.none());
+        RateLimiterRegistry<String> registry = givenRegistryHavingRates(id, Rates.none());
         //System.out.println(registry.getRateLimiterOrUnlimited(id));
         assertFalse(registry.getRateLimiterOptional(id).isPresent());
     }

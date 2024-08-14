@@ -29,8 +29,8 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         this.context = Objects.requireNonNull(context);
         this.annotationConverter = Objects.requireNonNull(annotationConverter);
         this.rootNodes = Objects.requireNonNull(rootNodes);
-        ((MutableNode)this.rootNodes.getPropertiesRootNode()).collectLeafs();
-        ((MutableNode)this.rootNodes.getAnnotationsRootNode()).collectLeafs();
+        ((MutableNode<?>)this.rootNodes.getPropertiesRootNode()).collectLeafs();
+        ((MutableNode<?>)this.rootNodes.getAnnotationsRootNode()).collectLeafs();
     }
 
     public boolean isWithinLimit(K key) {
@@ -79,6 +79,22 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
                 provider, annoRoot, key, permits, timeout, timeUnit);
 
         return propAcquired && annoAcquired;
+    }
+
+    public RateLimiterRegistry<K> deregister(String id) {
+        Node<MatchContext<K>> node = this.getNodeOrNull(id);
+        if (node == null) {
+            return this;
+        }
+        Node<MatchContext<K>> parentNode = node.getParentOrDefault(null);
+        if (parentNode == null) {
+            throw new UnsupportedOperationException("Cannot deregister root node");
+        }
+        if (parentNode instanceof MutableNode) {
+            ((MutableNode<?>)parentNode).removeChild(node.getName());
+            return this;
+        }
+        throw new UnsupportedOperationException("Cannot deregister node from immutable parent");
     }
 
     @Override
@@ -207,7 +223,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         }
         Node<MatchContext<K>> result = toRateContextNode(rootNodes.getPropertiesRootNode(), node);
         // We need to call this each time we add a child node.
-        ((MutableNode)rootNodes.getPropertiesRootNode()).collectLeafs();
+        ((MutableNode<?>)rootNodes.getPropertiesRootNode()).collectLeafs();
         return result;
     }
 
@@ -223,7 +239,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         }
         Node<MatchContext<K>> result = toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
         // We need to call this each time we add a child node.
-        ((MutableNode)rootNodes.getAnnotationsRootNode()).collectLeafs();
+        ((MutableNode<?>)rootNodes.getAnnotationsRootNode()).collectLeafs();
         return result;
     }
 

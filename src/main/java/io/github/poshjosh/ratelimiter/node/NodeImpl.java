@@ -67,6 +67,23 @@ final class NodeImpl<V> implements MutableNode<V> {
         return false;
     }
 
+    public Node<V> removeChild(String name) {
+        if (_children == null) {
+            return null;
+        }
+        Node<V> removed = null;
+        final Iterator<Node<V>> iter = _children.iterator();
+        while(iter.hasNext()) {
+            final Node<V> child = iter.next();
+            if(Objects.equals(child.getName(), name)) {
+                iter.remove();
+                removed = child;
+                break;
+            }
+        }
+        return removed;
+    }
+
     @Override
     public boolean anyChildMatch(Predicate<Node<V>> test) {
         return children().stream().anyMatch(child -> child.anyMatch(test));

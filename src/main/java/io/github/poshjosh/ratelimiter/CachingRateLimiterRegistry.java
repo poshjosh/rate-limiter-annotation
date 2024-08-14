@@ -40,6 +40,10 @@ final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return delegate.tryAcquire(key, permits, timeout, timeUnit);
     }
 
+    @Override public RateLimiterRegistry<K> deregister(String id) {
+        return delegate.deregister(id);
+    }
+
     @Override public RateLimiterRegistry<K> register(String id, Rates rates) {
         return delegate.register(id, rates);
     }

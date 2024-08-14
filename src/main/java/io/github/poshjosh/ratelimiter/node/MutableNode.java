@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.node;
 
 public interface MutableNode<V> extends Node<V> {
     boolean addChild(Node<V> child);
+    Node<V> removeChild(String name);
 
     /**
      * Get leaf child nodes (excluding root node, or {@link Nodes#EMPTY}).
