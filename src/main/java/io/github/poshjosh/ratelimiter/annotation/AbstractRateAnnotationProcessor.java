@@ -119,7 +119,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
     private Optional<Node<RateConfig>> findNodeForGroup(
             Node<RateConfig> root, GenericDeclaration groupSource) {
         final String groupName = RateId.of((Class<?>)groupSource);
-        return root.findFirstChild(childNode -> groupName.equals(childNode.getName()));
+        return root.findFirst(childNode -> groupName.equals(childNode.getName()));
     }
     private Node<RateConfig> createNodeForGroup(
             Node<RateConfig> root, GenericDeclaration groupSource) {
@@ -142,7 +142,7 @@ abstract class AbstractRateAnnotationProcessor<S extends GenericDeclaration>
 
     private String requireUniqueName(Node<RateConfig> root, Object source, String name) {
         final Node<RateConfig> child = root
-                .findFirstChild(node -> Objects.equals(name, node.getName()))
+                .findFirst(node -> Objects.equals(name, node.getName()))
                 .orElse(null);
         if (child != null) {
             final RateConfig value = child.getValueOrDefault(null);

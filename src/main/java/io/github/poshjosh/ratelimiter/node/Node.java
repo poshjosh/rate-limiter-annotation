@@ -199,12 +199,12 @@ public interface Node<V> {
         return target;
     }
 
-    default Optional<Node<V>> findFirstChild(Predicate<Node<V>> nodeTest) {
+    default Optional<Node<V>> findFirst(Predicate<Node<V>> nodeTest) {
         
         return this.findFirst(this, nodeTest);
     }
 
-    default Node<V> findFirstChildOrDefault(
+    default Node<V> findFirstOrDefault(
             Predicate<Node<V>> nodeTest, Node<V> resultIfNone) {
         return this.findFirstOrDefault(this, nodeTest, resultIfNone);
     }

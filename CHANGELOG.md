@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Direct rate limiting using method: `RateLimiterRegistry#tryAcquire`.
 - Method `RateLimiterRegistry#isWithinLimit(K key)`.
 - Method `RateLimiterRegistry#deregister(String key)` and its variants for `Method` and `Class`.
+- Listening for registry update events - `RateLimiterRegistry#addListener(Listener)`
 
 ### Changes
 

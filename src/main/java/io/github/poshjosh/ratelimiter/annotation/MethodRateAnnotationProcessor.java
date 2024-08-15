@@ -63,6 +63,6 @@ class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Meth
             }
             return declaringClassId.equals((rateConfig.getSource()).getId());
         };
-        return root.findFirstChild(testForDeclaringClass);
+        return root.findFirst(testForDeclaringClass);
     }
 }

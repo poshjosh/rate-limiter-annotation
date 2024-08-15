@@ -16,11 +16,14 @@ import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
+final class DefaultRateLimiterRegistry<K>
+        implements RateLimiterRegistry<K>, RateLimiterRegistry.Listener {
 
     private final RateLimiterContext<K> context;
     private final RootNodes<K> rootNodes;
     private final AnnotationConverter annotationConverter;
+
+    private final List<RateLimiterRegistry.Listener> listeners;
 
     DefaultRateLimiterRegistry(
             RateLimiterContext<K> context,
@@ -31,6 +34,25 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         this.rootNodes = Objects.requireNonNull(rootNodes);
         ((MutableNode<?>)this.rootNodes.getPropertiesRootNode()).collectLeafs();
         ((MutableNode<?>)this.rootNodes.getAnnotationsRootNode()).collectLeafs();
+        this.listeners = new ArrayList<>();
+        addListener(this);
+    }
+
+    @Override
+    public void onRateAdded(RateConfig rateConfig) {
+        ((MutableNode<?>)findRootNode(rateConfig.getId())).collectLeafs();
+    }
+
+    @Override
+    public void onRateRemoved(RateConfig rateConfig) {
+        // Use parent.id here because the rateConfig is already removed
+        final String parentId = rateConfig.getParent().getId();
+        ((MutableNode<?>)findRootNode(parentId)).collectLeafs();
+    }
+
+    @Override
+    public void addListener(Listener listener) {
+        listeners.add(listener);
     }
 
     public boolean isWithinLimit(K key) {
@@ -91,7 +113,11 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
             throw new UnsupportedOperationException("Cannot deregister root node");
         }
         if (parentNode instanceof MutableNode) {
-            ((MutableNode<?>)parentNode).removeChild(node.getName());
+            Node<MatchContext<K>> removed =
+                    ((MutableNode<MatchContext<K>>)parentNode).removeChild(node.getName());
+            RateConfig rateConfig =
+                    removed.getValueOptional().map(MatchContext::getRateConfig).orElse(null);
+            listeners.forEach(listener -> listener.onRateRemoved(rateConfig));
             return this;
         }
         throw new UnsupportedOperationException("Cannot deregister node from immutable parent");
@@ -100,7 +126,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     @Override
     public RateLimiterRegistry<K> register(String id, Rates rates) {
         if (isRegistered(id)) {
-            return this;
+            complainAlreadyRegistered(id);
         }
         addToPropertiesRoot(id, rates);
         return this;
@@ -109,7 +135,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     @Override
     public RateLimiterRegistry<K> register(Class<?> source) {
         if (isRegistered(source)) {
-            return this;
+            complainAlreadyRegistered(RateId.of(source));
         }
         addToAnnotationsRoot(source);
         return this;
@@ -118,7 +144,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     @Override
     public RateLimiterRegistry<K> register(Method source) {
         if (isRegistered(source)) {
-            return this;
+            complainAlreadyRegistered(RateId.of(source));
         }
         addToAnnotationsRoot(source);
         return this;
@@ -148,18 +174,34 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     @Override
     public boolean isRegistered(String id) {
         final Object found = rootNodes.getPropertiesRootNode()
-                .findFirstChildOrDefault(node -> isName(id, node), null);
+                .findFirstOrDefault(node -> isName(id, node), null);
         if (found != null) {
             return true;
         }
         return rootNodes.getAnnotationsRootNode()
-                .findFirstChildOrDefault(node -> isName(id, node), null) != null;
+                .findFirstOrDefault(node -> isName(id, node), null) != null;
     }
 
     @Override
     public boolean hasMatcher(String id) {
         final MatchContext<K> matchContext = getRateContextOrNull(id);
         return matchContext != null && matchContext.hasMatcher();
+    }
+
+    private void complainAlreadyRegistered(String id) {
+        throw new UnsupportedOperationException("Already registered: " + id);
+    }
+
+    private Node<MatchContext<K>> findRootNode(String id) {
+        Object found = rootNodes.getPropertiesRootNode()
+                .findFirstOrDefault(node -> isName(id, node), null);
+        if (found != null) {
+            return rootNodes.getPropertiesRootNode();
+        }
+        found = rootNodes.getAnnotationsRootNode()
+                .findFirstOrDefault(node -> isName(id, node), null);
+        Objects.requireNonNull(found);
+        return rootNodes.getAnnotationsRootNode();
     }
 
     private RateLimiter getRateLimiterOrNull(K key) {
@@ -215,16 +257,10 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return context.getRateLimiterProvider().getRateLimiter(key, rates);
     }
 
-    private Node<MatchContext<K>> addToPropertiesRoot(String id, Rates rates) {
+    private void addToPropertiesRoot(String id, Rates rates) {
         final RateSource rateSource = RateSource.of(id, rates.isSet());
-        final Node<RateConfig> node = createNodeOrNull(rateSource, rates);
-        if (node == null) {
-            return null;
-        }
-        Node<MatchContext<K>> result = toRateContextNode(rootNodes.getPropertiesRootNode(), node);
-        // We need to call this each time we add a child node.
-        ((MutableNode<?>)rootNodes.getPropertiesRootNode()).collectLeafs();
-        return result;
+        final Node<MatchContext<K>> parent = rootNodes.getPropertiesRootNode();
+        addTo(rateSource, rates, parent);
     }
 
     private Node<MatchContext<K>> addToAnnotationsRoot(GenericDeclaration source) {
@@ -232,14 +268,24 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         if (!rateSource.isRateLimited()) {
             return null;
         }
-        final Rates rates = annotationConverter.convert(rateSource);
-        final Node<RateConfig> node = createNodeOrNull(rateSource, rates);
+        final Node<MatchContext<K>> parent = rootNodes.getAnnotationsRootNode();
+        return addTo(rateSource, annotationConverter.convert(rateSource), parent);
+    }
+
+    private Node<MatchContext<K>> addTo(
+            RateSource rateSource, Rates rates, Node<MatchContext<K>> parent) {
+        if (!rateSource.isRateLimited()) {
+            return null;
+        }
+        final RateConfig parentConfig = parent.getValueOptional()
+                .map(MatchContext::getRateConfig).orElse(null);
+        final Node<RateConfig> node = createNodeOrNull(rateSource, rates, parentConfig);
         if (node == null) {
             return null;
         }
-        Node<MatchContext<K>> result = toRateContextNode(rootNodes.getAnnotationsRootNode(), node);
-        // We need to call this each time we add a child node.
-        ((MutableNode<?>)rootNodes.getAnnotationsRootNode()).collectLeafs();
+        final RateConfig rateConfig = node.requireValue();
+        final Node<MatchContext<K>> result = toRateContextNode(parent, node);
+        listeners.forEach(listener -> listener.onRateAdded(rateConfig));
         return result;
     }
 
@@ -249,12 +295,12 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     }
     private Node<MatchContext<K>> getNodeOrNull(String id) {
         Node<MatchContext<K>> result = rootNodes.getPropertiesRootNode()
-                .findFirstChildOrDefault(node -> isName(id, node), null);
+                .findFirstOrDefault(node -> isName(id, node), null);
         if (result != null) {
             return result;
         }
         return rootNodes.getAnnotationsRootNode()
-                .findFirstChildOrDefault(node -> isName(id, node), null);
+                .findFirstOrDefault(node -> isName(id, node), null);
     }
 
     private <T> boolean isName(String id, Node<T> node) {
@@ -272,10 +318,11 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return MatchContexts.of(context.getMatcherProvider(), node);
     }
 
-    private Node<RateConfig> createNodeOrNull(RateSource rateSource, Rates rates) {
+    private Node<RateConfig> createNodeOrNull(
+            RateSource rateSource, Rates rates, RateConfig parent) {
         if (!rateSource.isRateLimited()) {
             return null;
         }
-        return Nodes.of(rateSource.getId(), RateConfig.of(rateSource, rates));
+        return Nodes.of(rateSource.getId(), RateConfig.of(rateSource, rates, parent));
     }
 }

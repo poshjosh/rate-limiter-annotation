@@ -3,6 +3,8 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessors;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
+import io.github.poshjosh.ratelimiter.model.RateSource;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.node.Nodes;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
@@ -25,13 +27,13 @@ class RootNodes<K> {
     private final Node<MatchContext<K>> annotationsRootNode;
 
     private RootNodes(RateLimiterContext<K> context) {
-
         final RateConfigCollector propertyConfigs = new RateConfigCollector();
         Node<RateConfig> propRoot = getPropertyRateProcessor()
-                .process(Nodes.of("root.properties"), propertyConfigs, context.getProperties());
+                .process(createRootNode("root.properties"),
+                        propertyConfigs, context.getProperties());
 
         Node<RateConfig> annoRoot = getClassRateProcessor()
-                .processAll(Nodes.of("root.annotations"),
+                .processAll(createRootNode("root.annotations"),
                         (src, node) -> {}, context.getTargetClasses());
 
         final List<String> transferredToAnnotations = new ArrayList<>();
@@ -84,6 +86,11 @@ class RootNodes<K> {
                 .getRoot().transform(transformer);
 
         LOG.debug("PROPERTIES SOURCED NODES:\n{}", propertiesRootNode);
+    }
+
+    private Node<RateConfig> createRootNode(String id) {
+        final RateSource rateSource = RateSource.of(id, false);
+        return Nodes.of(id, RateConfig.of(rateSource, Rates.none()));
     }
 
     public boolean hasProperties() {

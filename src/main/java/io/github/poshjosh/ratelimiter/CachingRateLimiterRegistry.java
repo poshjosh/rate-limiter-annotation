@@ -32,6 +32,10 @@ final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return rateLimiter;
     }
 
+    @Override public void addListener(Listener listener) {
+        delegate.addListener(listener);
+    }
+
     @Override public boolean isWithinLimit(K key) {
         return delegate.isWithinLimit(key);
     }

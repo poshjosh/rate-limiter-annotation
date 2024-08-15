@@ -52,6 +52,15 @@ class RateLimiterRegistryTest {
         assertTrue(registry.register(id, Rate.ofSeconds(1)).isRegistered(id));
         assertFalse(registry.deregister(id).isRegistered(id));
     }
+
+    @Test
+    void register_shouldFailGivenAlreadyRegistered() {
+        RateLimiterRegistry<?> registry = givenRegistry();
+        final String id = "test-id";
+        registry.register(id, Rate.ofSeconds(1));
+        assertThrows(UnsupportedOperationException.class,
+                () -> registry.register(id, Rate.ofSeconds(1)));
+    }
     
     @ParameterizedTest
     @ValueSource(classes = { ClassWithLimits.class, ClassWithGroupLimits.class })

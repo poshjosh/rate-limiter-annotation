@@ -28,13 +28,13 @@ class NodeTest {
 
     @Test
     void findFirstChild_givenValidTest_shouldHitOneResult() {
-        assertTrue(TestNode.breadthFirst().findFirstChild(node -> "son".equals(node.getName())).isPresent());
+        assertTrue(TestNode.breadthFirst().findFirst(node -> "son".equals(node.getName())).isPresent());
     }
 
     @Test
     void transform_givenValuesConverter_shouldTransformValues() {
         Node<Integer> update = TestNode.breadthFirst().transform(node -> 0);
-        assertFalse(update.findFirstChild(node -> node.getValueOrDefault(0) != 0).isPresent());
+        assertFalse(update.findFirst(node -> node.getValueOrDefault(0) != 0).isPresent());
     }
 
     @Test
@@ -59,8 +59,8 @@ class NodeTest {
         };
         Node<Integer> found = expected.transform(test, node -> node.getValueOrDefault(0))
                 .orElseThrow(() -> new RuntimeException("Did I mean to delete all from the tree?"));
-        assertTrue(found.findFirstChild(test).isPresent());
-        assertFalse(found.findFirstChild(test.negate()).isPresent());
+        assertTrue(found.findFirst(test).isPresent());
+        assertFalse(found.findFirst(test.negate()).isPresent());
     }
 
     @Test

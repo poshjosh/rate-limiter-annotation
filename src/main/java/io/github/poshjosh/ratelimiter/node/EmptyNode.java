@@ -24,7 +24,7 @@ final class EmptyNode<V> implements Node<V>{
     @Override
     public Node<V> findFirstOrDefault(
             Node<V> offset, Predicate<Node<V>> nodeTest, Node<V> resultIfNone) {
-        return resultIfNone;
+        return offset == this && nodeTest.test(this) ? this : resultIfNone;
     }
 
     public boolean hasChildren() { return false; }

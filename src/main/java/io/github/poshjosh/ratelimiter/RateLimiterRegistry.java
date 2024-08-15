@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateId;
 import io.github.poshjosh.ratelimiter.model.Rate;
+import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.lang.reflect.Method;
@@ -9,6 +10,13 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public interface RateLimiterRegistry<K> {
+
+    interface Listener {
+        default void onRateAdded(RateConfig rateConfig) { }
+        default void onRateRemoved(RateConfig rateConfig) { }
+    }
+
+    void addListener(Listener listener);
 
     boolean isWithinLimit(K key);
     default boolean tryAcquire(K key, int permits) {
