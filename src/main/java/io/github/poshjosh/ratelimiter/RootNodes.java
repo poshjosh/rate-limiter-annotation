@@ -23,9 +23,6 @@ class RootNodes<K> {
     static <K> RootNodes<K> of(RateLimiterContext<K> context) {
         return new RootNodes<>(context);
     }
-    static <K> RootNodes<K> of(Node<MatchContext<K>> node) {
-        return new RootNodes<>(node, Node.empty());
-    }
 
     private final Node<MatchContext<K>> propertiesRootNode;
     private final Node<MatchContext<K>> annotationsRootNode;
@@ -90,12 +87,6 @@ class RootNodes<K> {
                 .getRoot().transform(transformer);
 
         LOG.debug("PROPERTIES SOURCED NODES:\n{}", propertiesRootNode);
-    }
-
-    private RootNodes(Node<MatchContext<K>> propertiesRootNode,
-            Node<MatchContext<K>> annotationsRootNode) {
-        this.propertiesRootNode = Objects.requireNonNull(propertiesRootNode);
-        this.annotationsRootNode = Objects.requireNonNull(annotationsRootNode);
     }
 
     private Node<RateConfig> createRootNode(String id) {
