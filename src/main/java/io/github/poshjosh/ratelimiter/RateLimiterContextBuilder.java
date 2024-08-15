@@ -36,7 +36,7 @@ final class RateLimiterContextBuilder<K> implements RateLimiterContext.Builder<K
     }
 
     @Override
-    public RateLimiterContext.Builder<K> rates(Map<String, Rates> rates) {
+    public RateLimiterContext.Builder<K> rates(List<Rates> rates) {
         context.setRates(rates);
         return this;
     }

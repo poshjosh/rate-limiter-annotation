@@ -1,9 +1,6 @@
 package io.github.poshjosh.ratelimiter.util;
 
-import io.github.poshjosh.ratelimiter.model.Rate;
-import io.github.poshjosh.ratelimiter.model.RateConfig;
-import io.github.poshjosh.ratelimiter.model.RateSource;
-import io.github.poshjosh.ratelimiter.model.Rates;
+import io.github.poshjosh.ratelimiter.model.*;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
@@ -104,7 +101,7 @@ class MatcherProviderTest {
     }
 
     private RateConfig givenRateConfigWithConditions(String nodeName, String globalCondition, String condition) {
-        Rates rates = Rates.of(globalCondition, Rate.of(1, condition));
-        return RateConfig.of(RateSource.of(nodeName, true), rates);
+        Rates rates = Rates.of(nodeName, Operator.NONE, globalCondition, Rate.of(1, condition));
+        return RateConfig.of(RateSources.of(rates), rates);
     }
 }

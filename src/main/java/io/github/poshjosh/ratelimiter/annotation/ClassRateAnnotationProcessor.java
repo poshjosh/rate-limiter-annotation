@@ -11,23 +11,20 @@ class ClassRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Class
 
     private final RateProcessor<Method> methodRateProcessor;
 
-    ClassRateAnnotationProcessor(
-            SourceFilter sourceTest, AnnotationConverter annotationConverter) {
-        this(sourceTest, annotationConverter, 
-                new MethodRateAnnotationProcessor(sourceTest, annotationConverter));
+    ClassRateAnnotationProcessor(SourceFilter sourceTest) {
+        this(sourceTest,
+                new MethodRateAnnotationProcessor(sourceTest));
     }
 
     ClassRateAnnotationProcessor(
-            SourceFilter sourceTest,
-            AnnotationConverter annotationConverter,
-            RateProcessor<Method> methodRateProcessor) {
-        super(sourceTest, annotationConverter);
+            SourceFilter sourceTest, RateProcessor<Method> methodRateProcessor) {
+        super(sourceTest);
         this.methodRateProcessor = methodRateProcessor;
     }
 
     @Override
     protected RateSource toRateSource(Class<?> element) {
-        return JavaRateSource.of(element);
+        return JavaRateSources.of(element);
     }
 
     // We override this here, so we can process the class and its super classes

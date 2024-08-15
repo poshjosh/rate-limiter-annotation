@@ -4,6 +4,8 @@ __Distributed rate limiting simplified using annotations__
 
 We believe that rate limiting should be as simple as:
 
+Rate limit through annotations.
+
 ```java
 // All methods collectively limited to 10 permits per second
 @Rate(10)
@@ -21,6 +23,22 @@ class RateLimitedResource {
         return "Hello " + who;
     }
 }
+```
+
+Direct usage.
+
+```java
+RateLimiter rateLimiter = RateLimiter.of(Bandwidths.ofSeconds(1));
+```
+
+Direct usage, with distributed cache.
+
+```java
+BandwidthsStore cache = // Easy to implement for Redis, Memcached etc
+RateLimiter rateLimiter = RateLimiterProviders
+        .of(RateToBandwidthConverter.ofDefaults(), cache, Tickers.ofDefaults())
+        .getRateLimiter("1ps", Rate.ofSeconds(1));
+
 ```
 
 Based on [rate-limiter](https://github.com/poshjosh/rate-limiter).

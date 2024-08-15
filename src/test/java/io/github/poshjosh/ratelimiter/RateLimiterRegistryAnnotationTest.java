@@ -20,8 +20,8 @@ class RateLimiterRegistryAnnotationTest {
     @Test
     void testRateLimitedClass() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(RateLimitedClass.class);
-        assertTrue(limiterRegistry.getRateLimiter("resource-0").tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter("resource-0").tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter("resource-0").tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter("resource-0").tryAcquire());
     }
 
     static class ClassWithRateLimitedMethod {
@@ -40,8 +40,8 @@ class RateLimiterRegistryAnnotationTest {
     void testClassWithSingleRateLimitedMethod() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithRateLimitedMethod.class);
         Object resourceId = ClassWithRateLimitedMethod.getRateLimitedMethod();
-        assertTrue(limiterRegistry.getRateLimiter(resourceId).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(resourceId).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(resourceId).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(resourceId).tryAcquire());
     }
 
     static class ClassWithNoLimit {
@@ -52,7 +52,7 @@ class RateLimiterRegistryAnnotationTest {
     void isNotLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithNoLimit.class);
         Object resourceId = ClassWithRateLimitedMethod.getRateLimitedMethod();
-        assertTrue(limiterRegistry.getRateLimiter(resourceId).tryAcquire(Integer.MAX_VALUE));
+        assertTrue(limiterRegistry.requireRateLimiter(resourceId).tryAcquire(Integer.MAX_VALUE));
     }
 
     @Rate(2)
@@ -71,8 +71,8 @@ class RateLimiterRegistryAnnotationTest {
     void isLimitedByMethodGivenMethodRateIsLower() {
         final RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassRateHigherThanMethodRate.class);
         final Object key = ClassRateHigherThanMethodRate.getRateLimitedMethod();
-        assertTrue(limiterRegistry.getRateLimiter(key).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(key).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(key).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
     @Rate(1)
@@ -92,16 +92,16 @@ class RateLimiterRegistryAnnotationTest {
     void methodIsLimitedByClassGivenClassRateIsLower() throws NoSuchMethodException {
         final RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassRateLowerThanMethodRate.class);
         final Method key = ClassRateLowerThanMethodRate.class.getDeclaredMethod("hi");
-        assertTrue(limiterRegistry.getRateLimiter(key).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(key).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(key).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
     @Test
     void methodIdentifiedByIdIsLimitedByClassGivenClassRateIsLower() {
         final RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassRateLowerThanMethodRate.class);
         final Object key = ClassRateLowerThanMethodRate.getRateLimitedMethod();
-        assertTrue(limiterRegistry.getRateLimiter(key).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(key).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(key).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
     @Rate(1)
@@ -134,8 +134,8 @@ class RateLimiterRegistryAnnotationTest {
         final RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(
                 ClassWithGroupRateLower1.class);
         final Method key = ClassWithGroupRateLower1.class.getDeclaredMethod("hi");
-        assertTrue(limiterRegistry.getRateLimiter(key).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(key).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(key).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
     @Test
@@ -143,8 +143,8 @@ class RateLimiterRegistryAnnotationTest {
         final RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(
                 ClassWithGroupRateLower1.class);
         final Object key = ClassWithGroupRateLower1.getRateLimitedMethod();
-        assertTrue(limiterRegistry.getRateLimiter(key).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(key).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(key).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
     @Test
@@ -152,9 +152,9 @@ class RateLimiterRegistryAnnotationTest {
         final RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(
                 ClassWithGroupRateLower1.class, ClassWithGroupRateLower2.class);
         final Method key1 = ClassWithGroupRateLower1.class.getDeclaredMethod("hi");
-        assertTrue(limiterRegistry.getRateLimiter(key1).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(key1).tryAcquire());
         final Method key2 = ClassWithGroupRateLower2.class.getDeclaredMethod("hi");
-        assertFalse(limiterRegistry.getRateLimiter(key2).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(key2).tryAcquire());
     }
 
     @Rate(permits = 1, id = "class")
@@ -167,8 +167,8 @@ class RateLimiterRegistryAnnotationTest {
     void testRateLimitedClassWithNamedRateLimitedMethod() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(
                 RateLimitedClassWithNamedRateLimitedMethod.class);
-        assertTrue(limiterRegistry.getRateLimiter("method").tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter("method").tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter("method").tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter("method").tryAcquire());
     }
 
     @Rate(permits = 1, timeUnit = SECONDS)
@@ -185,8 +185,8 @@ class RateLimiterRegistryAnnotationTest {
     void testRateLimitedClassWithOrLimits() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithOrRateGroup.class);
         final Object id = ClassWithOrRateGroup.class;
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits = 1, timeUnit = SECONDS)
@@ -203,10 +203,10 @@ class RateLimiterRegistryAnnotationTest {
     void testRateLimitedClassWithAndLimits() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithAndRateGroup.class);
         final Object id = ClassWithAndRateGroup.class;
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits = 10, timeUnit = SECONDS)
@@ -223,8 +223,8 @@ class RateLimiterRegistryAnnotationTest {
     void givenRateConditionFalse_shouldNotBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithSeparateRateCondition.class);
         final Object id = (ClassWithSeparateRateCondition.class);
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits=1, when="jvm.memory.free < 0")
@@ -234,8 +234,8 @@ class RateLimiterRegistryAnnotationTest {
     void givenRateWhenResolvesToFalse_shouldNotBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithWhenRateCondition.class);
         final Object id = (ClassWithWhenRateCondition.class);
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     @Rate(1)
@@ -246,8 +246,8 @@ class RateLimiterRegistryAnnotationTest {
     void givenRateConditionTrue_shouldBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithRateConditionTrue.class);
         final Object id = (ClassWithRateConditionTrue.class);
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits=1, when="sys.time.elapsed >= PT0S")
@@ -257,8 +257,8 @@ class RateLimiterRegistryAnnotationTest {
     void givenRateWhenResolvesToTrue_shouldBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithWhenRateConditionTrue.class);
         final Object id = (ClassWithWhenRateConditionTrue.class);
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits = 1, condition = "sys.time.elapsed >= PT2S")
@@ -270,10 +270,10 @@ class RateLimiterRegistryAnnotationTest {
         final Object key = (ClassWithRateCondition.class);
         // This consumption attempt should have returned false due to limit exceeded,
         // but we have a condition that must be met before rate limiting is applied
-        assertTrue(limiterRegistry.getRateLimiter(key).tryAcquire(Integer.MAX_VALUE));
+        assertTrue(limiterRegistry.requireRateLimiter(key).tryAcquire(Integer.MAX_VALUE));
         Thread.sleep(2000); // Time should match that of the condition specified above
-        assertTrue(limiterRegistry.getRateLimiter(key).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(key).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(key).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
     @Rate(1)
@@ -285,8 +285,8 @@ class RateLimiterRegistryAnnotationTest {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(
                 ClassWithSeparateRateConditionSpaced.class);
         final Object id = (ClassWithSeparateRateConditionSpaced.class);
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     @Rate(id = "resource-8b", permits=1, when=" sys.time.elapsed >= PT0S ")
@@ -295,8 +295,8 @@ class RateLimiterRegistryAnnotationTest {
     @Test
     void givenRateWhenResolvesToTrue_andHavingSpaces_shouldBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithWhenRateConditionSpaced.class);
-        assertTrue(limiterRegistry.getRateLimiter("resource-8b").tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter("resource-8b").tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter("resource-8b").tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter("resource-8b").tryAcquire());
     }
 
     @Rate(1)
@@ -307,8 +307,8 @@ class RateLimiterRegistryAnnotationTest {
     void givenRateConditionHavingNegationResolvesToTrue_shouldBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithNegationSeparateRateCondition.class);
         final Object id = (ClassWithNegationSeparateRateCondition.class);
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     @Rate(permits=1, when="sys.time.elapsed !< PT0S") // We have had 0 secs, which may cause !<= to fail
@@ -318,8 +318,8 @@ class RateLimiterRegistryAnnotationTest {
     void givenWhenHavingNegationResolvesToTrue_shouldBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithNegationWhenRateCondition.class);
         final Object id = (ClassWithNegationWhenRateCondition.class);
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     // This first Rate's condition will never evaluate to true,
@@ -332,9 +332,9 @@ class RateLimiterRegistryAnnotationTest {
     void givenNonConjunctedRates() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithNonConjunctedRates.class);
         final Object id = (ClassWithNonConjunctedRates.class);
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertTrue(limiterRegistry.getRateLimiter(id).tryAcquire());
-        assertFalse(limiterRegistry.getRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
+        assertFalse(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
     private RateLimiterRegistry<Object> newRateLimiterRegistry(Class<?>... classes) {

@@ -7,10 +7,7 @@ import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.node.Nodes;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> {
     PropertyRateProcessor() { }
@@ -23,9 +20,8 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
 
     private Node<RateConfig> addNodesToRoot(Node<RateConfig> rootNode, RateLimitProperties source,
             NodeConsumer nodeConsumer) {
-        Map<String, Rates> limits = source.getRateLimitConfigs();
-        Rates rootNodeConfig = limits.get(rootNode.getName());
-        if (rootNodeConfig != null) {
+        List<Rates> ratesList = source.getRateLimitConfigs();
+        if (ratesList.stream().anyMatch(rates -> rootNode.getName().equals(rates.getId()))) {
             throw new IllegalStateException("The name: " + rootNode.getName()
                     + " is reserved, and may not be used to identify rates in "
                     + RateLimitProperties.class.getName());
@@ -38,14 +34,13 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
             Node<RateConfig> parent,
             RateLimitProperties source,
             NodeConsumer nodeConsumer) {
-        final Set<Map.Entry<String, Rates>> entrySet = source.getRateLimitConfigs().entrySet();
-        for (Map.Entry<String, Rates> entry : entrySet) {
-            final String name = entry.getKey();
+        final List<Rates> ratesList = source.getRateLimitConfigs();
+        for (Rates rates : ratesList) {
+            final String name = rates.getId();
             if (parent.getName().equals(name)) {
                 continue;
             }
-            final Rates rates = entry.getValue();
-            final RateSource rateSource = PropertyRateSource.of(source, name);
+            final RateSource rateSource = PropertyRateSource.of(source, rates);
             final RateConfig parentConfig = parent.getValueOrDefault(null);
             final Node<RateConfig> node = Nodes
                     .of(name, RateConfig.of(rateSource, rates, parentConfig), parent);

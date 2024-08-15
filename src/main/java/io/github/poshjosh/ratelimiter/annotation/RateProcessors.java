@@ -22,20 +22,10 @@ public interface RateProcessors {
     }
 
     static RateProcessor<Class<?>> ofClass(RateProcessor.SourceFilter sourceTest) {
-        return ofClass(sourceTest, AnnotationConverter.ofDefaults());
+        return new ClassRateAnnotationProcessor(sourceTest);
     }
 
     static RateProcessor<Method> ofMethod(RateProcessor.SourceFilter sourceTest) {
-        return ofMethod(sourceTest, AnnotationConverter.ofDefaults());
-    }
-
-    static RateProcessor<Class<?>> ofClass(RateProcessor.SourceFilter sourceTest,
-            AnnotationConverter annotationConverter) {
-        return new ClassRateAnnotationProcessor(sourceTest, annotationConverter);
-    }
-
-    static RateProcessor<Method> ofMethod(RateProcessor.SourceFilter sourceTest,
-            AnnotationConverter annotationConverter) {
-        return new MethodRateAnnotationProcessor(sourceTest, annotationConverter);
+        return new MethodRateAnnotationProcessor(sourceTest);
     }
 }

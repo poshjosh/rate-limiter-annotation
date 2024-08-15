@@ -47,29 +47,29 @@ class RateLimiterRegistryAndGroupTest {
     void andGroupClass_shouldBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = givenLimiterRegistryHavingAndGroup();
         Class<?> clazz = RateLimitGroupClass1.class;
-        assertTrue(limiterRegistry.getClassRateLimiter(clazz).tryAcquire(MAX));
-        assertFalse(limiterRegistry.getClassRateLimiter(clazz).tryAcquire());
+        assertTrue(limiterRegistry.requireClassRateLimiter(clazz).tryAcquire(MAX));
+        assertFalse(limiterRegistry.requireClassRateLimiter(clazz).tryAcquire());
     }
 
     @Test
     void andGroupMethod_shouldBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = givenLimiterRegistryHavingAndGroup();
         Method method = RateLimitGroupClass2.getRateLimitedMethod();
-        assertTrue(limiterRegistry.getMethodRateLimiter(method).tryAcquire(MAX));
-        assertFalse(limiterRegistry.getMethodRateLimiter(method).tryAcquire());
+        assertTrue(limiterRegistry.requireMethodRateLimiter(method).tryAcquire(MAX));
+        assertFalse(limiterRegistry.requireMethodRateLimiter(method).tryAcquire());
     }
 
     @Test
     void andGroupName_shouldBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = givenLimiterRegistryHavingAndGroup();
-        assertTrue(limiterRegistry.getRateLimiter(AND_RATE_GROUP).tryAcquire(MAX));
-        assertFalse(limiterRegistry.getRateLimiter(AND_RATE_GROUP).tryAcquire());
+        assertTrue(limiterRegistry.requireRateLimiter(AND_RATE_GROUP).tryAcquire(MAX));
+        assertFalse(limiterRegistry.requireRateLimiter(AND_RATE_GROUP).tryAcquire());
     }
 
     @Test
     void andGroupAnnotation_shouldNotBeRateLimited() {
         RateLimiterRegistry<Object> limiterRegistry = givenLimiterRegistryHavingAndGroup();
-        assertTrue(limiterRegistry.getClassRateLimiter(RateLimitGroup.class).tryAcquire(Integer.MAX_VALUE));
+        assertTrue(limiterRegistry.requireClassRateLimiter(RateLimitGroup.class).tryAcquire(Integer.MAX_VALUE));
     }
 
     private RateLimiterRegistry<Object> givenLimiterRegistryHavingAndGroup() {

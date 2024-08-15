@@ -1,9 +1,8 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.annotation.JavaRateSources;
 import io.github.poshjosh.ratelimiter.annotation.RateId;
-import io.github.poshjosh.ratelimiter.model.Rate;
-import io.github.poshjosh.ratelimiter.model.RateConfig;
-import io.github.poshjosh.ratelimiter.model.Rates;
+import io.github.poshjosh.ratelimiter.model.*;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
@@ -35,39 +34,60 @@ public interface RateLimiterRegistry<K> {
     RateLimiterRegistry<K> deregister(String id);
 
     default RateLimiterRegistry<K> register(String id, Rate rate) {
-        return register(id, Rates.of(rate));
+        return register(Rates.of(id, rate));
     }
 
-    RateLimiterRegistry<K> register(String id, Rates rates);
+    default RateLimiterRegistry<K> register(Rates rates) {
+        return register(RateSources.of(rates));
+    }
 
-    RateLimiterRegistry<K> register(Class<?> source);
+    default RateLimiterRegistry<K> register(Class<?> source) {
+        return register(JavaRateSources.of(source));
+    }
 
-    RateLimiterRegistry<K> register(Method source);
+    default RateLimiterRegistry<K> register(Method source) {
+        return register(JavaRateSources.of(source));
+    }
+
+    RateLimiterRegistry<K> register(RateSource rateSource);
 
     default RateLimiter getRateLimiterOrUnlimited(K key) {
-        return getRateLimiterOptional(key).orElse(RateLimiters.NO_LIMIT);
+        return getRateLimiterOrDefault(key, RateLimiters.NO_LIMIT);
     }
 
-    default RateLimiter getRateLimiter(K key) {
+    default RateLimiter requireRateLimiter(K key) {
         return getRateLimiterOptional(key).orElseThrow(
                 () -> new IllegalArgumentException("No rate limiter for " + key));
     }
 
-    default RateLimiter getClassRateLimiter(Class<?> clazz) {
-        return getClassRateLimiterOptional(clazz).orElseThrow(
+    default RateLimiter requireClassRateLimiter(Class<?> clazz) {
+        return getRateLimiterOptional(JavaRateSources.of(clazz)).orElseThrow(
                 () -> new IllegalArgumentException("No rate limiter for " + clazz));
     }
 
-    default RateLimiter getMethodRateLimiter(Method method) {
-        return getMethodRateLimiterOptional(method).orElseThrow(
+    default RateLimiter requireMethodRateLimiter(Method method) {
+        return getRateLimiterOptional(JavaRateSources.of(method)).orElseThrow(
                 () -> new IllegalArgumentException("No rate limiter for " + method));
     }
 
-    Optional<RateLimiter> getRateLimiterOptional(K key);
+    default Optional<RateLimiter> getRateLimiterOptional(K key) {
+        return Optional.ofNullable(getRateLimiterOrDefault(key, null));
+    }
+    RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone);
 
-    Optional<RateLimiter> getClassRateLimiterOptional(Class<?> clazz);
+    default Optional<RateLimiter> getRateLimiterOptional(Class<?> clazz) {
+        return getRateLimiterOptional(JavaRateSources.of(clazz));
+    }
 
-    Optional<RateLimiter> getMethodRateLimiterOptional(Method method);
+    default Optional<RateLimiter> getRateLimiterOptional(Method method) {
+        return getRateLimiterOptional(JavaRateSources.of(method));
+    }
+
+    default Optional<RateLimiter> getRateLimiterOptional(RateSource rateSource) {
+        return Optional.ofNullable(getRateLimiterOrDefault(rateSource, null));
+    }
+
+    RateLimiter getRateLimiterOrDefault(RateSource rateSource, RateLimiter resultIfNone);
 
 
     default boolean isRegistered(Class<?> source) {

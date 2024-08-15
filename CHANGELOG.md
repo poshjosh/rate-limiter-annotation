@@ -18,10 +18,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Method `RateLimiterRegistry#isWithinLimit(K key)`.
 - Method `RateLimiterRegistry#deregister(String key)` and its variants for `Method` and `Class`.
 - Listening for registry update events - `RateLimiterRegistry#addListener(Listener)`
+- Method `RateSource#getRates` to get rates defined at the respective source.
 
-### Changes
+### Changed
 
-- Renamed `RateContext` to `MatchContext`.
+- Return type of `RateLimitProperties#getRateLimitConfigs()` from `Map` to `List`.
+
+### Removed
+
+- `AnnotationConverter` and its implementations. Rather use `JavaRateSources.of()`.
 
 ## [ [0.8.0](https://github.com/poshjosh/rate-limiter-annotation/tree/v0.8.0) ] - 2024-08-05
 

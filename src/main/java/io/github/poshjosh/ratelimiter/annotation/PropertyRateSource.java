@@ -1,6 +1,7 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
 import io.github.poshjosh.ratelimiter.model.RateSource;
+import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 
 import java.lang.annotation.Annotation;
@@ -9,28 +10,29 @@ import java.util.Optional;
 
 public final class PropertyRateSource implements RateSource {
 
-    public static RateSource of(RateLimitProperties source, String id) {
-        return new PropertyRateSource(id, source.getRateLimitConfigs().get(id).isSet(), source);
+    public static RateSource of(RateLimitProperties source, Rates rates) {
+        return new PropertyRateSource(source, rates);
     }
 
-    private final String id;
-
-    private final boolean rateLimited;
+    private final Rates rates;
 
     private final RateLimitProperties source;
 
-    private PropertyRateSource(String id, boolean rateLimited, RateLimitProperties source) {
-        this.id = Objects.requireNonNull(id);
-        this.rateLimited = rateLimited;
+    private PropertyRateSource(RateLimitProperties source, Rates rates) {
+        this.rates = Objects.requireNonNull(rates);
         this.source = Objects.requireNonNull(source);
     }
 
     @Override public String getId() {
-        return id;
+        return rates.getId();
     }
 
     @Override public Object getSource() {
         return source;
+    }
+
+    @Override public Rates getRates() {
+        return rates;
     }
 
     @Override public <T extends Annotation> Optional<T> getAnnotation(Class<T> annotationClass) {
@@ -38,7 +40,7 @@ public final class PropertyRateSource implements RateSource {
     }
 
     @Override public boolean isRateLimited() {
-        return rateLimited;
+        return rates.isSet();
     }
 
     @Override public int hashCode() {

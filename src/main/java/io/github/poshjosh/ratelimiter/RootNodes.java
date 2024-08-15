@@ -4,6 +4,7 @@ import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessors;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
+import io.github.poshjosh.ratelimiter.model.RateSources;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.node.Nodes;
@@ -21,6 +22,9 @@ class RootNodes<K> {
 
     static <K> RootNodes<K> of(RateLimiterContext<K> context) {
         return new RootNodes<>(context);
+    }
+    static <K> RootNodes<K> of(Node<MatchContext<K>> node) {
+        return new RootNodes<>(node, Node.empty());
     }
 
     private final Node<MatchContext<K>> propertiesRootNode;
@@ -88,19 +92,25 @@ class RootNodes<K> {
         LOG.debug("PROPERTIES SOURCED NODES:\n{}", propertiesRootNode);
     }
 
+    private RootNodes(Node<MatchContext<K>> propertiesRootNode,
+            Node<MatchContext<K>> annotationsRootNode) {
+        this.propertiesRootNode = Objects.requireNonNull(propertiesRootNode);
+        this.annotationsRootNode = Objects.requireNonNull(annotationsRootNode);
+    }
+
     private Node<RateConfig> createRootNode(String id) {
-        final RateSource rateSource = RateSource.of(id, false);
+        final RateSource rateSource = RateSources.of(id);
         return Nodes.of(id, RateConfig.of(rateSource, Rates.none()));
     }
 
     public boolean hasProperties() {
-        // TODO - Find out why this led to x100 increase in memory usage
+        // TODO - Find out why #hasChildren() led to x100 increase in memory usage over #size()
 //        return !propertiesRootNode.isEmptyNode() && propertiesRootNode.hasChildren();
         return !propertiesRootNode.isEmptyNode() && propertiesRootNode.size() > 0;
     }
 
     public boolean hasAnnotations() {
-        // TODO - Find out why this led to x100 increase in memory usage
+        // TODO - Find out why #hasChildren() led to x100 increase in memory usage over #size()
 //        return !annotationsRootNode.isEmptyNode() && annotationsRootNode.hasChildren();
         return !annotationsRootNode.isEmptyNode() && annotationsRootNode.size() > 0;
     }

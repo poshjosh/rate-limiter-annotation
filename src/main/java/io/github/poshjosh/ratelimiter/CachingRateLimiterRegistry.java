@@ -1,12 +1,9 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.annotation.RateId;
-import io.github.poshjosh.ratelimiter.model.Rates;
+import io.github.poshjosh.ratelimiter.model.RateSource;
 
-import java.lang.reflect.Method;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -48,43 +45,34 @@ final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return delegate.deregister(id);
     }
 
-    @Override public RateLimiterRegistry<K> register(String id, Rates rates) {
-        return delegate.register(id, rates);
+    @Override public RateLimiterRegistry<K> register(RateSource rateSource) {
+        return delegate.register(rateSource);
     }
 
-    @Override public RateLimiterRegistry<K> register(Class<?> source) {
-        return delegate.register(source);
-    }
-
-    @Override public RateLimiterRegistry<K> register(Method source) {
-        return delegate.register(source);
-    }
-
-    @Override public Optional<RateLimiter> getRateLimiterOptional(K key) {
+    @Override public RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone) {
         final RateLimiter fromCache = getRateLimiterFromCacheOrNull(key);
         if (fromCache != null) {
-            return Optional.of(fromCache);
+            return fromCache;
         }
-        return delegate.getRateLimiterOptional(key)
-                .map(rateLimiter -> addRateLimiterToCache(key, rateLimiter));
+        final RateLimiter rateLimiter = delegate.getRateLimiterOrDefault(key, null);
+        if (rateLimiter != null) {
+            addRateLimiterToCache(key, rateLimiter);
+        }
+        return rateLimiter == null ? resultIfNone : rateLimiter;
     }
 
-    @Override public Optional<RateLimiter> getClassRateLimiterOptional(Class<?> clazz) {
-        final RateLimiter fromCache = getRateLimiterFromCacheOrNull(clazz);
+    @Override public RateLimiter getRateLimiterOrDefault(
+            RateSource rateSource, RateLimiter resultIfNone) {
+        final String key = rateSource.getId();
+        final RateLimiter fromCache = getRateLimiterFromCacheOrNull(key);
         if (fromCache != null) {
-            return Optional.of(fromCache);
+            return fromCache;
         }
-        return delegate.getClassRateLimiterOptional(clazz)
-                .map(rateLimiter -> addRateLimiterToCache(RateId.of(clazz), rateLimiter));
-    }
-
-    @Override public Optional<RateLimiter> getMethodRateLimiterOptional(Method method) {
-        final RateLimiter fromCache = getRateLimiterFromCacheOrNull(method);
-        if (fromCache != null) {
-            return Optional.of(fromCache);
+        final RateLimiter rateLimiter = delegate.getRateLimiterOrDefault(rateSource, null);
+        if (rateLimiter != null) {
+            addRateLimiterToCache(key, rateLimiter);
         }
-        return delegate.getMethodRateLimiterOptional(method)
-                .map(rateLimiter -> addRateLimiterToCache(RateId.of(method), rateLimiter));
+        return rateLimiter == null ? resultIfNone : rateLimiter;
     }
 
     @Override public boolean isRegistered(String name) {

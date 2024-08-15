@@ -1,8 +1,5 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.annotation.AnnotationConverter;
-import io.github.poshjosh.ratelimiter.annotation.RateId;
-import io.github.poshjosh.ratelimiter.annotation.JavaRateSource;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
@@ -11,8 +8,6 @@ import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.node.Nodes;
 import io.github.poshjosh.ratelimiter.util.Ticker;
 
-import java.lang.reflect.GenericDeclaration;
-import java.lang.reflect.Method;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -21,16 +16,13 @@ final class DefaultRateLimiterRegistry<K>
 
     private final RateLimiterContext<K> context;
     private final RootNodes<K> rootNodes;
-    private final AnnotationConverter annotationConverter;
 
     private final List<RateLimiterRegistry.Listener> listeners;
 
     DefaultRateLimiterRegistry(
             RateLimiterContext<K> context,
-            RootNodes<K> rootNodes,
-            AnnotationConverter annotationConverter) {
+            RootNodes<K> rootNodes) {
         this.context = Objects.requireNonNull(context);
-        this.annotationConverter = Objects.requireNonNull(annotationConverter);
         this.rootNodes = Objects.requireNonNull(rootNodes);
         ((MutableNode<?>)this.rootNodes.getPropertiesRootNode()).collectLeafs();
         ((MutableNode<?>)this.rootNodes.getAnnotationsRootNode()).collectLeafs();
@@ -124,51 +116,27 @@ final class DefaultRateLimiterRegistry<K>
     }
 
     @Override
-    public RateLimiterRegistry<K> register(String id, Rates rates) {
+    public RateLimiterRegistry<K> register(RateSource rateSource) {
+        final String id = rateSource.getId();
         if (isRegistered(id)) {
             complainAlreadyRegistered(id);
         }
-        addToPropertiesRoot(id, rates);
+        addToRoot(rateSource);
         return this;
     }
 
     @Override
-    public RateLimiterRegistry<K> register(Class<?> source) {
-        if (isRegistered(source)) {
-            complainAlreadyRegistered(RateId.of(source));
-        }
-        addToAnnotationsRoot(source);
-        return this;
+    public RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone) {
+        // This rate limiter is not cached.
+        // Uses for cases where each key is unique. E.g: http request.
+        // Since each http request is unique, no need to cache the rate limiter for re-use.
+        return createRateLimiterOrDefault(key, resultIfNone);
     }
 
     @Override
-    public RateLimiterRegistry<K> register(Method source) {
-        if (isRegistered(source)) {
-            complainAlreadyRegistered(RateId.of(source));
-        }
-        addToAnnotationsRoot(source);
-        return this;
-    }
-
-    @Override
-    public RateLimiter getRateLimiterOrUnlimited(K key) {
-        final RateLimiter rateLimiter = getRateLimiterOrNull(key);
-        return rateLimiter == null ? RateLimiters.NO_LIMIT : rateLimiter;
-    }
-
-    @Override
-    public Optional<RateLimiter> getRateLimiterOptional(K key) {
-        return Optional.ofNullable(getRateLimiterOrNull(key));
-    }
-
-    @Override
-    public Optional<RateLimiter> getClassRateLimiterOptional(Class<?> clazz) {
-        return Optional.ofNullable(getGenericRateLimiterOrNull(clazz));
-    }
-
-    @Override
-    public Optional<RateLimiter> getMethodRateLimiterOptional(Method method) {
-        return Optional.ofNullable(getGenericRateLimiterOrNull(method));
+    public RateLimiter getRateLimiterOrDefault(RateSource rateSource, RateLimiter resultIfNone) {
+        // This rate-limiter is cached.
+        return getSourceRateLimiterOr(rateSource, resultIfNone);
     }
 
     @Override
@@ -204,9 +172,9 @@ final class DefaultRateLimiterRegistry<K>
         return rootNodes.getAnnotationsRootNode();
     }
 
-    private RateLimiter getRateLimiterOrNull(K key) {
+    private RateLimiter createRateLimiterOrDefault(K key, RateLimiter resultIfNone) {
         if (!isRateLimitingSetup()) {
-            return null;
+            return resultIfNone;
         }
         if (!rootNodes.hasProperties()) {
             return createAnnotationsRateLimiter(key);
@@ -236,50 +204,42 @@ final class DefaultRateLimiterRegistry<K>
                 key, rootNodes.getAnnotationsRootNode(), context.getRateLimiterProvider());
     }
 
-    private RateLimiter getGenericRateLimiterOrNull(GenericDeclaration source) {
-        final String rateId = RateId.of(source);
-        MatchContext<K> matchContext = getRateContextOrNull(rateId);
+    private RateLimiter getSourceRateLimiterOr(RateSource rateSource, RateLimiter resultIfNone) {
+        final String id = rateSource.getId();
+        MatchContext<K> matchContext = getRateContextOrNull(id);
         if (matchContext == null) {
-            final Node<MatchContext<K>> added = addToAnnotationsRoot(source);
+            final Node<MatchContext<K>> added = addToRoot(rateSource);
             matchContext = added == null ? null : added.requireValue();
         }
         if (matchContext == null) {
-            return null;
+            return resultIfNone;
         }
-        return getRateLimiterOrNull(rateId, matchContext);
+        return getRateLimiterOrDefault(id, matchContext, resultIfNone);
     }
 
-    private RateLimiter getRateLimiterOrNull(String key, MatchContext<K> matchContext) {
+    private RateLimiter getRateLimiterOrDefault(
+            String key, MatchContext<K> matchContext, RateLimiter resultIfNone) {
         if (!matchContext.getSource().isRateLimited()) {
-            return null;
+            return resultIfNone;
         }
         final Rates rates = matchContext.getRatesWithParentRatesAsFallback();
         return context.getRateLimiterProvider().getRateLimiter(key, rates);
     }
 
-    private void addToPropertiesRoot(String id, Rates rates) {
-        final RateSource rateSource = RateSource.of(id, rates.isSet());
-        final Node<MatchContext<K>> parent = rootNodes.getPropertiesRootNode();
-        addTo(rateSource, rates, parent);
-    }
-
-    private Node<MatchContext<K>> addToAnnotationsRoot(GenericDeclaration source) {
-        final RateSource rateSource = JavaRateSource.of(source);
-        if (!rateSource.isRateLimited()) {
-            return null;
-        }
-        final Node<MatchContext<K>> parent = rootNodes.getAnnotationsRootNode();
-        return addTo(rateSource, annotationConverter.convert(rateSource), parent);
+    private Node<MatchContext<K>> addToRoot(RateSource rateSource) {
+        final Node<MatchContext<K>> parent = rateSource.isGenericDeclaration() ?
+                rootNodes.getAnnotationsRootNode() : rootNodes.getPropertiesRootNode();
+        return addTo(rateSource, parent);
     }
 
     private Node<MatchContext<K>> addTo(
-            RateSource rateSource, Rates rates, Node<MatchContext<K>> parent) {
+            RateSource rateSource, Node<MatchContext<K>> parent) {
         if (!rateSource.isRateLimited()) {
             return null;
         }
         final RateConfig parentConfig = parent.getValueOptional()
                 .map(MatchContext::getRateConfig).orElse(null);
-        final Node<RateConfig> node = createNodeOrNull(rateSource, rates, parentConfig);
+        final Node<RateConfig> node = createNodeOrNull(rateSource, parentConfig);
         if (node == null) {
             return null;
         }
@@ -318,11 +278,11 @@ final class DefaultRateLimiterRegistry<K>
         return MatchContexts.of(context.getMatcherProvider(), node);
     }
 
-    private Node<RateConfig> createNodeOrNull(
-            RateSource rateSource, Rates rates, RateConfig parent) {
+    private Node<RateConfig> createNodeOrNull(RateSource rateSource, RateConfig parent) {
         if (!rateSource.isRateLimited()) {
             return null;
         }
-        return Nodes.of(rateSource.getId(), RateConfig.of(rateSource, rates, parent));
+        return Nodes.of(rateSource.getId(),
+                RateConfig.of(rateSource, rateSource.getRates(), parent));
     }
 }

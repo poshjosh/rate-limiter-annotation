@@ -2,6 +2,7 @@ package io.github.poshjosh.ratelimiter.performance;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
+import io.github.poshjosh.ratelimiter.annotation.JavaRateSources;
 import io.github.poshjosh.ratelimiter.performance.dummyclasses.dummyclasses0.RateLimitedClass0;
 import org.junit.jupiter.api.Test;
 
@@ -62,7 +63,7 @@ abstract class PerformanceIT {
     void firstCallToGet_shouldConsumeLimitedTimeAndMemory() {
         final RateLimiterRegistry<String> rateLimiterRegistry = givenRateLimiterRegistry(annotatedClasses());
         final Usage bookmark = Usage.bookmark();
-        rateLimiterRegistry.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        rateLimiterRegistry.requireRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage recordedUsage = bookmark.current();
         assertUsageLessOrEqualToLimit(
                 "firstCallToGet_shouldConsumeLimitedTimeAndMemory()",
@@ -72,9 +73,9 @@ abstract class PerformanceIT {
     @Test
     void secondCallToGet_shouldConsumeLimitedTimeAndMemory() {
         final RateLimiterRegistry<String> rateLimiterRegistry = givenRateLimiterRegistry();
-        rateLimiterRegistry.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        rateLimiterRegistry.requireRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage bookmark = Usage.bookmark();
-        rateLimiterRegistry.getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+        rateLimiterRegistry.requireRateLimiter(RateLimitedClass0.METHOD_5_KEY);
         final Usage recordedUsage = bookmark.current();
         assertUsageLessOrEqualToLimit(
                 "secondCallToGet_shouldConsumeLimitedTimeAndMemory()",
@@ -90,7 +91,7 @@ abstract class PerformanceIT {
         final Usage bookmark = Usage.bookmark();
         for(int i = 0; i < count; i++) {
             final Method method = methods.get(i);
-            rateLimiterRegistry.getMethodRateLimiterOptional(method);
+            rateLimiterRegistry.getRateLimiterOptional(JavaRateSources.of(method));
         }
         final Usage recordedUsage = bookmark.current();
         assertUsageLessOrEqualToLimit(
@@ -102,7 +103,7 @@ abstract class PerformanceIT {
     void tryConsume_shouldConsumeLimitedTimeAndMemory() {
 
         final RateLimiter rateLimiter = givenRateLimiterRegistry()
-                .getRateLimiter(RateLimitedClass0.METHOD_5_KEY);
+                .requireRateLimiter(RateLimitedClass0.METHOD_5_KEY);
 
         final Usage usageBookmark = Usage.bookmark();
 
@@ -134,7 +135,7 @@ abstract class PerformanceIT {
             if (rateLimiterRegistry.tryAcquire(rateId, 1)) {
                 ++successCount;
             }
-//            if(rateLimiterRegistry.getRateLimiter(rateId).tryAcquire(1)) {
+//            if(rateLimiterRegistry.requireRateLimiter(rateId).tryAcquire(1)) {
 //                ++successCount;
 //            }
             waitFor(intervalMillis);

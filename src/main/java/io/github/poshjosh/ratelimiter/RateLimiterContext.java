@@ -6,6 +6,7 @@ import io.github.poshjosh.ratelimiter.util.MatcherProvider;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import io.github.poshjosh.ratelimiter.util.Ticker;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +46,7 @@ public interface RateLimiterContext<K> {
          * @param rates
          * @return
          */
-        Builder<K> rates(Map<String, Rates> rates);
+        Builder<K> rates(List<Rates> rates);
 
         /**
          * Specify either this or {@code #classes(Class...)}

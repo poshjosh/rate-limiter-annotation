@@ -10,18 +10,12 @@ import java.util.function.Predicate;
 
 class MethodRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Method> {
 
-    MethodRateAnnotationProcessor(AnnotationConverter annotationConverter) {
-        this(RateProcessor.SourceFilter.ofRateLimited(), annotationConverter);
-    }
-    
-    MethodRateAnnotationProcessor(
-            SourceFilter sourceTest,
-            AnnotationConverter annotationConverter) {
-        super(sourceTest, annotationConverter);
+    MethodRateAnnotationProcessor(SourceFilter sourceTest) {
+        super(sourceTest);
     }
 
     @Override protected RateSource toRateSource(Method element) {
-        return JavaRateSource.of(element);
+        return JavaRateSources.of(element);
     }
 
     @Override protected Node<RateConfig> getParent(

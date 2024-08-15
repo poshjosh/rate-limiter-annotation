@@ -6,7 +6,6 @@ import io.github.poshjosh.ratelimiter.model.Rates;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The class allows for the customization of {@link RateLimiter}s via properties.
@@ -76,5 +75,5 @@ public interface RateLimitProperties {
      *
      * @return Rates to apply to rate limiters
      */
-    default Map<String, Rates> getRateLimitConfigs() { return Collections.emptyMap(); }
+    default List<Rates> getRateLimitConfigs() { return Collections.emptyList(); }
 }

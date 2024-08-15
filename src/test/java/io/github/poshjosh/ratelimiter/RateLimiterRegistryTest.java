@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.annotation.JavaRateSources;
 import io.github.poshjosh.ratelimiter.annotation.RateId;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.model.Rate;
@@ -87,7 +88,7 @@ class RateLimiterRegistryTest {
     void register_shouldNotRegisterIdWithNoLimits() {
         final String id = "test-id";
         RateLimiterRegistry<?> registry = givenRegistry();
-        assertFalse(registry.register(id, Rates.none()).isRegistered(id));
+        assertFalse(registry.register(Rates.ofId(id)).isRegistered(id));
     }
 
     @ParameterizedTest
@@ -100,7 +101,7 @@ class RateLimiterRegistryTest {
     @Test
     void isRegistered_shouldReturnTrue_givenRegistryHasIdWithLimits() {
         final String id = "test-id";
-        RateLimiterRegistry<?> registry = givenRegistryHavingRates(id, Rates.of(Rate.ofSeconds(1)));
+        RateLimiterRegistry<?> registry = givenRegistryHavingRates(Rates.of(id, Rate.ofSeconds(1)));
         assertTrue(registry.isRegistered(id));
     }
 
@@ -117,7 +118,7 @@ class RateLimiterRegistryTest {
     @Disabled
     void isRegistered_shouldReturnFalse_givenRegistryHasIdWithNoLimits() {
         final String id = "test-id";
-        RateLimiterRegistry<?> registry = givenRegistryHavingRates(id, Rates.none());
+        RateLimiterRegistry<?> registry = givenRegistryHavingRates(Rates.ofId(id));
         assertFalse(registry.isRegistered(id));
     }
 
@@ -125,13 +126,13 @@ class RateLimiterRegistryTest {
     @ValueSource(classes = { ClassWithLimits.class, ClassWithGroupLimits.class })
     void getRateLimiter_shouldReturnRateLimiter_whenRegistryHasClassWithLimits(Class<?> clazz) {
         RateLimiterRegistry<?> registry = givenRegistryHavingClass(clazz);
-        assertTrue(registry.getClassRateLimiterOptional(clazz).isPresent());
+        assertTrue(registry.getRateLimiterOptional(JavaRateSources.of(clazz)).isPresent());
     }
 
     @Test
     void getRateLimiter_shouldReturnRateLimiter_whenRegistryHasIdWithLimits() {
         final String id = "test-id";
-        RateLimiterRegistry<String> registry = givenRegistryHavingRates(id, Rates.of(Rate.ofSeconds(1)));
+        RateLimiterRegistry<String> registry = givenRegistryHavingRates(Rates.of(id, Rate.ofSeconds(1)));
         assertTrue(registry.getRateLimiterOptional(id).isPresent());
     }
 
@@ -139,7 +140,7 @@ class RateLimiterRegistryTest {
     void getRateLimiter_shouldReturnEmpty_whenRegistryHasClassWithNoLimits() {
         Class<?> clazz = ClassWithNoLimits.class;
         RateLimiterRegistry<?> registry = givenRegistryHavingClass(clazz);
-        assertFalse(registry.getClassRateLimiterOptional(clazz).isPresent());
+        assertFalse(registry.getRateLimiterOptional(JavaRateSources.of(clazz)).isPresent());
     }
 
     // TODO - Fix this test
@@ -147,7 +148,7 @@ class RateLimiterRegistryTest {
     @Disabled
     void getRateLimiter_shouldReturnEmpty_whenRegistryHasIdWithNoLimits() {
         final String id = "test-id";
-        RateLimiterRegistry<String> registry = givenRegistryHavingRates(id, Rates.none());
+        RateLimiterRegistry<String> registry = givenRegistryHavingRates(Rates.ofId(id));
         //System.out.println(registry.getRateLimiterOrUnlimited(id));
         assertFalse(registry.getRateLimiterOptional(id).isPresent());
     }
@@ -166,20 +167,20 @@ class RateLimiterRegistryTest {
 
     @Test
     void shouldCreateRateLimiterWhenOnlyPackagesSpecified() {
-        assertNotNull(givenRegistryForPackage("dummy-package").getRateLimiter(ID));
+        assertNotNull(givenRegistryForPackage("dummy-package").requireRateLimiter(ID));
     }
 
     @Test
     void shouldCreateRateLimiterWhenOnlyClassesSpecified() {
-        assertNotNull(givenRegistryHavingClass(ClassWithNoLimits.class).getRateLimiter(ID));
+        assertNotNull(givenRegistryHavingClass(ClassWithNoLimits.class).requireRateLimiter(ID));
     }
 
     @Test
     void shouldCreateRateLimiterWhenOnlyRatesSpecified() {
         RateLimiterContext<Object> context = RateLimiterContext.builder()
-                .rates(Collections.singletonMap(ID, Rates.of(Rate.ofSeconds(1))))
+                .rates(Collections.singletonList(Rates.of(ID, Rate.ofSeconds(1))))
                 .build();
-        assertNotNull(RateLimiterRegistries.of(context).getRateLimiter(ID));
+        assertNotNull(RateLimiterRegistries.of(context).requireRateLimiter(ID));
     }
 
     @Test
@@ -193,7 +194,7 @@ class RateLimiterRegistryTest {
         RateLimiterContext<Object> context = RateLimiterContext.builder()
                 .properties(properties)
                 .build();
-        assertNotNull(RateLimiterRegistries.of(context).getRateLimiter(ID));
+        assertNotNull(RateLimiterRegistries.of(context).requireRateLimiter(ID));
     }
 
     private RateLimiterRegistry givenRegistry() {
@@ -211,9 +212,9 @@ class RateLimiterRegistryTest {
         return RateLimiterRegistries.of(context);
     }
 
-    private RateLimiterRegistry givenRegistryHavingRates(String id, Rates rates) {
+    private RateLimiterRegistry givenRegistryHavingRates(Rates rates) {
         RateLimiterContext context = RateLimiterContext.builder()
-                .rates(Collections.singletonMap(id, rates)).build();
+                .rates(Collections.singletonList(rates)).build();
         //System.out.println(context);
         return RateLimiterRegistries.of(context);
     }

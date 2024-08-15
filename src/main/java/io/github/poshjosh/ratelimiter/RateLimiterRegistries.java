@@ -1,10 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
-import io.github.poshjosh.ratelimiter.annotation.AnnotationConverter;
-import io.github.poshjosh.ratelimiter.model.Rate;
-import io.github.poshjosh.ratelimiter.model.RateConfig;
-import io.github.poshjosh.ratelimiter.model.RateSource;
-import io.github.poshjosh.ratelimiter.model.Rates;
+import io.github.poshjosh.ratelimiter.model.*;
 import io.github.poshjosh.ratelimiter.util.Operator;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 
@@ -16,7 +12,7 @@ public interface RateLimiterRegistries {
     }
 
     static RateLimiter getLimiter(Class<?> aClass, Object id) {
-        return of(aClass).getRateLimiter(id);
+        return of(aClass).requireRateLimiter(id);
     }
 
     /**
@@ -30,19 +26,19 @@ public interface RateLimiterRegistries {
     }
 
     static <K> RateLimiterRegistry<K> of(String resourceId, Rate limit) {
-        RateSource rateSource = RateSource.of(resourceId, limit != null);
-        return of(resourceId, RateConfig.of(rateSource, Rates.of(limit)));
+        Rates rates = Rates.of(resourceId, limit);
+        RateSource rateSource = RateSources.of(rates);
+        return of(RateConfig.of(rateSource, rates));
     }
 
     static <K> RateLimiterRegistry<K> of(String resourceId, Operator operator, Rate... limits) {
-        final boolean hasLimits = limits != null && limits.length > 0;
-        return of(resourceId, RateConfig.of(RateSource.of(resourceId, hasLimits),
-                Rates.of(operator, limits)));
+        final Rates rates = Rates.of(resourceId, operator, "", limits);
+        return of(RateConfig.of(RateSources.of(rates), rates));
     }
 
-    static <K> RateLimiterRegistry<K> of(String resourceId, RateConfig rateConfig) {
+    static <K> RateLimiterRegistry<K> of(RateConfig rateConfig) {
         RateLimiterContext<K> context = RateLimiterContext.<K>builder()
-                .rates(Collections.singletonMap(resourceId, rateConfig.getRates()))
+                .rates(Collections.singletonList(rateConfig.getRates()))
                 .build();
         return of(context);
     }
@@ -55,8 +51,7 @@ public interface RateLimiterRegistries {
     }
 
     static <K> RateLimiterRegistry<K> of(RateLimiterContext<K> context) {
-        return new DefaultRateLimiterRegistry<>(
-                context, RootNodes.of(context), AnnotationConverter.ofDefaults());
+        return new DefaultRateLimiterRegistry<>(context, RootNodes.of(context));
     }
 
     static <K> RateLimiterRegistry<K> ofCaching(RateLimiterRegistry<K> registry) {

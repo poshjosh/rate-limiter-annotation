@@ -23,7 +23,7 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
 
     private Class<?>[] classes;
 
-    private Map<String, Rates> rates;
+    private List<Rates> rates;
 
     public RateLimiterContextImpl() { }
 
@@ -52,8 +52,8 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
                 @Override public List<String> getResourcePackages() {
                     return packages == null ? Collections.emptyList() : Arrays.asList(packages);
                 }
-                @Override public Map<String, Rates> getRateLimitConfigs() {
-                    return rates == null ? Collections.emptyMap() : rates;
+                @Override public List<Rates> getRateLimitConfigs() {
+                    return rates == null ? Collections.emptyList() : rates;
                 }
             });
         }
@@ -192,11 +192,11 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
         this.classes = classes;
     }
 
-    public Map<String, Rates> getRates() {
+    public List<Rates> getRates() {
         return rates;
     }
 
-    public void setRates(Map<String, Rates> rates) {
+    public void setRates(List<Rates> rates) {
         this.rates = rates;
     }
 

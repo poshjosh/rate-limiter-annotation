@@ -116,7 +116,7 @@ class RateLimiterRegistryTest2 {
         final long duration = 100;
         RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(2, duration));
         Thread.sleep(duration + 1);
-        assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
+        assertTrue(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
     }
 
     @ParameterizedTest
@@ -124,8 +124,8 @@ class RateLimiterRegistryTest2 {
     void shouldExceedLimitAfterLongInitialDelay(long duration) throws InterruptedException {
         RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(1, duration));
         Thread.sleep(duration + 10);
-        assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
-        assertFalse(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Capable of acquiring additional permit");
+        assertTrue(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
+        assertFalse(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Capable of acquiring additional permit");
     }
 
     @Test
@@ -133,22 +133,22 @@ class RateLimiterRegistryTest2 {
         final long duration = 1;
         RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(Long.MAX_VALUE, duration));
         for (int i = 0; i < 100; i++) {
-            assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
     }
 
     @Test
     void immediateConsumeShouldSucceed() {
         RateLimiterRegistry<String> RateLimiterRegistry = perSecondRateLimiter(1);
-        assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
+        assertTrue(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Unable to acquire initial permit");
     }
 
     @Test
     void testConsumeParameterValidation() {
         RateLimiterRegistry<String> RateLimiterRegistry = perSecondRateLimiter(999);
-        assertThrowsRuntimeException(() -> RateLimiterRegistry.getRateLimiter(key).tryAcquire(-1));
+        assertThrowsRuntimeException(() -> RateLimiterRegistry.requireRateLimiter(key).tryAcquire(-1));
         if (!supportsNullKeys) {
-            assertThrowsRuntimeException(() -> RateLimiterRegistry.getRateLimiter((String)null).tryAcquire());
+            assertThrowsRuntimeException(() -> RateLimiterRegistry.requireRateLimiter((String)null).tryAcquire());
         }
     }
 
@@ -174,10 +174,10 @@ class RateLimiterRegistryTest2 {
         for (; i < limit; i++) {
             //System.out.println(i);
             //startMillis = System.currentTimeMillis();
-            assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
         //System.out.println(i);
-        assertFalse(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
+        assertFalse(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
 
         // Works but is a bit flaky
         //Thread.sleep(duration - (System.currentTimeMillis() - startMillis) + 1); // Leads to reset
@@ -186,30 +186,30 @@ class RateLimiterRegistryTest2 {
         i = 0;
         for (; i < limit; i++) {
             //System.out.println(i);
-            assertTrue(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
+            assertTrue(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Unable to acquire permit " + i);
         }
         //System.out.println(i);
-        assertFalse(RateLimiterRegistry.getRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
+        assertFalse(RateLimiterRegistry.requireRateLimiter(key).tryAcquire(), "Capable of acquiring permit " + limit);
     }
 
     @Test
     void shouldResetWhenAtThreshold() throws Exception{
         RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(1, 0));
-        RateLimiterRegistry.getRateLimiter(key).tryAcquire();
+        RateLimiterRegistry.requireRateLimiter(key).tryAcquire();
 
         // Simulate some time before the next recording
         // This way we can have a reset
         Thread.sleep(durationMillis + 500);
 
-        RateLimiterRegistry.getRateLimiter(key).tryAcquire();
+        RateLimiterRegistry.requireRateLimiter(key).tryAcquire();
     }
 
     @Test
     void shouldFailWhenLimitExceeded() {
         RateLimiterRegistry<String> RateLimiterRegistry = getRateLimiterRegistry(getRate(2, 1000));
-        assertThat(RateLimiterRegistry.getRateLimiter(key).tryAcquire()).isTrue();
-        assertThat(RateLimiterRegistry.getRateLimiter(key).tryAcquire()).isTrue();
-        assertThat(RateLimiterRegistry.getRateLimiter(key).tryAcquire()).isFalse();
+        assertThat(RateLimiterRegistry.requireRateLimiter(key).tryAcquire()).isTrue();
+        assertThat(RateLimiterRegistry.requireRateLimiter(key).tryAcquire()).isTrue();
+        assertThat(RateLimiterRegistry.requireRateLimiter(key).tryAcquire()).isFalse();
     }
 
     static void assertTrue(boolean expression, String message) {
