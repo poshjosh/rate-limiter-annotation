@@ -105,7 +105,6 @@ class RateLimiterRegistryTest {
         assertTrue(registry.isRegistered(id));
     }
 
-
     @Test
     void isRegistered_shouldReturnFalse_givenRegistryHasClassWithNoLimits() {
         Class<?> clazz = ClassWithNoLimits.class;

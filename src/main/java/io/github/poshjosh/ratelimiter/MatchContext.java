@@ -144,11 +144,11 @@ final class MatchContext<INPUT> {
     }
 
     public Rates getRates() {
-        return Rates.of(rateConfig.getRates());
+        return rateConfig.getRates().copy();
     }
 
     public Rates getRatesWithParentRatesAsFallback() {
-        return Rates.of(rateConfig.getRatesWithParentRatesAsFallback());
+        return rateConfig.getRatesWithParentRatesAsFallback().copy();
     }
 
     public Matcher<INPUT> getMainMatcher() { return mainMatcher; }

@@ -125,17 +125,50 @@ final class DefaultRateLimiterRegistry<K>
         return this;
     }
 
+    /**
+     * Get a RateLimiter for the specified key.
+     * A rate limiter which is a composition of multiple rate limiters is created and returned.
+     * Each rate limiter in the composition is akin to those returned by the method.
+     * <p>
+     *     The rate limiter is not cached, so that each call to this method will return a
+     *     new instance. Use for cases where this method will never be called with the
+     *     same key, more than once. E.g: Where each key is a http request.
+     *     If want to cache the provided rate limiter, use the factory method
+     *     {@link RateLimiterRegistries#ofCaching(RateLimiterRegistry)} to wrap this registry.
+     * </p>
+     * @param key The key for which a rate limiter is to be returned.
+     * @param resultIfNone The rate limiter to return if none is found.
+     * @return The RateLimiter for the specified key or the provided default if none is found.
+     * @see RateLimiterRegistries#ofCaching(RateLimiterRegistry)
+     * @see #getRateLimiterOrDefault(RateSource, RateLimiter)
+     */
     @Override
     public RateLimiter getRateLimiterOrDefault(K key, RateLimiter resultIfNone) {
-        // This rate limiter is not cached.
-        // Uses for cases where each key is unique. E.g: http request.
-        // Since each http request is unique, no need to cache the rate limiter for re-use.
+        // This rate-limiter is not cached.
+        // Each key will always lead to the construction of a new RateLimiter.
+        // Use for cases where this method will never be called with the same
+        // key, more than once. E.g: Where each key is a http request.
         return createRateLimiterOrDefault(key, resultIfNone);
     }
 
+    /**
+     * Get or create the rate limiter for the specified rate source.
+     * A rate source may be a class, method, or any other implementation of RateSource.
+     * <p>
+     *     This RateLimiter is cached.
+     *     Since each unique RateSource will always refer to the same RateLimiter,
+     *     we cache the RateLimiter for re-use.
+     * </p>
+     *
+     * @param rateSource The RateSource for which a rate limiter is to be returned.
+     * @param resultIfNone The rate limiter to return if none is found.
+     * @return The RateLimiter for the specified RateSource or the provided default if none is found.
+     * @see RateSource
+     * @see io.github.poshjosh.ratelimiter.model.RateSources
+     * @see io.github.poshjosh.ratelimiter.annotation.JavaRateSources
+     */
     @Override
     public RateLimiter getRateLimiterOrDefault(RateSource rateSource, RateLimiter resultIfNone) {
-        // This rate-limiter is cached.
         return getSourceRateLimiterOr(rateSource, resultIfNone);
     }
 

@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Method `RateLimiterRegistry#deregister(String key)` and its variants for `Method` and `Class`.
 - Listening for registry update events - `RateLimiterRegistry#addListener(Listener)`
 - Method `RateSource#getRates` to get rates defined at the respective source.
+- Nesting of property defined rates, possible via `Rates#parentId`.
 
 ### Changed
 
