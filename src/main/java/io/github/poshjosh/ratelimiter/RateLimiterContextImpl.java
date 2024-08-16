@@ -25,9 +25,7 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
 
     private List<Rates> rates;
 
-    public RateLimiterContextImpl() { }
-
-    public RateLimiterContextImpl with(RateLimiterContextImpl<K> context) {
+    public RateLimiterContextImpl<K> with(RateLimiterContextImpl<K> context) {
         this.properties = context.getProperties();
         this.matcherProvider = context.getMatcherProvider();
         this.rateLimiterProvider = context.getRateLimiterProvider();
@@ -40,10 +38,6 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
     }
 
     public RateLimiterContext<K> withDefaultsAsFallback() {
-        if (!hasRateSources()) {
-            throw new IllegalArgumentException(
-                    "A source of rates must be defined, either: packages, classes, or rates");
-        }
         if (getProperties() == null) {
             setProperties(new RateLimitProperties(){
                 @Override public List<Class<?>> getResourceClasses() {
@@ -92,13 +86,11 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
                 && (rates == null || rates.isEmpty()));
     }
     @Override public Set<Class<?>> getTargetClasses() {
-        Set<Class<?>> classes = new HashSet<>();
-        classes.addAll(getProperties().getResourceClasses());
-        // TODO - ClassesInPackageFinder is hidden logic, which should be exposed?
+        Set<Class<?>> targetClasses = new HashSet<>(getProperties().getResourceClasses());
         List<Class<?>> classesFromPackages = getClassesInPackageFinder()
                 .findClasses(getProperties().getResourcePackages());
-        classes.addAll(classesFromPackages);
-        return Collections.unmodifiableSet(classes);
+        targetClasses.addAll(classesFromPackages);
+        return Collections.unmodifiableSet(targetClasses);
     }
 
     protected ClassesInPackageFinder getClassesInPackageFinder() {
@@ -106,32 +98,32 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
     }
 
     @Override public RateLimiterContext<K> withProperties(RateLimitProperties properties) {
-        RateLimiterContextImpl result = with(this);
+        RateLimiterContextImpl<K> result = with(this);
         result.setProperties(properties);
         return result;
     }
 
     @Override public RateLimiterContext<K> withMatcherProvider(MatcherProvider<K> matcherProvider) {
-        RateLimiterContextImpl result = with(this);
+        RateLimiterContextImpl<K> result = with(this);
         result.setMatcherProvider(matcherProvider);
         return result;
     }
 
     @Override public RateLimiterContext<K> withRateLimiterProvider(
             RateLimiterProvider rateLimiterProvider) {
-        RateLimiterContextImpl result = with(this);
+        RateLimiterContextImpl<K> result = with(this);
         result.setRateLimiterProvider(rateLimiterProvider);
         return result;
     }
 
     @Override public RateLimiterContext<K> withStore(BandwidthsStore<K> bandwidthsStore) {
-        RateLimiterContextImpl result = with(this);
+        RateLimiterContextImpl<K> result = with(this);
         result.setStore(store);
         return result;
     }
 
     @Override public RateLimiterContext<K> withTicker(Ticker ticker) {
-        RateLimiterContextImpl result = with(this);
+        RateLimiterContextImpl<K> result = with(this);
         result.setTicker(ticker);
         return result;
     }
