@@ -10,18 +10,17 @@ import java.util.concurrent.TimeUnit;
 
 public interface RateLimiterRegistry<K> {
 
-    interface Listener {
-        default void onRateAdded(RateConfig rateConfig) { }
-        default void onRateRemoved(RateConfig rateConfig) { }
-    }
-
-    void addListener(Listener listener);
-
     boolean isWithinLimit(K key);
     default boolean tryAcquire(K key, int permits) {
         return tryAcquire(key, permits, 0, TimeUnit.MICROSECONDS);
     }
     boolean tryAcquire(K key, int permits, long timeout, TimeUnit timeUnit);
+
+    default Optional<MatchContext<K>> getMatchContextOptional(String id) {
+        return Optional.ofNullable(getMatchContextOrDefault(id, null));
+    }
+
+    MatchContext<K> getMatchContextOrDefault(String id, MatchContext<K> resultIfNone);
 
     default RateLimiterRegistry<K> deregister(Class<?> source) {
         return deregister(RateId.of(source));

@@ -18,19 +18,14 @@ final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     private RateLimiter getRateLimiterFromCacheOrNull(Object key) {
         return rateLimiterCache == null ? null : rateLimiterCache.get(key);
     }
-    private RateLimiter addRateLimiterToCache(Object key, RateLimiter rateLimiter) {
+    private void addRateLimiterToCache(Object key, RateLimiter rateLimiter) {
         if (rateLimiter == null) {
-            return null;
+            return;
         }
         if (rateLimiterCache == null) {
             rateLimiterCache = new WeakHashMap<>();
         }
         rateLimiterCache.put(key, rateLimiter);
-        return rateLimiter;
-    }
-
-    @Override public void addListener(Listener listener) {
-        delegate.addListener(listener);
     }
 
     @Override public boolean isWithinLimit(K key) {
@@ -39,6 +34,11 @@ final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
 
     @Override public boolean tryAcquire(K key, int permits, long timeout, TimeUnit timeUnit) {
         return delegate.tryAcquire(key, permits, timeout, timeUnit);
+    }
+
+    @Override public MatchContext<K> getMatchContextOrDefault(
+            String id, MatchContext<K> resultIfNone) {
+        return delegate.getMatchContextOrDefault(id, resultIfNone);
     }
 
     @Override public RateLimiterRegistry<K> deregister(String id) {

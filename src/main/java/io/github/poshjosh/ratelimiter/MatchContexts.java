@@ -45,7 +45,7 @@ public final class MatchContexts {
             }
         }
         final MatchContext<K> matchContext =
-                new MatchContext<>(rateConfig, mainMatcher, limitMatchers);
+                new DefaultMatchContext<>(rateConfig, mainMatcher, limitMatchers);
         LOG.trace("{}", matchContext);
         return matchContext;
     }
@@ -71,7 +71,7 @@ public final class MatchContexts {
             K toMatch,
             MatchVisitor<?> matchVisitor) {
         if (IS_BOTTOM_UP_TRAVERSAL) {
-            visitNodesBottomUp(((MutableNode)rootNode).getCollectLeafs(), toMatch, matchVisitor);
+            visitNodesBottomUp(((MutableNode)rootNode).getCollectedLeafs(), toMatch, matchVisitor);
         } else {
             visitNodesTopDown(rootNode, toMatch, matchVisitor);
         }

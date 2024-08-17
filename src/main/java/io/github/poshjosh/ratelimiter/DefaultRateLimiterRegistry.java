@@ -11,13 +11,10 @@ import io.github.poshjosh.ratelimiter.util.Ticker;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-final class DefaultRateLimiterRegistry<K>
-        implements RateLimiterRegistry<K>, RateLimiterRegistry.Listener {
+final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
 
     private final RateLimiterContext<K> context;
     private final RootNodes<K> rootNodes;
-
-    private final List<RateLimiterRegistry.Listener> listeners;
 
     DefaultRateLimiterRegistry(
             RateLimiterContext<K> context,
@@ -26,25 +23,6 @@ final class DefaultRateLimiterRegistry<K>
         this.rootNodes = Objects.requireNonNull(rootNodes);
         ((MutableNode<?>)this.rootNodes.getPropertiesRootNode()).collectLeafs();
         ((MutableNode<?>)this.rootNodes.getAnnotationsRootNode()).collectLeafs();
-        this.listeners = new ArrayList<>();
-        addListener(this);
-    }
-
-    @Override
-    public void onRateAdded(RateConfig rateConfig) {
-        ((MutableNode<?>)findRootNode(rateConfig.getId())).collectLeafs();
-    }
-
-    @Override
-    public void onRateRemoved(RateConfig rateConfig) {
-        // Use parent.id here because the rateConfig is already removed
-        final String parentId = rateConfig.getParent().getId();
-        ((MutableNode<?>)findRootNode(parentId)).collectLeafs();
-    }
-
-    @Override
-    public void addListener(Listener listener) {
-        listeners.add(listener);
     }
 
     public boolean isWithinLimit(K key) {
@@ -95,6 +73,12 @@ final class DefaultRateLimiterRegistry<K>
         return propAcquired && annoAcquired;
     }
 
+    @Override
+    public MatchContext<K> getMatchContextOrDefault(String id, MatchContext<K> resultIfNone) {
+        final MatchContext<K> matchContext = this.getMatchContextOrNull(id);
+        return matchContext == null ? resultIfNone : matchContext;
+    }
+
     public RateLimiterRegistry<K> deregister(String id) {
         Node<MatchContext<K>> node = this.getNodeOrNull(id);
         if (node == null) {
@@ -107,9 +91,7 @@ final class DefaultRateLimiterRegistry<K>
         if (parentNode instanceof MutableNode) {
             Node<MatchContext<K>> removed =
                     ((MutableNode<MatchContext<K>>)parentNode).removeChild(node.getName());
-            RateConfig rateConfig =
-                    removed.getValueOptional().map(MatchContext::getRateConfig).orElse(null);
-            listeners.forEach(listener -> listener.onRateRemoved(rateConfig));
+            onRateRemoved(removed);
             return this;
         }
         throw new UnsupportedOperationException("Cannot deregister node from immutable parent");
@@ -185,7 +167,7 @@ final class DefaultRateLimiterRegistry<K>
 
     @Override
     public boolean hasMatcher(String id) {
-        final MatchContext<K> matchContext = getRateContextOrNull(id);
+        final MatchContext<K> matchContext = getMatchContextOrNull(id);
         return matchContext != null && matchContext.hasMatcher();
     }
 
@@ -239,7 +221,7 @@ final class DefaultRateLimiterRegistry<K>
 
     private RateLimiter getSourceRateLimiterOr(RateSource rateSource, RateLimiter resultIfNone) {
         final String id = rateSource.getId();
-        MatchContext<K> matchContext = getRateContextOrNull(id);
+        MatchContext<K> matchContext = getMatchContextOrNull(id);
         if (matchContext == null) {
             final Node<MatchContext<K>> added = addToRoot(rateSource);
             matchContext = added == null ? null : added.requireValue();
@@ -255,7 +237,7 @@ final class DefaultRateLimiterRegistry<K>
         if (!matchContext.getSource().isRateLimited()) {
             return resultIfNone;
         }
-        final Rates rates = matchContext.getRatesWithParentRatesAsFallback();
+        final Rates rates = matchContext.getRatesOrParentRates();
         return context.getRateLimiterProvider().getRateLimiter(key, rates);
     }
 
@@ -276,13 +258,28 @@ final class DefaultRateLimiterRegistry<K>
         if (node == null) {
             return null;
         }
-        final RateConfig rateConfig = node.requireValue();
         final Node<MatchContext<K>> result = toRateContextNode(parent, node);
-        listeners.forEach(listener -> listener.onRateAdded(rateConfig));
+        onRateAdded(result);
         return result;
     }
 
-    private MatchContext<K> getRateContextOrNull(String id) {
+    private void onRateAdded(Node<MatchContext<K>> node) {
+        node.getValueOptional()
+                .map(MatchContext::getRateConfig)
+                .map(RateConfig::getId)
+                .ifPresent(id -> ((MutableNode<?>)findRootNode(id)).collectLeafs());
+    }
+
+    private void onRateRemoved(Node<MatchContext<K>> node) {
+        node.getValueOptional()
+                .map(MatchContext::getRateConfig)
+                .map(RateConfig::getParent)
+                // Use parent.id here because the rateConfig is already removed
+                .map(RateConfig::getId)
+                .ifPresent(parentId -> ((MutableNode<?>)findRootNode(parentId)).collectLeafs());
+    }
+
+    private MatchContext<K> getMatchContextOrNull(String id) {
         Node<MatchContext<K>> node = getNodeOrNull(id);
         return node == null ? null : node.getValueOrDefault(null);
     }

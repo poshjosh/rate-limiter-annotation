@@ -9,7 +9,7 @@
 
     <logger name="io.github.poshjosh.ratelimiter" level="info"/>
 <!--    <logger name="io.github.poshjosh.ratelimiter.bandwidths.DefaultRateToBandwidthConverter" level="trace"/>-->
-<!--    <logger name="io.github.poshjosh.ratelimiter.MatchContext" level="trace"/>-->
+<!--    <logger name="io.github.poshjosh.ratelimiter.DefaultMatchContext" level="trace"/>-->
 <!--    <logger name="io.github.poshjosh.ratelimiter.NodeRateLimiter" level="trace"/>-->
 
     <root level="info">

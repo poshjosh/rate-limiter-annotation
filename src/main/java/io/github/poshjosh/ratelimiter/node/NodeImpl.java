@@ -159,7 +159,7 @@ final class NodeImpl<V> implements MutableNode<V> {
      * @throws UnsupportedOperationException if {@link #collectLeafs()} was not earlier called.
      */
     @Override
-    public Node<V>[] getCollectLeafs() throws UnsupportedOperationException {
+    public Node<V>[] getCollectedLeafs() throws UnsupportedOperationException {
         if (leafs == null) {
             throw new UnsupportedOperationException(
                     "#collectLeafs() must have been called, before calling getCollectedLeafs()");

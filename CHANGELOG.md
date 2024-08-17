@@ -16,10 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Direct registration of Rates using  method: `RateLimiterRegistry#register(String, Rates)`.
 - Direct rate limiting using method: `RateLimiterRegistry#tryAcquire`.
 - Method `RateLimiterRegistry#isWithinLimit(K key)`.
-- Method `RateLimiterRegistry#deregister(String key)` and its variants for `Method` and `Class`.
-- Listening for registry update events - `RateLimiterRegistry#addListener(Listener)`
+- Method `RateLimiterRegistry#deregister(String id)` and its variants for `Method` and `Class`.
 - Method `RateSource#getRates` to get rates defined at the respective source.
 - Nesting of property defined rates, possible via `Rates#parentId`.
+- Method `RateLimiterRegistry#getMatchContext(String id)`.
 
 ### Changed
 

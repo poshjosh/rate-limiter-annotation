@@ -20,5 +20,5 @@ public interface MutableNode<V> extends Node<V> {
      * @throws UnsupportedOperationException if method {@link #collectLeafs()}
      * was not previously called.
      */
-    Node<V>[] getCollectLeafs() throws UnsupportedOperationException;
+    Node<V>[] getCollectedLeafs() throws UnsupportedOperationException;
 }
