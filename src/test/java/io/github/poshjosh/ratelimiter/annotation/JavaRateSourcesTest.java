@@ -1,6 +1,6 @@
 package io.github.poshjosh.ratelimiter.annotation;
 
-import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.model.Operator;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
@@ -38,17 +38,17 @@ class JavaRateSourcesTest {
         io.github.poshjosh.ratelimiter.model.Rate rate = rates.getLimit();
         assertEquals(7, rate.getPermits());
         assertEquals(Duration.ofMinutes(2), rate.getDuration());
-        assertEquals("jvm.memory.free > 0", rate.getRateCondition());
+        assertEquals("jvm.memory.free > 0", rate.getCondition());
     }
 
-    @Rate(2)
-    @Rate(10)
+    @Rate("2/s")
+    @Rate("10/s")
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
     @RateGroup(id ="resource-group", operator = Operator.AND)
     public @interface CustomRateGroup { }
 
-    @Rate(1)
+    @Rate("1/s")
     @Rate(permits=5, condition="sys.time.elapsed > PT0S")
     @RateCondition("jvm.memory.free < 0")
     @CustomRateGroup
@@ -62,7 +62,7 @@ class JavaRateSourcesTest {
         assertEquals(3, rates.totalSize());
         assertEquals("jvm.memory.free < 0", rates.getRateCondition());
         assertTrue(rates.getSubLimits().stream()
-                .map(io.github.poshjosh.ratelimiter.model.Rate::getRateCondition)
+                .map(io.github.poshjosh.ratelimiter.model.Rate::getCondition)
                 .anyMatch("sys.time.elapsed > PT0S"::equals));
     }
 

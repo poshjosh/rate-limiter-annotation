@@ -15,11 +15,21 @@ public @interface Rate {
 
     String id() default "";
 
-    /** Alias for value */
-    long permits() default Long.MAX_VALUE;
+    /**
+     * A string representation of the rate.
+     * 99/m = 99 permits per minute
+     * 1    = 1 permit per millisecond
+     * Supported characters : '' = milli, 's' = second, 'm' = minute, 'h' = hour, 'd' = day
+     *
+     * @see #permits()
+     * @see #duration()
+     */
+    String rate() default "";
 
-    /** Alias for permits */
-    long value() default Long.MAX_VALUE;
+    /** Alias for rate */
+    String value() default "";
+
+    long permits() default -1;
 
     long duration() default 1;
 

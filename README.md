@@ -8,11 +8,11 @@ Rate limit through annotations.
 
 ```java
 // All methods collectively limited to 10 permits per second
-@Rate(10)
+@Rate("10/s")
 class RateLimitedResource {
 
     // 99 permits per second
-    @Rate(99)
+    @Rate("99/s")
     public String smile() {
         return ":)";
     }

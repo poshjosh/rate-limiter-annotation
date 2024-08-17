@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class RateProcessorTest {
 
-    @Rate(1)
+    @Rate("1/s")
     static class Resource1{}
     static class Resource2{}
     static class Resource3{}

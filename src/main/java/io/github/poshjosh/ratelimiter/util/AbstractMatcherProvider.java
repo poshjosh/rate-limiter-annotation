@@ -25,13 +25,13 @@ public abstract class AbstractMatcherProvider<INPUT> implements MatcherProvider<
             return Collections.emptyList();
         }
         if (subLimits.size() == 1) {
-            return createExpressionMatcher(subLimits.get(0).getRateCondition())
+            return createExpressionMatcher(subLimits.get(0).getCondition())
                     .map(Collections::singletonList)
                     // Tag:Rule:number-of-matchers-must-equal-number-of-rates
                     .orElse(Collections.singletonList(Matchers.matchNone()));
         }
         return subLimits.stream()
-                .map(rate -> createExpressionMatcher(rate.getRateCondition()).orElse(Matchers.matchNone()))
+                .map(rate -> createExpressionMatcher(rate.getCondition()).orElse(Matchers.matchNone()))
                 .collect(Collectors.toList());
     }
 

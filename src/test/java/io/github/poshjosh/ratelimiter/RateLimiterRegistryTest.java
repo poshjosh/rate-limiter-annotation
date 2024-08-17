@@ -25,7 +25,7 @@ class RateLimiterRegistryTest {
 
     private static final String ID = "test";
 
-    @io.github.poshjosh.ratelimiter.annotations.Rate(1)
+    @io.github.poshjosh.ratelimiter.annotations.Rate("1/s")
     @RateGroup
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
@@ -34,7 +34,7 @@ class RateLimiterRegistryTest {
     @Limited
     static class ClassWithGroupLimits { }
 
-    @io.github.poshjosh.ratelimiter.annotations.Rate(1)
+    @io.github.poshjosh.ratelimiter.annotations.Rate("1/s")
     static class ClassWithLimits {}
     static class ClassWithNoLimits {}
 

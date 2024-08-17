@@ -5,7 +5,7 @@ import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 
 import java.time.Instant;
 
-@Rate(10)
+@Rate("10/s")
 public class RateLimitedClass1 {
     void method_0() {}
     void $method_1(String sval, Instant instant) {}
@@ -13,7 +13,7 @@ public class RateLimitedClass1 {
         return "method_2";
     }
     private void method_3(boolean bval) {}
-    @Rate(10)
+    @Rate("10/s")
     @RateCondition("sys.time.elapsed > PT3S")
     public String methodNumber4(Object a, Object b, Object c, Object d, Object e, Object f,
             Object g, Object h, Object i, Object j, Object k, Object l, Object m, Object n,

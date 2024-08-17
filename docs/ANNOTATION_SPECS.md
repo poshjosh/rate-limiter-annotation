@@ -57,7 +57,7 @@ Given the following rate groups:
 
 ```java
 // 1 request per second for requests whose locale is not either en_US or en_UK
-@Rate(1)
+@Rate("1/s")
 @RateCondition("web.request.locale != [en_US|en_UK]")
 @RateGroup("class-group")
 @Retention(RetentionPolicy.RUNTIME)
@@ -65,7 +65,7 @@ Given the following rate groups:
 @interface ClassGroup{ }
 
 // 1 request per second for requests with the specified header
-@Rate(1)
+@Rate("1/s")
 @RateCondition("web.request.header = X-Rate-Limited")
 @RateGroup("method-group")
 @Retention(RetentionPolicy.RUNTIME)
@@ -78,13 +78,13 @@ And 3 resource classes `Resource1`, `Resource2` and `Resource3`, rate limited as
 ```java
 class Resource1{
     
-    @Rate(1)
+    @Rate("1/s")
     void methodA() {}
 
-    @Rate(1)
+    @Rate("1/s")
     void methodB() {}
 
-    @Rate(1)
+    @Rate("1/s")
     @MethodGroup
     void methodC() {}
 }
@@ -94,14 +94,14 @@ class Resource1{
 @ClassGroup
 class Resource2{
     
-    @Rate(1)
+    @Rate("1/s")
     void methodA() {}
 
-    @Rate(1)
+    @Rate("1/s")
     @MethodGroup
     void methodB() {}
 
-    @Rate(1)
+    @Rate("1/s")
     void methodC() {}
 }
 ```
@@ -110,7 +110,7 @@ class Resource2{
 @ClassGroup
 class Resource3{
     
-    @Rate(1)
+    @Rate("1/s")
     void methodA() {}
 }
 ```

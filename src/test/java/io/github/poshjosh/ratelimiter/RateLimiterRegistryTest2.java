@@ -23,7 +23,7 @@ class RateLimiterRegistryTest2 {
     private final Class<? extends BandwidthFactory> factoryClass = BandwidthFactories.AllOrNothing.class;
     private final boolean supportsNullKeys = true;
 
-    @io.github.poshjosh.ratelimiter.annotations.Rate(1)
+    @io.github.poshjosh.ratelimiter.annotations.Rate("1/s")
     static class ResourceWithClassAndMethodRates {
         @io.github.poshjosh.ratelimiter.annotations.Rate(id = "smile", permits = 2)
         void smile() { }
@@ -62,7 +62,7 @@ class RateLimiterRegistryTest2 {
         assertThat(limiter.tryAcquire(1)).isFalse();
     }
 
-    @io.github.poshjosh.ratelimiter.annotations.Rate(2)
+    @io.github.poshjosh.ratelimiter.annotations.Rate("2/s")
     static class ResourceWithClassRateLargerThanMethodRate {
         @io.github.poshjosh.ratelimiter.annotations.Rate(id = "smile", permits = 1)
         void smile() { }
@@ -88,7 +88,7 @@ class RateLimiterRegistryTest2 {
         assertThat(limiter.tryAcquire(1)).isFalse();
     }
 
-    @io.github.poshjosh.ratelimiter.annotations.Rate(1)
+    @io.github.poshjosh.ratelimiter.annotations.Rate("1/s")
     static class ResourceWithOnlyClassRate {
         void smile() { }
         static Method getMethodLimitedByClassRate() {
@@ -233,6 +233,6 @@ class RateLimiterRegistryTest2 {
     }
 
     protected Rate getRate(long permits, long durationMillis, Class<? extends BandwidthFactory> factoryClass) {
-        return Rate.of(permits, Duration.ofMillis(durationMillis), "", factoryClass);
+        return Rate.of(permits, Duration.ofMillis(durationMillis), "", factoryClass.getName());
     }
 }

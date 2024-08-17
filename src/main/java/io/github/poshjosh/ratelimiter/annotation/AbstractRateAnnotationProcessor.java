@@ -8,7 +8,7 @@ import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.RateSources;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.node.Nodes;
-import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.model.Operator;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import org.slf4j.Logger;

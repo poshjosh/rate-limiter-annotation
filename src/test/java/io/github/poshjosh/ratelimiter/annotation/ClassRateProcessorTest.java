@@ -3,7 +3,7 @@ package io.github.poshjosh.ratelimiter.annotation;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.model.Operator;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import org.junit.jupiter.api.Test;
 import java.lang.annotation.*;
@@ -16,7 +16,7 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
 
     final RateProcessor<Class<?>> rateProcessor = RateProcessors.ofDefaults();
 
-    @Rate(2)
+    @Rate("2/s")
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.METHOD, ElementType.TYPE, ElementType.ANNOTATION_TYPE})
     @RateGroup

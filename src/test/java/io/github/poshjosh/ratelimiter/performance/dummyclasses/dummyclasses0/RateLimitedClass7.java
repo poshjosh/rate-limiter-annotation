@@ -12,7 +12,7 @@ public class RateLimitedClass7 {
         return "method_2";
     }
     private void method_3(boolean bval) {}
-    @Rate(10)
+    @Rate("10/s")
     @RateCondition("sys.time.elapsed > PT3S")
     public String methodNumber4(Object a, Object b, Object c, Object d, Object e, Object f,
             Object g, Object h, Object i, Object j, Object k, Object l, Object m, Object n,

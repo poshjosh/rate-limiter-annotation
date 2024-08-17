@@ -1,7 +1,7 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.model.*;
-import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.model.Operator;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 
 import java.util.Collections;

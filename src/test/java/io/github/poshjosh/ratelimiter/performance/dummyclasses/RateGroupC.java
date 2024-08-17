@@ -8,7 +8,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-@Rate(1)
+@Rate("1/s")
 @Retention(RetentionPolicy.RUNTIME)
 @Target({ElementType.TYPE, ElementType.ANNOTATION_TYPE, ElementType.METHOD})
 public @interface RateGroupC { }

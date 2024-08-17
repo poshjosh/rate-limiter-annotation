@@ -6,7 +6,7 @@ import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
-import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.model.Operator;
 import io.github.poshjosh.ratelimiter.util.StringUtils;
 
 import java.lang.annotation.Annotation;
@@ -104,13 +104,13 @@ public final class JavaRateSources {
             }
             final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
             final Rate[] rateAnnotations = source.getAnnotationsByType(Rate.class);
-            final String rateConditionForAllRates = getRateCondition(source);
+            final String conditionForAllRates = getCondition(source);
 
             final Operator operator = operator(rateGroup);
             validate(source, operator, rateAnnotations);
             if (rateAnnotations.length == 0) {
                 // Operator is irrelevant for a single Rate
-                return Rates.ofCondition(rateConditionForAllRates);
+                return Rates.ofCondition(conditionForAllRates);
             }
             final io.github.poshjosh.ratelimiter.model.Rate[] rateData = new io.github.poshjosh.ratelimiter.model.Rate[rateAnnotations.length];
             for (int i = 0; i < rateAnnotations.length; i++) {
@@ -118,16 +118,16 @@ public final class JavaRateSources {
             }
             if (rateData.length == 1) {
                 final io.github.poshjosh.ratelimiter.model.Rate only = rateData[0];
-                if (!StringUtils.hasText(rateConditionForAllRates)) {
+                if (!StringUtils.hasText(conditionForAllRates)) {
                     return Rates.of(only);
                 }
-                if (!StringUtils.hasText(only.getRateCondition())) {
-                    only.setRateCondition(rateConditionForAllRates);
+                if (!StringUtils.hasText(only.getCondition())) {
+                    only.setCondition(conditionForAllRates);
                     return Rates.of(only);
                 }
             }
 
-            return Rates.of(id, operator, rateConditionForAllRates, rateData);
+            return Rates.of(id, operator, conditionForAllRates, rateData);
         }
 
         private void validate(GenericDeclaration source, Operator operator, Rate[] rates) {
@@ -143,15 +143,15 @@ public final class JavaRateSources {
             }
         }
 
-        private String getRateCondition(GenericDeclaration source) {
-            final RateCondition rateCondition = source.getAnnotation(RateCondition.class);
-            return getExpression(source, rateCondition);
+        private String getCondition(GenericDeclaration source) {
+            final RateCondition condition = source.getAnnotation(RateCondition.class);
+            return getExpression(source, condition);
         }
 
-        private String getExpression(GenericDeclaration source, RateCondition rateCondition) {
-            return rateCondition == null ? "" :
+        private String getExpression(GenericDeclaration source, RateCondition condition) {
+            return condition == null ? "" :
                     Checks.requireOneContent(source, "RateCondition expression",
-                            rateCondition.expression(), rateCondition.value());
+                            condition.expression(), condition.value());
         }
 
         private Operator operator(RateGroup rateGroup) {
@@ -159,11 +159,22 @@ public final class JavaRateSources {
         }
 
         private io.github.poshjosh.ratelimiter.model.Rate convert(Rate rate) {
-            long value = rate.value() == Long.MAX_VALUE ? rate.permits() : rate.value();
-            Duration duration = rate.duration() == 0 ? Duration.ZERO : Duration.of(rate.duration(), toChronoUnit(rate.timeUnit()));
-            String condition = StringUtils.hasText(rate.condition()) ? rate.condition() : rate.when();
+            final long permits = rate.permits();
+            final String rateText = rate.value().isEmpty() ? rate.rate() : rate.value();
+            if (permits == -1 && (rateText == null || rateText.isEmpty())) {
+                throw new AnnotationProcessingException(
+                        "Either `permits` or `rate` must be specified in: " + rate);
+            }
+            Duration duration = rate.duration() == 0 ?
+                    Duration.ZERO : Duration.of(rate.duration(), toChronoUnit(rate.timeUnit()));
+            String when = StringUtils.hasText(rate.condition()) ? rate.condition() : rate.when();
+            String factoryClass = rate.factoryClass().getName();
+            if (StringUtils.hasText(rateText)) {
+                return io.github.poshjosh.ratelimiter.model.Rate.of(rateText)
+                        .condition(when).factoryClass(factoryClass);
+            }
             return io.github.poshjosh.ratelimiter.model.Rate
-                    .of(value, duration, condition, rate.factoryClass());
+                    .of(permits, duration, when, factoryClass);
         }
 
         private ChronoUnit toChronoUnit(TimeUnit timeUnit) {

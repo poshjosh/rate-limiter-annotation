@@ -3,7 +3,7 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateCondition;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
-import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.model.Operator;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.*;
@@ -25,7 +25,7 @@ class RateLimiterRegistryAnnotationTest {
     }
 
     static class ClassWithRateLimitedMethod {
-        @Rate(1)
+        @Rate("1/s")
         void hi() { }
         static Method getRateLimitedMethod() {
             try {
@@ -55,9 +55,9 @@ class RateLimiterRegistryAnnotationTest {
         assertTrue(limiterRegistry.requireRateLimiter(resourceId).tryAcquire(Integer.MAX_VALUE));
     }
 
-    @Rate(2)
+    @Rate("2/s")
     static class ClassRateHigherThanMethodRate {
-        @Rate(1)
+        @Rate("1/s")
         void hi() { }
         static Method getRateLimitedMethod() {
             try {
@@ -75,9 +75,9 @@ class RateLimiterRegistryAnnotationTest {
         assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
-    @Rate(1)
+    @Rate("1/s")
     static class ClassRateLowerThanMethodRate {
-        @Rate(2)
+        @Rate("2/s")
         void hi() { }
         static Method getRateLimitedMethod() {
             try {
@@ -104,7 +104,7 @@ class RateLimiterRegistryAnnotationTest {
         assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
-    @Rate(1)
+    @Rate("1/s")
     @RateGroup
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
@@ -112,7 +112,7 @@ class RateLimiterRegistryAnnotationTest {
 
     @RateGroupWithLowRate
     static class ClassWithGroupRateLower1 {
-        @Rate(2)
+        @Rate("2/s")
         void hi() { }
         static Method getRateLimitedMethod() {
             try {
@@ -125,7 +125,7 @@ class RateLimiterRegistryAnnotationTest {
 
     @RateGroupWithLowRate
     static class ClassWithGroupRateLower2 {
-        @Rate(2)
+        @Rate("2/s")
         void hi() { }
     }
 
@@ -215,7 +215,7 @@ class RateLimiterRegistryAnnotationTest {
         void method_0() { }
     }
 
-    @Rate(1)
+    @Rate("1/s")
     @RateCondition("jvm.memory.free < 1")
     static class ClassWithSeparateRateCondition { }
 
@@ -238,7 +238,7 @@ class RateLimiterRegistryAnnotationTest {
         assertTrue(limiterRegistry.requireRateLimiter(id).tryAcquire());
     }
 
-    @Rate(1)
+    @Rate("1/s")
     @RateCondition("sys.time.elapsed >= PT0S")
     static class ClassWithRateConditionTrue { }
 
@@ -276,7 +276,7 @@ class RateLimiterRegistryAnnotationTest {
         assertFalse(limiterRegistry.requireRateLimiter(key).tryAcquire());
     }
 
-    @Rate(1)
+    @Rate("1/s")
     @RateCondition(" sys.time.elapsed >= PT0S ")
     static class ClassWithSeparateRateConditionSpaced { }
 
@@ -299,7 +299,7 @@ class RateLimiterRegistryAnnotationTest {
         assertFalse(limiterRegistry.requireRateLimiter("resource-8b").tryAcquire());
     }
 
-    @Rate(1)
+    @Rate("1/s")
     @RateCondition("sys.time.elapsed !< PT0S") // We have had 0 secs, which may cause !<= to fail
     static class ClassWithNegationSeparateRateCondition { }
 

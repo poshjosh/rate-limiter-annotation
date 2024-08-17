@@ -2,7 +2,7 @@ package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotations.Rate;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
-import io.github.poshjosh.ratelimiter.util.Operator;
+import io.github.poshjosh.ratelimiter.model.Operator;
 import org.junit.jupiter.api.Test;
 
 import java.lang.annotation.ElementType;
@@ -17,10 +17,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RateLimiterRegistryAndGroupTest {
     private static final String AND_RATE_GROUP = "and-rate-group";
     private static final int MIN = 1;
+    private static final String MIN_RATE = MIN + "/s";
     private static final int MAX = 2;
+    private static final String MAX_RATE = MAX + "/s";
 
-    @Rate(MIN)
-    @Rate(MAX)
+
+    @Rate(MIN_RATE)
+    @Rate(MAX_RATE)
     @RateGroup(id = AND_RATE_GROUP, operator = Operator.AND)
     @Retention(RetentionPolicy.RUNTIME)
     @Target({ ElementType.TYPE, ElementType.METHOD, ElementType.ANNOTATION_TYPE})
