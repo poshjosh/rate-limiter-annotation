@@ -27,7 +27,7 @@ public interface MatchContext<INPUT> {
 
     Matcher<INPUT> getMainMatcher();
 
-    List<Matcher<INPUT>> getLimitMatchers();
+    List<Matcher<INPUT>> getSubMatchers();
 
     RateConfig getRateConfig();
 }

@@ -52,7 +52,7 @@ public interface RateLimitProperties {
     default boolean hasRateSources() {
         return !((getResourcePackages() == null || getResourcePackages().isEmpty())
                 && (getResourceClasses() == null || getResourceClasses().isEmpty())
-                && (getRateLimitConfigs() == null || getRateLimitConfigs().isEmpty()));
+                && (getRates() == null || getRates().isEmpty()));
     }
 
     default boolean isRateLimitingEnabled() {
@@ -75,5 +75,5 @@ public interface RateLimitProperties {
      *
      * @return Rates to apply to rate limiters
      */
-    default List<Rates> getRateLimitConfigs() { return Collections.emptyList(); }
+    default List<Rates> getRates() { return Collections.emptyList(); }
 }

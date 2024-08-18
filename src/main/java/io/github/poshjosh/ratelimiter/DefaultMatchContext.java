@@ -25,13 +25,13 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
     /**
      * Matchers for rate conditions specific to each rate.
      */
-    private final List<Matcher<INPUT>> limitMatchers;
+    private final List<Matcher<INPUT>> subMatchers;
 
     DefaultMatchContext(RateConfig rateConfig,
-            Matcher<INPUT> mainMatcher, List<Matcher<INPUT>> limitMatchers) {
+            Matcher<INPUT> mainMatcher, List<Matcher<INPUT>> subMatchers) {
         this.rateConfig = Objects.requireNonNull(rateConfig);
         this.mainMatcher = Objects.requireNonNull(mainMatcher);
-        this.limitMatchers = Objects.requireNonNull(limitMatchers);
+        this.subMatchers = Objects.requireNonNull(subMatchers);
     }
 
     @Override public boolean matches(INPUT key, MatchVisitor<?> matchVisitor) {
@@ -40,11 +40,12 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
     }
 
     private int visitMatching(INPUT key, MatchVisitor<?> matchVisitor) {
-        final String mainMatch = match(key);
+        final String mainMatch = matchMain(key);
         if (hasSubConditions()) {
-            final int count = getLimitMatchers().size();
+            final int count = getSubMatchers().size();
             int matchCount = 0;
             for(int i = 0; i < count; i++) {
+                // If there are sub conditions, then the main match is used in conjunction with each
                 final String match = matchAt(key, i, mainMatch);
                 if (Matcher.isMatch(match)) {
                     ++matchCount;
@@ -88,7 +89,7 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
         }
     }
 
-    private String match(INPUT key) {
+    private String matchMain(INPUT key) {
         final Matcher<INPUT> matcher = getMainMatcher();
         final String match = matcher.match(key);
         if (LOG.isTraceEnabled()) {
@@ -100,7 +101,7 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
 
     private String matchAt(INPUT key, int i, String mainMatch) {
 
-        final Matcher<INPUT> matcher = getLimitMatchers().get(i);
+        final Matcher<INPUT> matcher = getSubMatchers().get(i);
 
         final String match = matcher.match(key);
 
@@ -118,7 +119,7 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
 
     private boolean isMatchSuccessful(int matchCount) {
         if (hasSubConditions()) {
-            return matchCount >= getLimitMatchers().size();
+            return matchCount >= getSubMatchers().size();
         } else {
             return matchCount >= 1;
         }
@@ -126,7 +127,7 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
 
     @Override public boolean hasMatcher() {
         return !Matchers.matchNone().equals(mainMatcher) ||
-                limitMatchers.stream().anyMatch(matcher -> !Matchers.matchNone().equals(matcher));
+                subMatchers.stream().anyMatch(matcher -> !Matchers.matchNone().equals(matcher));
     }
 
     @Override public String getId() {
@@ -144,7 +145,7 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
     }
     
     private Rate rateAt(int index) {
-        return rateConfig.getRates().getSubLimits().get(index);
+        return rateConfig.getRates().getRates().get(index);
     }
 
     @Override public Rates getRates() {
@@ -161,8 +162,8 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
 
     @Override public Matcher<INPUT> getMainMatcher() { return mainMatcher; }
 
-    @Override public List<Matcher<INPUT>> getLimitMatchers() {
-        return limitMatchers;
+    @Override public List<Matcher<INPUT>> getSubMatchers() {
+        return subMatchers;
     }
 
     @Override public RateConfig getRateConfig() {
@@ -176,15 +177,15 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
             return false;
         DefaultMatchContext<?> that = (DefaultMatchContext<?>) o;
         return rateConfig.equals(that.rateConfig) && mainMatcher.equals(that.mainMatcher)
-                && limitMatchers.equals(that.limitMatchers);
+                && subMatchers.equals(that.subMatchers);
     }
 
     public int hashCode() {
-        return Objects.hash(rateConfig, mainMatcher, limitMatchers);
+        return Objects.hash(rateConfig, mainMatcher, subMatchers);
     }
 
     public String toString() {
         return "DefaultMatchContext{config=" + rateConfig +
-                ", mainMatcher=" + mainMatcher + ", limitMatchers=" + limitMatchers + '}';
+                ", mainMatcher=" + mainMatcher + ", subMatchers=" + subMatchers + '}';
     }
 }

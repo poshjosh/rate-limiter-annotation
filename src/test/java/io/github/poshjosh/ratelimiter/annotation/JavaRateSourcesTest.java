@@ -25,7 +25,7 @@ class JavaRateSourcesTest {
         Rates rates = JavaRateSources.of(ClassWithZeroRates.class).getRates();
         assertFalse(rates.isSet());
         assertEquals(Operator.NONE, rates.getOperator());
-        assertTrue(rates.getRateCondition() == null || rates.getRateCondition().isEmpty());
+        assertTrue(rates.getCondition() == null || rates.getCondition().isEmpty());
     }
 
     @Rate(permits=7, duration=2, timeUnit=TimeUnit.MINUTES, condition="jvm.memory.free > 0")
@@ -34,8 +34,8 @@ class JavaRateSourcesTest {
     @Test
     void getRates_givenClassWithSingleRate_shouldReturnMatchingRate() {
         Rates rates = JavaRateSources.of(ClassWithSingleRate.class).getRates();
-        assertEquals(1, rates.totalSize());
-        io.github.poshjosh.ratelimiter.model.Rate rate = rates.getLimit();
+        assertEquals(1, rates.size());
+        io.github.poshjosh.ratelimiter.model.Rate rate = rates.getRates().get(0);
         assertEquals(7, rate.getPermits());
         assertEquals(Duration.ofMinutes(2), rate.getDuration());
         assertEquals("jvm.memory.free > 0", rate.getCondition());
@@ -59,9 +59,9 @@ class JavaRateSourcesTest {
         // 1 x RateCondition (main)
         // 2 x Rate (sub)
         Rates rates = JavaRateSources.of(ClassWith2Rates.class).getRates();
-        assertEquals(3, rates.totalSize());
-        assertEquals("jvm.memory.free < 0", rates.getRateCondition());
-        assertTrue(rates.getSubLimits().stream()
+        assertEquals(2, rates.size());
+        assertEquals("jvm.memory.free < 0", rates.getCondition());
+        assertTrue(rates.getRates().stream()
                 .map(io.github.poshjosh.ratelimiter.model.Rate::getCondition)
                 .anyMatch("sys.time.elapsed > PT0S"::equals));
     }
@@ -69,7 +69,7 @@ class JavaRateSourcesTest {
     @Test
     void convert_givenGroupAnnotationWithSomeRates_shouldReturnSameNumberOfRates() {
       Rates rates = JavaRateSources.of(CustomRateGroup.class).getRates();
-      assertEquals(2, rates.totalSize());
+      assertEquals(2, rates.size());
       assertEquals(Operator.AND, rates.getOperator());
     }
 }

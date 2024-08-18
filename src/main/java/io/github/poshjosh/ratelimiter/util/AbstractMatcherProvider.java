@@ -19,23 +19,26 @@ public abstract class AbstractMatcherProvider<INPUT> implements MatcherProvider<
     }
 
     @Override
-    public List<Matcher<INPUT>> createLimitMatchers(RateConfig rateConfig) {
-        List<Rate> subLimits = rateConfig.getRates().getSubLimits();
-        if (subLimits.isEmpty()) {
+    public List<Matcher<INPUT>> createSubMatchers(RateConfig rateConfig) {
+        List<Rate> subRates = rateConfig.getRates().getRates();
+        if (subRates.isEmpty()) {
             return Collections.emptyList();
         }
-        if (subLimits.size() == 1) {
-            return createExpressionMatcher(subLimits.get(0).getCondition())
+        if (subRates.size() == 1) {
+            return createExpressionMatcher(subRates.get(0).getCondition())
                     .map(Collections::singletonList)
                     // Tag:Rule:number-of-matchers-must-equal-number-of-rates
                     .orElse(Collections.singletonList(Matchers.matchNone()));
         }
-        return subLimits.stream()
+        return subRates.stream()
                 .map(rate -> createExpressionMatcher(rate.getCondition()).orElse(Matchers.matchNone()))
                 .collect(Collectors.toList());
     }
 
     protected Optional<Matcher<INPUT>> createExpressionMatcher(String expression) {
+        if (expression == null || expression.isEmpty()) {
+            return Optional.empty();
+        }
         return expressionMatcher.matcher(expression);
     }
 

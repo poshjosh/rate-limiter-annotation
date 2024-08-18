@@ -23,7 +23,7 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
 
     private Node<RateConfig> addNodesToRoot(Node<RateConfig> rootNode, RateLimitProperties source,
             NodeConsumer nodeConsumer) {
-        List<Rates> ratesList = source.getRateLimitConfigs();
+        List<Rates> ratesList = source.getRates();
         checkNamesNotConflicting(rootNode, ratesList);
         createNodes(rootNode, source, nodeConsumer);
         return rootNode;
@@ -46,7 +46,7 @@ final class PropertyRateProcessor implements RateProcessor<RateLimitProperties> 
             Node<RateConfig> root,
             RateLimitProperties source,
             NodeConsumer nodeConsumer) {
-        final List<Rates> ratesList = sortParentBeforeChild(source.getRateLimitConfigs());
+        final List<Rates> ratesList = sortParentBeforeChild(source.getRates());
         final Map<String, Node<RateConfig>> processed = new HashMap<>();
         for (Rates rates : ratesList) {
             final String id = rates.getId();

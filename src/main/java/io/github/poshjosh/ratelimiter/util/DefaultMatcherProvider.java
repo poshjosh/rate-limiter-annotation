@@ -12,7 +12,7 @@ final class DefaultMatcherProvider<INPUT> extends AbstractMatcherProvider<INPUT>
     @Override
     public Matcher<INPUT> createMainMatcher(RateConfig rateConfig) {
         final Matcher<INPUT> expressionMatcher = createExpressionMatcher(
-                rateConfig.getRates().getRateCondition()).orElse(null);
+                rateConfig.getRates().getCondition()).orElse(null);
         if (isMatchNone(rateConfig, expressionMatcher != null)) {
             return Matchers.matchNone();
         }

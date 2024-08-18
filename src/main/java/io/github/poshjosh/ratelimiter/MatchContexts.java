@@ -36,12 +36,12 @@ public final class MatchContexts {
             limitMatchers = Collections.emptyList();
         } else {
             mainMatcher = matcherProvider.createMainMatcher(rateConfig);
-            limitMatchers = matcherProvider.createLimitMatchers(rateConfig);
+            limitMatchers = matcherProvider.createSubMatchers(rateConfig);
             // Tag:Rule:number-of-matchers-must-equal-number-of-rates
-            if (limitMatchers.size() != rateConfig.getRates().subLimitSize()) {
+            if (limitMatchers.size() != rateConfig.getRates().subRateSize()) {
                 throw new IllegalStateException(
                         String.format("Number of Matchers: %s is not equal to number of rates: %s",
-                                limitMatchers.size(), rateConfig.getRates().subLimitSize()));
+                                limitMatchers.size(), rateConfig.getRates().subRateSize()));
             }
         }
         final MatchContext<K> matchContext =

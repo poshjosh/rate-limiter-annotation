@@ -46,7 +46,7 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
                 @Override public List<String> getResourcePackages() {
                     return packages == null ? Collections.emptyList() : Arrays.asList(packages);
                 }
-                @Override public List<Rates> getRateLimitConfigs() {
+                @Override public List<Rates> getRates() {
                     return rates == null ? Collections.emptyList() : rates;
                 }
             });

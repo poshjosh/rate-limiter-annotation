@@ -3,7 +3,6 @@ package io.github.poshjosh.ratelimiter.util;
 import io.github.poshjosh.ratelimiter.model.*;
 import org.junit.jupiter.api.Test;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
@@ -55,16 +54,16 @@ class MatcherProviderTest {
     @Test
     void createSubMatchers_givenNoRateCondition_shouldReturnEmpty() {
         RateConfig rateConfig = RateConfig.of(Rates.empty());
-        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
     }
 
     @Test
-    void createSubMatchers_givenOnlyGlobalRateCondition_shouldReturnEmpty() {
+    void createSubMatchers_givenOnlyGlobalCondition_shouldReturnEmpty() {
         Rates rates = new Rates();
-        rates.setRateCondition("sys.time.elapsed >= PT0S");
+        rates.setCondition("sys.time.elapsed >= PT0S");
         RateConfig rateConfig = RateConfig.of(rates);
-        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
         assertTrue(matchers.isEmpty());
     }
 
@@ -73,26 +72,15 @@ class MatcherProviderTest {
         List<Rate> rateList = Arrays.asList(Rate.ofDays(1), Rate.ofDays(2));
         Rates rates = Rates.of(Operator.OR, "sys.time.elapsed >= PT0S", rateList);
         RateConfig rateConfig = RateConfig.of(rates);
-        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
         assertEquals(rateList.size(), matchers.size());
-    }
-
-    @Test
-    void createSubMatchers_givenOnlyOneGlobalRate_shouldReturnEmpty() {
-        Rates rates = new Rates();
-        rates.setPermits(1);
-        rates.setDuration(Duration.ofSeconds(1));
-        rates.setRateCondition("sys.time.elapsed >= PT0S");
-        RateConfig rateConfig = RateConfig.of(rates);
-        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
-        assertTrue(matchers.isEmpty());
     }
 
     @Test
     void createSubMatchers_givenOneNonGlobalRateCondition_shouldReturnOne() {
         String nodeName = "test-node-name";
         RateConfig rateConfig = givenRateConfigWithConditions(nodeName, "", "sys.time.elapsed >= PT0S");
-        List<Matcher<String>> matchers = matcherProvider.createLimitMatchers(rateConfig);
+        List<Matcher<String>> matchers = matcherProvider.createSubMatchers(rateConfig);
         assertEquals(1, matchers.size());
     }
 

@@ -104,30 +104,19 @@ public final class JavaRateSources {
             }
             final RateGroup rateGroup = source.getAnnotation(RateGroup.class);
             final Rate[] rateAnnotations = source.getAnnotationsByType(Rate.class);
-            final String conditionForAllRates = getCondition(source);
+            final String globalCondition = getCondition(source);
 
             final Operator operator = operator(rateGroup);
             validate(source, operator, rateAnnotations);
             if (rateAnnotations.length == 0) {
-                // Operator is irrelevant for a single Rate
-                return Rates.ofCondition(conditionForAllRates);
+                return globalCondition == null || globalCondition.isEmpty()
+                        ? Rates.none() : Rates.ofCondition(globalCondition);
             }
             final io.github.poshjosh.ratelimiter.model.Rate[] rateData = new io.github.poshjosh.ratelimiter.model.Rate[rateAnnotations.length];
             for (int i = 0; i < rateAnnotations.length; i++) {
                 rateData[i] = convert(rateAnnotations[i]);
             }
-            if (rateData.length == 1) {
-                final io.github.poshjosh.ratelimiter.model.Rate only = rateData[0];
-                if (!StringUtils.hasText(conditionForAllRates)) {
-                    return Rates.of(only);
-                }
-                if (!StringUtils.hasText(only.getCondition())) {
-                    only.setCondition(conditionForAllRates);
-                    return Rates.of(only);
-                }
-            }
-
-            return Rates.of(id, operator, conditionForAllRates, rateData);
+            return Rates.of(id, operator, globalCondition, rateData);
         }
 
         private void validate(GenericDeclaration source, Operator operator, Rate[] rates) {
@@ -169,12 +158,8 @@ public final class JavaRateSources {
                     Duration.ZERO : Duration.of(rate.duration(), toChronoUnit(rate.timeUnit()));
             String when = StringUtils.hasText(rate.condition()) ? rate.condition() : rate.when();
             String factoryClass = rate.factoryClass().getName();
-            if (StringUtils.hasText(rateText)) {
-                return io.github.poshjosh.ratelimiter.model.Rate.of(rateText)
-                        .condition(when).factoryClass(factoryClass);
-            }
-            return io.github.poshjosh.ratelimiter.model.Rate
-                    .of(permits, duration, when, factoryClass);
+            return io.github.poshjosh.ratelimiter.model.Rate.of(rateText)
+                    .permits(permits).duration(duration).condition(when).factoryClass(factoryClass);
         }
 
         private ChronoUnit toChronoUnit(TimeUnit timeUnit) {
