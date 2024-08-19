@@ -16,6 +16,8 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     private final RateLimiterContext<K> context;
     private final RootNodes<K> rootNodes;
 
+    private final boolean allowRateLessSources = true;
+
     DefaultRateLimiterRegistry(
             RateLimiterContext<K> context,
             RootNodes<K> rootNodes) {
@@ -103,7 +105,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         if (isRegistered(id)) {
             complainAlreadyRegistered(id);
         }
-        addToRoot(rateSource);
+        add(rateSource);
         return this;
     }
 
@@ -223,7 +225,7 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         final String id = rateSource.getId();
         MatchContext<K> matchContext = getMatchContextOrNull(id);
         if (matchContext == null) {
-            final Node<MatchContext<K>> added = addToRoot(rateSource);
+            final Node<MatchContext<K>> added = add(rateSource);
             matchContext = added == null ? null : added.requireValue();
         }
         if (matchContext == null) {
@@ -241,15 +243,27 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         return context.getRateLimiterProvider().getRateLimiter(key, rates);
     }
 
-    private Node<MatchContext<K>> addToRoot(RateSource rateSource) {
-        final Node<MatchContext<K>> parent = rateSource.isGenericDeclaration() ?
-                rootNodes.getAnnotationsRootNode() : rootNodes.getPropertiesRootNode();
-        return addTo(rateSource, parent);
+    private Node<MatchContext<K>> add(RateSource rateSource) {
+        return addTo(rateSource, getParentNode(rateSource));
+    }
+
+    private Node<MatchContext<K>> getParentNode(RateSource rateSource) {
+        final String parentId = rateSource.getRates().getParentId();
+        if (parentId == null || parentId.isEmpty()) {
+            return rateSource.isGenericDeclaration() ?
+                    rootNodes.getAnnotationsRootNode() : rootNodes.getPropertiesRootNode();
+        }
+        final Node<MatchContext<K>> parent = this.getNodeOrNull(parentId);
+        if (parent == null) {
+            throw new IllegalArgumentException("Parent not found. parentId: " + parentId
+                    + ", of: " + rateSource);
+        }
+        return parent;
     }
 
     private Node<MatchContext<K>> addTo(
             RateSource rateSource, Node<MatchContext<K>> parent) {
-        if (!rateSource.isRateLimited()) {
+        if (!allowRateLessSources && !rateSource.isRateLimited()) {
             return null;
         }
         final RateConfig parentConfig = parent.getValueOptional()
@@ -309,10 +323,23 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     }
 
     private Node<RateConfig> createNodeOrNull(RateSource rateSource, RateConfig parent) {
-        if (!rateSource.isRateLimited()) {
+        if (!allowRateLessSources && !rateSource.isRateLimited()) {
             return null;
         }
         return Nodes.of(rateSource.getId(),
                 RateConfig.of(rateSource, rateSource.getRates(), parent));
+    }
+
+    @Override
+    public String toString() {
+        final StringBuilder builder = new StringBuilder(1024);
+        return builder.append(getClass().getName())
+                .append('@')
+                .append(Integer.toHexString(System.identityHashCode(this)))
+                .append('{')
+                .append("\nAnnotation sourced nodes:\n").append(rootNodes.getAnnotationsRootNode())
+                .append("\nProperties sourced nodes:\n").append(rootNodes.getPropertiesRootNode())
+                .append("\nContext:").append(context)
+                .append('}').toString();
     }
 }

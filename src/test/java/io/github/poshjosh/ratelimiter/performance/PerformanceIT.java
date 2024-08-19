@@ -91,7 +91,7 @@ abstract class PerformanceIT {
         final Usage bookmark = Usage.bookmark();
         for(int i = 0; i < count; i++) {
             final Method method = methods.get(i);
-            rateLimiterRegistry.getRateLimiterOptional(JavaRateSources.of(method));
+            rateLimiterRegistry.getRateLimiterOptional(method);
         }
         final Usage recordedUsage = bookmark.current();
         assertUsageLessOrEqualToLimit(

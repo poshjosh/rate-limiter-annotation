@@ -32,8 +32,8 @@ public interface RateLimiterRegistry<K> {
 
     RateLimiterRegistry<K> deregister(String id);
 
-    default RateLimiterRegistry<K> register(String id, Rate rate) {
-        return register(Rates.of(id, rate));
+    default RateLimiterRegistry<K> register(String parentId, String id, Rate rate) {
+        return register(new Rates().parentId(parentId).id(id).rates(rate));
     }
 
     default RateLimiterRegistry<K> register(Rates rates) {

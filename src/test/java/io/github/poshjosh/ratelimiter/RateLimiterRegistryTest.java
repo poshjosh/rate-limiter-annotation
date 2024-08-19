@@ -50,7 +50,7 @@ class RateLimiterRegistryTest {
     void deregister_shouldDeregisterIdWithLimits() {
         RateLimiterRegistry<?> registry = givenRegistry();
         final String id = "test-id";
-        assertTrue(registry.register(id, Rate.ofSeconds(1)).isRegistered(id));
+        assertTrue(registry.register(Rates.of(id, Rate.ofSeconds(1))).isRegistered(id));
         assertFalse(registry.deregister(id).isRegistered(id));
     }
 
@@ -58,9 +58,9 @@ class RateLimiterRegistryTest {
     void register_shouldFailGivenAlreadyRegistered() {
         RateLimiterRegistry<?> registry = givenRegistry();
         final String id = "test-id";
-        registry.register(id, Rate.ofSeconds(1));
+        registry.register(Rates.of(id, Rate.ofSeconds(1)));
         assertThrows(UnsupportedOperationException.class,
-                () -> registry.register(id, Rate.ofSeconds(1)));
+                () -> registry.register(Rates.of(id, Rate.ofSeconds(1))));
     }
     
     @ParameterizedTest
@@ -74,21 +74,50 @@ class RateLimiterRegistryTest {
     void register_shouldRegisterIdWithLimits() {
         final String id = "test-id";
         RateLimiterRegistry<?> registry = givenRegistry();
-        assertTrue(registry.register(id, Rate.ofSeconds(1)).isRegistered(id));
+        assertTrue(registry.register(Rates.of(id, Rate.ofSeconds(1))).isRegistered(id));
     }
 
     @Test
-    void register_shouldNotRegisterClassWithNoLimits() {
+    void register_shouldRegisterClassWithNoLimits() {
         Class<?> clazz = ClassWithNoLimits.class;
         RateLimiterRegistry<?> registry = givenRegistry();
-        assertFalse(registry.register(clazz).isRegistered(clazz));
+        assertTrue(registry.register(clazz).isRegistered(clazz));
     }
 
     @Test
-    void register_shouldNotRegisterIdWithNoLimits() {
+    void register_shouldRegisterIdWithNoLimits() {
         final String id = "test-id";
         RateLimiterRegistry<?> registry = givenRegistry();
-        assertFalse(registry.register(Rates.ofId(id)).isRegistered(id));
+        assertTrue(registry.register(Rates.ofId(id)).isRegistered(id));
+    }
+
+    @Test
+    void register_shouldRegister_givenNoneRootParent() {
+        final Rates parent = givenParentRates(1);
+        register_shouldRegister_givenParent(parent);
+    }
+
+    @Test
+    void register_shouldRegister_givenNoneRootRatelessParent() {
+        final Rates parent = givenParentRates(-1);
+        register_shouldRegister_givenParent(parent);
+    }
+
+    private Rates givenParentRates(int permits) {
+        final String parentId = "test-parent-id";
+        return permits < 1 ? Rates.ofId(parentId) : Rates.of(parentId, Rate.ofSeconds(permits));
+    }
+
+    private void register_shouldRegister_givenParent(Rates parent) {
+        RateLimiterRegistry<?> registry = givenRegistry();
+        final String parentId = parent.getId();
+        assertTrue(registry.register(parent).isRegistered(parentId));
+        System.out.println(registry);
+        final String childId = "test-child-id";
+        final Rates child = new Rates().parentId(parentId).id(childId).rates(Rate.ofSeconds(1));
+        System.out.println(child);
+        assertTrue(registry.register(child).isRegistered(childId));
+        System.out.println(registry);
     }
 
     @ParameterizedTest
