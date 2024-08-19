@@ -15,9 +15,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -118,6 +116,31 @@ class RateLimiterRegistryTest {
         System.out.println(child);
         assertTrue(registry.register(child).isRegistered(childId));
         System.out.println(registry);
+    }
+
+    @Test
+    void getRateNames_shouldReturnValidNames() {
+        String [] expected = {"test-parent-id", "test-child-id"};
+        RateLimiterRegistry<?> registry = givenRegistryWithParentAndChild(expected[0], expected[1]);
+        assertArrayEquals(expected, registry.getRateNames().toArray());
+    }
+
+    @Test
+    void visitRates_shouldVisitAllRates() {
+        String [] expected = {"test-parent-id", "test-child-id"};
+        RateLimiterRegistry<?> registry = givenRegistryWithParentAndChild(expected[0], expected[1]);
+        Set<String> result = new HashSet<>();
+        registry.visitRates(ctx -> result.add(ctx.getId()));
+        assertArrayEquals(expected, result.toArray());
+    }
+
+    private RateLimiterRegistry<?> givenRegistryWithParentAndChild(String parentId, String childId) {
+        RateLimiterRegistry<?> registry = givenRegistry();
+        Rates parent = Rates.of(parentId, Rate.ofSeconds(1));
+        registry.register(parent);
+        final Rates child = new Rates().parentId(parentId).id(childId).rates(Rate.ofSeconds(1));
+        registry.register(child);
+        return registry;
     }
 
     @ParameterizedTest

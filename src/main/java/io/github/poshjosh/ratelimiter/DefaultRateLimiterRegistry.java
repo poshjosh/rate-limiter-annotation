@@ -10,6 +10,7 @@ import io.github.poshjosh.ratelimiter.util.Ticker;
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
 
@@ -73,6 +74,24 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
                 provider, annoRoot, key, permits, timeout, timeUnit);
 
         return propAcquired && annoAcquired;
+    }
+
+    @Override
+    public Set<String> getRateNames() {
+        final Set<String> names = new HashSet<>();
+        rootNodes.getPropertiesRootNode().visitAll(node -> names.add(node.getName()));
+        names.remove(rootNodes.getPropertiesRootNode().getName());
+        rootNodes.getAnnotationsRootNode().visitAll(node -> names.add(node.getName()));
+        names.remove(rootNodes.getAnnotationsRootNode().getName());
+        return Collections.unmodifiableSet(names);
+    }
+
+    @Override
+    public void visitRates(Consumer<MatchContext<K>> visitor) {
+        rootNodes.getPropertiesRootNode().getChildren()
+                .forEach(child -> child.visitAll(node -> visitor.accept(node.getValueOrDefault(null))));
+        rootNodes.getAnnotationsRootNode().getChildren()
+                .forEach(child -> child.visitAll(node -> visitor.accept(node.getValueOrDefault(null))));
     }
 
     @Override

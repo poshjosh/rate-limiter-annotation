@@ -6,7 +6,9 @@ import io.github.poshjosh.ratelimiter.model.*;
 
 import java.lang.reflect.Method;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 public interface RateLimiterRegistry<K> {
 
@@ -15,6 +17,10 @@ public interface RateLimiterRegistry<K> {
         return tryAcquire(key, permits, 0, TimeUnit.MICROSECONDS);
     }
     boolean tryAcquire(K key, int permits, long timeout, TimeUnit timeUnit);
+
+    Set<String> getRateNames();
+
+    void visitRates(Consumer<MatchContext<K>> visitor);
 
     default Optional<MatchContext<K>> getMatchContextOptional(String id) {
         return Optional.ofNullable(getMatchContextOrDefault(id, null));

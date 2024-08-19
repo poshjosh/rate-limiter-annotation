@@ -4,8 +4,10 @@ import io.github.poshjosh.ratelimiter.model.RateSource;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
 final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
     private final RateLimiterRegistry<K> delegate;
@@ -34,6 +36,14 @@ final class CachingRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
 
     @Override public boolean tryAcquire(K key, int permits, long timeout, TimeUnit timeUnit) {
         return delegate.tryAcquire(key, permits, timeout, timeUnit);
+    }
+
+    @Override public Set<String> getRateNames() {
+        return delegate.getRateNames();
+    }
+
+    @Override public void visitRates(Consumer<MatchContext<K>> visitor) {
+        delegate.visitRates(visitor);
     }
 
     @Override public MatchContext<K> getMatchContextOrDefault(
