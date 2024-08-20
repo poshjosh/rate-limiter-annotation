@@ -98,9 +98,9 @@ public class MatchVisitors {
 
         private final RateLimiterProvider rateLimiterProvider;
         private final Ticker ticker;
-        private LimitCheckingVisitor(RateLimiterProvider rateLimiterProvider, Ticker tiker) {
+        private LimitCheckingVisitor(RateLimiterProvider rateLimiterProvider, Ticker ticker) {
             this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
-            this.ticker = Objects.requireNonNull(tiker);
+            this.ticker = Objects.requireNonNull(ticker);
         }
 
         @Override public void visit(String match, Rate rate) {
