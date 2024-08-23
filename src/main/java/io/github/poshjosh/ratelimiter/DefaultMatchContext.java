@@ -55,7 +55,7 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
                     matchVisitor.visit(match, rate);
 
                     if (LOG.isTraceEnabled()) {
-                        LOG.trace("[{}]{} = {}", i, match, rate);
+                        LOG.trace("At [{}], matched '{}' to {}", i, match, rate);
                     }
                 }
             }
@@ -80,7 +80,7 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
                 matchVisitor.visit(mainMatch, rates);
 
                 if (LOG.isTraceEnabled()) {
-                    LOG.trace("{} = {}", mainMatch, rates);
+                    LOG.trace("Matched '{}' to {}", mainMatch, rates);
                 }
                 return 1;
             } else {

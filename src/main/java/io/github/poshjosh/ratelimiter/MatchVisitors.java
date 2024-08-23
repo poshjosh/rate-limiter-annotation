@@ -6,6 +6,8 @@ import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.model.Operator;
 import io.github.poshjosh.ratelimiter.util.Ticker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -13,6 +15,8 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 public class MatchVisitors {
+
+    private static final Logger LOG = LoggerFactory.getLogger(MatchVisitors.class);
 
     static MatchVisitor<Double> permitAcquiring(
             RateLimiterProvider rateLimiterProvider, int permits) {
@@ -53,6 +57,10 @@ public class MatchVisitors {
             if (timeSpent > 0) { // Only increment when > 0, as some value may be negative.
                 totalTimeSpent += timeSpent;
             }
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("For match: {}, acquired {} permits in {} seconds (Accumulated: {} seconds) from: {}",
+                        match, permits, timeSpent, totalTimeSpent, rateLimiter);
+            }
         }
 
         @Override
@@ -81,8 +89,13 @@ public class MatchVisitors {
 
         @Override
         protected void visit(String match, RateLimiter rateLimiter) {
-            if (!rateLimiter.tryAcquire(permits, timeout, timeUnit)) {
+            final boolean acquired = rateLimiter.tryAcquire(permits, timeout, timeUnit);
+            if (!acquired) {
                 noLimitExceeded = false;
+            }
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("For match: {}, acquired: {}, {} permits (anyLimitExceeded: {}), with timeout: {} {}, from: {}",
+                        match, acquired, permits, !noLimitExceeded, timeout, timeUnit, rateLimiter);
             }
         }
 
@@ -94,7 +107,7 @@ public class MatchVisitors {
 
     private static final class LimitCheckingVisitor
             implements MatchVisitor<Boolean> {
-        private boolean limitExceeded = false;
+        private boolean anyLimitExceeded = false;
 
         private final RateLimiterProvider rateLimiterProvider;
         private final Ticker ticker;
@@ -105,21 +118,28 @@ public class MatchVisitors {
 
         @Override public void visit(String match, Rate rate) {
             final Bandwidth bandwidth = rateLimiterProvider.getBandwidth(match, rate);
-            if (!bandwidth.isAvailable(ticker.elapsedMicros())) {
-                limitExceeded = true;
-            }
+            visit(match, rate, bandwidth);
         }
 
         @Override public void visit(String match, Rates rates) {
             final Bandwidth bandwidth = rateLimiterProvider.getBandwidth(match, rates);
-            if (!bandwidth.isAvailable(ticker.elapsedMicros())) {
-                limitExceeded = true;
+            visit(match, rates, bandwidth);
+        }
+
+        private void visit(String match, Object rates, Bandwidth bandwidth) {
+            final boolean available = bandwidth.isAvailable(ticker.elapsedMicros());
+            if (!available) {
+                anyLimitExceeded = true;
+            }
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("For match: {}, is available: {} (anyLimitExceeded: {}), for: {} of: {}",
+                        match, available, anyLimitExceeded, bandwidth, rates);
             }
         }
 
         @Override
         public Boolean getResult() {
-            return !limitExceeded;
+            return !anyLimitExceeded;
         }
     }
 
