@@ -33,50 +33,51 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
     }
 
     @Override public boolean matches(INPUT key, MatchVisitor<?> matchVisitor) {
-        final int matchCount = visitMatching(key, matchVisitor);
-        return isMatchSuccessful(matchCount);
-    }
-
-    private int visitMatching(INPUT key, MatchVisitor<?> matchVisitor) {
         final String mainMatch = matchMain(key);
-        if (hasSubConditions()) {
-            final int count = getSubMatchers().size();
-            int matchCount = 0;
-            for(int i = 0; i < count; i++) {
-                // If there are sub conditions, then the main match is used in conjunction with each
-                final String match = matchAt(key, i, mainMatch);
-                if (Matcher.isMatch(match)) {
-                    ++matchCount;
+        if (!Matcher.isMatch(mainMatch)) {
+            return false;
+        }
 
-                    final Rate rate = rateAt(i);
+        if (!hasSubConditions()) {
 
-                    matchVisitor.visit(match, rate);
-                }
-            }
-            return matchCount;
-        } else {
-            if (Matcher.isMatch(mainMatch)) {
+            // We use parent rates as fallback. (Applies only to main matcher).
+            //
+            // This is useful for matchers which cannot match a rate source's parent.
+            //
+            // When a class or method is used as match candidate,
+            // We can write a matcher like RateSourceMatcher which matches the candidate
+            // with the rate source of the matcher and possibly the rate source's parent.
+            // This is because we can use reflection to get a class or method's "parent".
+            //
+            // On the other hand, when an arbitrary value is used as match candidate,
+            // we have to rely on other means. This fallback to the parent here gives
+            // matchers based on this config an avenue to match the rate source's parent.
+            //
+            final Rates rates = ratesOrParentRates();
 
-                // We use parent rates as fallback. (Applies only to main matcher).
-                //
-                // This is useful for matchers which cannot match a rate source's parent.
-                //
-                // When a class or method is used as match candidate,
-                // We can write a matcher like RateSourceMatcher which matches the candidate
-                // with the rate source of the matcher and possibly the rate source's parent.
-                // This is because we can use reflection to get a class or method's "parent".
-                //
-                // On the other hand, when an arbitrary value is used as match candidate,
-                // we have to rely on other means. This fallback to the parent here gives
-                // matchers based on this config an avenue to match the rate source's parent.
-                //
-                final Rates rates = ratesOrParentRates();
-                matchVisitor.visit(mainMatch, rates);
-                return 1;
-            } else {
-                return 0;
+            // We visit the mainMatch only if there are no sub-conditions
+            // If there are sub-conditions, we don't visit it, rather we
+            // include the mainMatch when we match the sub-conditions.
+            matchVisitor.visit(mainMatch, rates);
+
+            return true;
+        }
+
+        final int count = getSubMatchers().size();
+        int matchCount = 0;
+        for(int i = 0; i < count; i++) {
+            // If there are sub conditions, then the main match
+            // is used in conjunction with each
+            final String match = matchAt(key, i, mainMatch);
+            if (Matcher.isMatch(match)) {
+                ++matchCount;
+
+                final Rate rate = rateAt(i);
+
+                matchVisitor.visit(match, rate);
             }
         }
+        return matchCount == count;
     }
 
     private String matchMain(INPUT key) {
@@ -105,14 +106,6 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
         }
 
         return Matcher.composeResults(mainMatch, match);
-    }
-
-    private boolean isMatchSuccessful(int matchCount) {
-        if (hasSubConditions()) {
-            return matchCount >= getSubMatchers().size();
-        } else {
-            return matchCount >= 1;
-        }
     }
 
     @Override public boolean hasMatcher() {
