@@ -1,9 +1,9 @@
-package io.github.poshjosh.ratelimiter.util;
+package io.github.poshjosh.ratelimiter.annotation;
 
 import java.util.*;
 import java.util.function.UnaryOperator;
 
-public final class ParentChildSorter {
+final class ParentChildSorter {
     /**
      * Sort a list of elements such that parents come before children.
      * This method is not optimized for performance, but rather for simplicity.
@@ -12,7 +12,7 @@ public final class ParentChildSorter {
      * @return A new list with the elements sorted such that parents come before children.
      * @param <T> The type of the elements in the list.
      */
-    public static <T> List<T> sortParentBeforeChild(List<T> list, UnaryOperator<T> getParent) {
+    static <T> List<T> sortParentBeforeChild(List<T> list, UnaryOperator<T> getParent) {
         LinkedHashSet<T> sorted = new LinkedHashSet<>(list.size() * 2);
         for(T e : list) {
             recursivelyAddParentBeforeChild(sorted, e, getParent);
@@ -28,7 +28,7 @@ public final class ParentChildSorter {
      * @return A new list with the elements sorted such that children come before parents.
      * @param <T> The type of the elements in the list.
      */
-    public static <T> List<T> sortChildBeforeParent(List<T> list, UnaryOperator<T> getParent) {
+    static <T> List<T> sortChildBeforeParent(List<T> list, UnaryOperator<T> getParent) {
         List<T> sorted = new ArrayList<>(list.size());
         for(T e : list) {
             recursivelyAddChildBeforeParent(sorted, e, getParent);

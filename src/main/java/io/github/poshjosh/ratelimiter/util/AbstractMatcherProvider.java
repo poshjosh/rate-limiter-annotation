@@ -1,6 +1,8 @@
 package io.github.poshjosh.ratelimiter.util;
 
 import io.github.poshjosh.ratelimiter.expression.ExpressionMatcher;
+import io.github.poshjosh.ratelimiter.matcher.Matcher;
+import io.github.poshjosh.ratelimiter.matcher.Matchers;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 

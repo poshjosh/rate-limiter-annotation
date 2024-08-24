@@ -2,6 +2,8 @@ package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.annotation.RateProcessor;
 import io.github.poshjosh.ratelimiter.annotation.RateProcessors;
+import io.github.poshjosh.ratelimiter.matcher.MatchContext;
+import io.github.poshjosh.ratelimiter.matcher.MatchContexts;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.RateSources;

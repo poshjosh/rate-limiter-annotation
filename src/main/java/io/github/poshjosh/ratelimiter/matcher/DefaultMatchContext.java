@@ -1,11 +1,9 @@
-package io.github.poshjosh.ratelimiter;
+package io.github.poshjosh.ratelimiter.matcher;
 
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
-import io.github.poshjosh.ratelimiter.util.Matcher;
-import io.github.poshjosh.ratelimiter.util.Matchers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,10 +51,6 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
                     final Rate rate = rateAt(i);
 
                     matchVisitor.visit(match, rate);
-
-                    if (LOG.isTraceEnabled()) {
-                        LOG.trace("At [{}], matched '{}' to {}", i, match, rate);
-                    }
                 }
             }
             return matchCount;
@@ -78,10 +72,6 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
                 //
                 final Rates rates = ratesOrParentRates();
                 matchVisitor.visit(mainMatch, rates);
-
-                if (LOG.isTraceEnabled()) {
-                    LOG.trace("Matched '{}' to {}", mainMatch, rates);
-                }
                 return 1;
             } else {
                 return 0;
@@ -93,8 +83,8 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
         final Matcher<INPUT> matcher = getMainMatcher();
         final String match = matcher.match(key);
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Match: {}, toMatch: {}, matcher: {}",
-                    Matcher.isMatch(match), key, matcher);
+            LOG.trace("Is match: {}, for: {}, to match: {}, main-matcher: {}, rates: {}",
+                    Matcher.isMatch(match), match, key, matcher, ratesOrParentRates().getId());
         }
         return match;
     }
@@ -106,8 +96,8 @@ final class DefaultMatchContext<INPUT> implements MatchContext<INPUT> {
         final String match = matcher.match(key);
 
         if (LOG.isTraceEnabled()) {
-            LOG.trace("Match: {}, node[{}] toMatch: {}, matcher: {}",
-                    Matcher.isMatch(match), i, key, matcher);
+            LOG.trace("Is match: {}, for: {}, to match: {}, sub-matcher[{}]: {}",
+                    Matcher.isMatch(match), match, key, i, matcher);
         }
 
         if (!Matcher.isMatch(match)) {

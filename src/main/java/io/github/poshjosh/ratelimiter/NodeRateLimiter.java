@@ -1,6 +1,10 @@
 package io.github.poshjosh.ratelimiter;
 
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
+import io.github.poshjosh.ratelimiter.matcher.MatchContext;
+import io.github.poshjosh.ratelimiter.matcher.MatchContexts;
+import io.github.poshjosh.ratelimiter.matcher.MatchVisitor;
+import io.github.poshjosh.ratelimiter.matcher.MatchVisitors;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.util.Ticker;
 

@@ -1,11 +1,9 @@
-package io.github.poshjosh.ratelimiter;
+package io.github.poshjosh.ratelimiter.matcher;
 
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.node.MutableNode;
 import io.github.poshjosh.ratelimiter.node.Node;
-import io.github.poshjosh.ratelimiter.util.Matcher;
 import io.github.poshjosh.ratelimiter.util.MatcherProvider;
-import io.github.poshjosh.ratelimiter.util.Matchers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +17,7 @@ public final class MatchContexts {
     // Bottom-up traversal consumes about 7x less memory, as of the last tests.
     private static final boolean IS_BOTTOM_UP_TRAVERSAL = true;
 
-    static <K> MatchContext<K> of(
+    public static <K> MatchContext<K> of(
             MatcherProvider<K> matcherProvider,
             Node<RateConfig> node) {
         RateConfig rateConfig = node.getValueOrDefault(null);
@@ -49,6 +47,18 @@ public final class MatchContexts {
         LOG.trace("{}", matchContext);
         return matchContext;
     }
+
+    public static <K> void visitNodes(
+            Node<MatchContext<K>> rootNode,
+            K toMatch,
+            MatchVisitor<?> matchVisitor) {
+        if (IS_BOTTOM_UP_TRAVERSAL) {
+            visitNodesBottomUp(((MutableNode)rootNode).getCollectedLeafs(), toMatch, matchVisitor);
+        } else {
+            visitNodesTopDown(rootNode, toMatch, matchVisitor);
+        }
+    }
+
     private static boolean hasLimitsInTree(Node<RateConfig> node) {
         return hasLimits(node) || (IS_BOTTOM_UP_TRAVERSAL ?
                 anyParentHasLimits(node) : anyChildHasLimits(node));
@@ -66,18 +76,7 @@ public final class MatchContexts {
         return node.requireValue().getRates().isSet();
     }
 
-    static <K> void visitNodes(
-            Node<MatchContext<K>> rootNode,
-            K toMatch,
-            MatchVisitor<?> matchVisitor) {
-        if (IS_BOTTOM_UP_TRAVERSAL) {
-            visitNodesBottomUp(((MutableNode)rootNode).getCollectedLeafs(), toMatch, matchVisitor);
-        } else {
-            visitNodesTopDown(rootNode, toMatch, matchVisitor);
-        }
-    }
-
-    static <K> void visitNodesTopDown(
+    private static <K> void visitNodesTopDown(
             Node<MatchContext<K>> rootNode,
             K toMatch,
             MatchVisitor<?> matchVisitor) {

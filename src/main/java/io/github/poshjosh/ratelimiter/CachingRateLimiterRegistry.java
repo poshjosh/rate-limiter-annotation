@@ -1,5 +1,6 @@
 package io.github.poshjosh.ratelimiter;
 
+import io.github.poshjosh.ratelimiter.matcher.MatchContext;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 
 import java.util.Map;

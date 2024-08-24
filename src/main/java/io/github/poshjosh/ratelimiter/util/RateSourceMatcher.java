@@ -1,6 +1,8 @@
 package io.github.poshjosh.ratelimiter.util;
 
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
+import io.github.poshjosh.ratelimiter.matcher.Matcher;
+import io.github.poshjosh.ratelimiter.matcher.Matchers;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.GenericDeclaration;

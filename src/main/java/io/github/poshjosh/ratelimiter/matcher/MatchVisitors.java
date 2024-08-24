@@ -1,5 +1,7 @@
-package io.github.poshjosh.ratelimiter;
+package io.github.poshjosh.ratelimiter.matcher;
 
+import io.github.poshjosh.ratelimiter.RateLimiter;
+import io.github.poshjosh.ratelimiter.RateLimiterProvider;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidth;
 import io.github.poshjosh.ratelimiter.bandwidths.Bandwidths;
 import io.github.poshjosh.ratelimiter.model.Rate;
@@ -18,22 +20,22 @@ public class MatchVisitors {
 
     private static final Logger LOG = LoggerFactory.getLogger(MatchVisitors.class);
 
-    static MatchVisitor<Double> permitAcquiring(
+    public static MatchVisitor<Double> permitAcquiring(
             RateLimiterProvider rateLimiterProvider, int permits) {
         return new PermitAcquiringVisitor(rateLimiterProvider, permits);
     }
 
-    static MatchVisitor<Boolean> permitAttempting(
+    public static MatchVisitor<Boolean> permitAttempting(
             RateLimiterProvider rateLimiterProvider, int permits, long timeout, TimeUnit timeUnit) {
         return new PermitAttemptingVisitor(rateLimiterProvider, permits, timeout, timeUnit);
     }
 
-    static MatchVisitor<Boolean> limitChecking(
+    public static MatchVisitor<Boolean> limitChecking(
             RateLimiterProvider rateLimiterProvider, Ticker ticker) {
         return new LimitCheckingVisitor(rateLimiterProvider, ticker);
     }
 
-    static MatchVisitor<Bandwidth> bandwidthCollecting(
+    public static MatchVisitor<Bandwidth> bandwidthCollecting(
             RateLimiterProvider rateLimiterProvider) {
         return new BandwidthCollectingVisitor(rateLimiterProvider);
     }
@@ -58,7 +60,7 @@ public class MatchVisitors {
                 totalTimeSpent += timeSpent;
             }
             if (LOG.isTraceEnabled()) {
-                LOG.trace("For match: {}, acquired {} permits in {} seconds (Accumulated: {} seconds) from: {}",
+                LOG.trace("For: {}, acquired {} permits in {} seconds (Accumulated: {} seconds) from: {}",
                         match, permits, timeSpent, totalTimeSpent, rateLimiter);
             }
         }
@@ -94,7 +96,7 @@ public class MatchVisitors {
                 noLimitExceeded = false;
             }
             if (LOG.isTraceEnabled()) {
-                LOG.trace("For match: {}, acquired: {}, {} permits (anyLimitExceeded: {}), with timeout: {} {}, from: {}",
+                LOG.trace("For: {}, acquired: {}, {} permits (anyLimitExceeded: {}), with timeout: {} {}, from: {}",
                         match, acquired, permits, !noLimitExceeded, timeout, timeUnit, rateLimiter);
             }
         }
@@ -132,7 +134,7 @@ public class MatchVisitors {
                 anyLimitExceeded = true;
             }
             if (LOG.isTraceEnabled()) {
-                LOG.trace("For match: {}, is available: {} (anyLimitExceeded: {}), for: {} of: {}",
+                LOG.trace("For: {}, is available: {} (anyLimitExceeded: {}), for: {} of: {}",
                         match, available, anyLimitExceeded, bandwidth, rates);
             }
         }
@@ -168,10 +170,10 @@ public class MatchVisitors {
         }
     }
 
-    abstract static class MatchingRateLimiterVisitor<R> implements MatchVisitor<R> {
+    public abstract static class MatchingRateLimiterVisitor<R> implements MatchVisitor<R> {
 
         private final RateLimiterProvider rateLimiterProvider;
-        MatchingRateLimiterVisitor(RateLimiterProvider rateLimiterProvider) {
+        protected MatchingRateLimiterVisitor(RateLimiterProvider rateLimiterProvider) {
             this.rateLimiterProvider = Objects.requireNonNull(rateLimiterProvider);
         }
 

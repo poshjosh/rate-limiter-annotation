@@ -1,4 +1,4 @@
-package io.github.poshjosh.ratelimiter.util;
+package io.github.poshjosh.ratelimiter.annotation;
 
 import org.junit.jupiter.api.Test;
 

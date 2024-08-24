@@ -6,7 +6,6 @@ import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.node.Node;
 import io.github.poshjosh.ratelimiter.node.Nodes;
-import io.github.poshjosh.ratelimiter.util.ParentChildSorter;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 
 import java.util.*;

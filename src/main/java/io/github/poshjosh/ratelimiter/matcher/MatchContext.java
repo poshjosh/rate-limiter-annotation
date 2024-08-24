@@ -1,10 +1,9 @@
-package io.github.poshjosh.ratelimiter;
+package io.github.poshjosh.ratelimiter.matcher;
 
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import io.github.poshjosh.ratelimiter.model.RateSource;
 import io.github.poshjosh.ratelimiter.model.Rates;
-import io.github.poshjosh.ratelimiter.util.Matcher;
 
 import java.util.List;
 
