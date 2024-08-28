@@ -52,7 +52,7 @@ class RateLimiterRegistryAnnotationTest {
     void isNotLimited() {
         RateLimiterRegistry<Object> limiterRegistry = newRateLimiterRegistry(ClassWithNoLimit.class);
         Object resourceId = ClassWithRateLimitedMethod.getRateLimitedMethod();
-        assertTrue(limiterRegistry.requireRateLimiter(resourceId).tryAcquire(Integer.MAX_VALUE));
+        assertTrue(limiterRegistry.getRateLimiterOrUnlimited(resourceId).tryAcquire(Integer.MAX_VALUE));
     }
 
     @Rate("2/s")

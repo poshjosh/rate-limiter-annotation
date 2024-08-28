@@ -73,9 +73,8 @@ class NodeRateLimiter<K> implements RateLimiter {
     public String toString() {
         final StringBuilder builder = new StringBuilder(256)
                 .append(this.getClass().getSimpleName())
-                .append('@')
-                .append(Integer.toHexString(hashCode()))
-                .append('{');
+                .append('@').append(Integer.toHexString(hashCode()))
+                .append('{').append("key=").append(key);
         final int lengthBeforeVisit = builder.length();
         final MatchVisitor<StringBuilder> visitor =
                 new MatchVisitors.MatchingRateLimiterVisitor<StringBuilder>(rateLimiterProvider) {

@@ -5,6 +5,7 @@ import io.github.poshjosh.ratelimiter.annotation.RateId;
 import io.github.poshjosh.ratelimiter.annotations.RateGroup;
 import io.github.poshjosh.ratelimiter.model.Rate;
 import io.github.poshjosh.ratelimiter.model.Rates;
+import io.github.poshjosh.ratelimiter.performance.dummyclasses.dummyclasses0.RateLimitedClass0;
 import io.github.poshjosh.ratelimiter.util.RateLimitProperties;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -110,12 +111,12 @@ class RateLimiterRegistryTest {
         RateLimiterRegistry<?> registry = givenRegistry();
         final String parentId = parent.getId();
         assertTrue(registry.register(parent).isRegistered(parentId));
-        System.out.println(registry);
+//        System.out.println(registry);
         final String childId = "test-child-id";
         final Rates child = new Rates().parentId(parentId).id(childId).rates(Rate.ofSeconds(1));
-        System.out.println(child);
+//        System.out.println(child);
         assertTrue(registry.register(child).isRegistered(childId));
-        System.out.println(registry);
+//        System.out.println(registry);
     }
 
     @Test
@@ -164,13 +165,12 @@ class RateLimiterRegistryTest {
         assertFalse(registry.isRegistered(clazz));
     }
 
-    // TODO - Fix this test
     @Test
-    @Disabled
-    void isRegistered_shouldReturnFalse_givenRegistryHasIdWithNoLimits() {
+    void isRegistered_shouldReturnTrue_givenRegistryHasIdWithNoLimits() {
         final String id = "test-id";
         RateLimiterRegistry<?> registry = givenRegistryHavingRates(Rates.ofId(id));
-        assertFalse(registry.isRegistered(id));
+        // is true because DefaultRateLimiterRegistry#allowRateLessSources is true
+        assertTrue(registry.isRegistered(id));
     }
 
     @ParameterizedTest
@@ -194,14 +194,13 @@ class RateLimiterRegistryTest {
         assertFalse(registry.getRateLimiterOptional(JavaRateSources.of(clazz)).isPresent());
     }
 
-    // TODO - Fix this test
     @Test
-    @Disabled
     void getRateLimiter_shouldReturnEmpty_whenRegistryHasIdWithNoLimits() {
         final String id = "test-id";
         RateLimiterRegistry<String> registry = givenRegistryHavingRates(Rates.ofId(id));
-        //System.out.println(registry.getRateLimiterOrUnlimited(id));
-        assertFalse(registry.getRateLimiterOptional(id).isPresent());
+        // is true because DefaultRateLimiterRegistry#allowRateLessSources is true
+//        System.out.println(registry.getRateLimiterOrUnlimited(id));
+        assertTrue(registry.getRateLimiterOptional(id).isPresent());
     }
 
     @Test
@@ -218,12 +217,16 @@ class RateLimiterRegistryTest {
 
     @Test
     void shouldCreateRateLimiterWhenOnlyPackagesSpecified() {
-        assertNotNull(givenRegistryForPackage("dummy-package").requireRateLimiter(ID));
+        final Class<?> clazz = RateLimitedClass0.class;
+        final String id = RateId.of(clazz);
+        final String packageName = clazz.getPackage().getName();
+        assertNotNull(givenRegistryForPackage(packageName).requireRateLimiter(id));
     }
 
     @Test
     void shouldCreateRateLimiterWhenOnlyClassesSpecified() {
-        assertNotNull(givenRegistryHavingClass(ClassWithNoLimits.class).requireRateLimiter(ID));
+        final String id = RateId.of(ClassWithLimits.class);
+        assertNotNull(givenRegistryHavingClass(ClassWithLimits.class).requireRateLimiter(id));
     }
 
     @Test
@@ -236,16 +239,18 @@ class RateLimiterRegistryTest {
 
     @Test
     void shouldCreateRateLimiterWhenOnlyPropertiesSpecified() {
+        final Class<?> clazz = ClassWithLimits.class;
+        final String id = RateId.of(clazz);
         RateLimitProperties properties = new RateLimitProperties() {
             @Override public List<Class<?>> getResourceClasses() {
-                return Collections.emptyList();
+                return Collections.singletonList(clazz);
             }
-            @Override public List<String> getResourcePackages() { return Arrays.asList("package"); }
+            @Override public List<String> getResourcePackages() { return Collections.emptyList(); }
         };
         RateLimiterContext<Object> context = RateLimiterContext.builder()
                 .properties(properties)
                 .build();
-        assertNotNull(RateLimiterRegistries.of(context).requireRateLimiter(ID));
+        assertNotNull(RateLimiterRegistries.of(context).requireRateLimiter(id));
     }
 
     private RateLimiterRegistry givenRegistry() {

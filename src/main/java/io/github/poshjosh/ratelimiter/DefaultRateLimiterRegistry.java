@@ -40,6 +40,9 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         final Node<MatchContext<K>> propRoot = rootNodes.getPropertiesRootNode();
 
         if (!rootNodes.hasProperties()) {
+            if (!rootNodes.hasAnnotations()) {
+                return true;
+            }
             return NodeRateLimiter.isWithinLimit(provider, annoRoot, key, ticker);
         }
         if (!rootNodes.hasAnnotations()) {
@@ -63,6 +66,9 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
         final Node<MatchContext<K>> propRoot = rootNodes.getPropertiesRootNode();
 
         if (!rootNodes.hasProperties()) {
+            if (!rootNodes.hasAnnotations()) {
+                return true;
+            }
             return NodeRateLimiter.tryAcquire(provider, annoRoot, key, permits, timeout, timeUnit);
         }
         if (!rootNodes.hasAnnotations()) {
@@ -215,6 +221,9 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
             return resultIfNone;
         }
         if (!rootNodes.hasProperties()) {
+            if (!rootNodes.hasAnnotations()) {
+                return resultIfNone;
+            }
             return createAnnotationsRateLimiter(key);
         }
 
