@@ -220,13 +220,6 @@ public interface Node<V> {
 
     Node<V> getChild(int index);
 
-    default int getChildCount() {
-        return getChildren().size();
-    }
-
-    /**
-     * @return An unmodifiable list of this node's children
-     */
     List<Node<V>> getChildren();
 
     String getName();

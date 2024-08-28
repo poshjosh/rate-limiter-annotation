@@ -97,15 +97,11 @@ class RootNodes<K> {
     }
 
     public boolean hasProperties() {
-        // TODO - Find out why #hasChildren() led to x100 increase in memory usage over #size()
-//        return !propertiesRootNode.isEmptyNode() && propertiesRootNode.hasChildren();
-        return !propertiesRootNode.isEmptyNode() && propertiesRootNode.size() > 0;
+        return !propertiesRootNode.isEmptyNode() && propertiesRootNode.hasChildren();
     }
 
     public boolean hasAnnotations() {
-        // TODO - Find out why #hasChildren() led to x100 increase in memory usage over #size()
-//        return !annotationsRootNode.isEmptyNode() && annotationsRootNode.hasChildren();
-        return !annotationsRootNode.isEmptyNode() && annotationsRootNode.size() > 0;
+        return !annotationsRootNode.isEmptyNode() && annotationsRootNode.hasChildren();
     }
 
     public Node<MatchContext<K>> getPropertiesRootNode() {

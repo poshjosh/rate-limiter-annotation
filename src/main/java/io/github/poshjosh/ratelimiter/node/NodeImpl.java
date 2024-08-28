@@ -17,7 +17,6 @@
 package io.github.poshjosh.ratelimiter.node;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.*;
 
 /**
@@ -48,31 +47,31 @@ final class NodeImpl<V> implements MutableNode<V> {
         }
     }
 
-    private List<Node<V>> _children = null;
+    private List<Node<V>> children = null;
     @Override
     public boolean addChild(Node<V> child) {
         final Node<V> parentNode = child.getParentOrDefault(null);
         if (!Objects.equals(parentNode, this)) {
             throw new UnsupportedOperationException();
         }
-        if (_children == null) {
-            _children = new ArrayList<>();
-            return _children.add(child);
+        if (children == null) {
+            children = new ArrayList<>();
+            return children.add(child);
         }
 
-        if(!_children.contains(child)) {
-            return _children.add(child);
+        if(!children.contains(child)) {
+            return children.add(child);
         }
 
         return false;
     }
 
     public Node<V> removeChild(String name) {
-        if (_children == null) {
+        if (children == null) {
             return null;
         }
         Node<V> removed = null;
-        final Iterator<Node<V>> iter = _children.iterator();
+        final Iterator<Node<V>> iter = children.iterator();
         while(iter.hasNext()) {
             final Node<V> child = iter.next();
             if(Objects.equals(child.getName(), name)) {
@@ -86,7 +85,7 @@ final class NodeImpl<V> implements MutableNode<V> {
 
     @Override
     public boolean anyChildMatch(Predicate<Node<V>> test) {
-        return children().stream().anyMatch(child -> child.anyMatch(test));
+        return getChildren().stream().anyMatch(child -> child.anyMatch(test));
     }
 
     @Override
@@ -95,14 +94,15 @@ final class NodeImpl<V> implements MutableNode<V> {
             return 1;
         }
         int size = 1;
-        for (Node<V> child : children()) {
+        for (Node<V> child : getChildren()) {
             size += child.size();
         }
         return size;
     }
 
-    private List<Node<V>> children() {
-        return _children == null ? Collections.emptyList() : _children;
+    @Override
+    public List<Node<V>> getChildren() {
+        return children == null ? Collections.emptyList() : children;
     }
 
     @Override
@@ -113,7 +113,7 @@ final class NodeImpl<V> implements MutableNode<V> {
     @Override
     public Node<V> copyTo(Node<V> parent) {
         final Node<V> newNode = Nodes.of(name, value, parent);
-        children().forEach(child -> child.copyTo(newNode));
+        getChildren().forEach(child -> child.copyTo(newNode));
         return newNode;
     }
 
@@ -123,10 +123,7 @@ final class NodeImpl<V> implements MutableNode<V> {
         if(nodeTest.test(offset)) {
             found = offset;
         } else {
-            // offset.getChildren().stream() returns a copy which is less performant
-            final int childCount = offset.getChildCount();
-            for(int i = 0; i < childCount; i++) {
-                Node<V> child = offset.getChild(i);
+            for(Node<V> child : offset.getChildren()) {
                 found = findFirstOrDefault(child, nodeTest, null);
                 if(found != null) {
                     break;
@@ -184,24 +181,11 @@ final class NodeImpl<V> implements MutableNode<V> {
     }
 
     public boolean hasChildren() {
-        return !children().isEmpty();
+        return !getChildren().isEmpty();
     }
 
     @Override
-    public Node<V> getChild(int index) { return children().get(index); }
-
-    @Override
-    public int getChildCount() {
-        return children().size();
-    }
-
-    /**
-     * @return An unmodifiable list of this node's children
-     */
-    @Override
-    public List<Node<V>> getChildren() {
-        return Collections.unmodifiableList(children());
-    }
+    public Node<V> getChild(int index) { return getChildren().get(index); }
 
     @Override
     public int hashCode() {
@@ -209,8 +193,8 @@ final class NodeImpl<V> implements MutableNode<V> {
         hash = 11 * hash + Objects.hashCode(this.name);
         hash = 11 * hash + Objects.hashCode(this.value);
         hash = 11 * hash + Objects.hashCode(this.parent);
-// To avoid stackoverflow, use either parent or children, but not both.
-//        hash = 11 * hash + Objects.hashCode(this.children());
+// To avoid stackoverflow, use either parent or getChildren, but not both.
+//        hash = 11 * hash + Objects.hashCode(this.getChildren());
         return hash;
     }
 
@@ -235,8 +219,8 @@ final class NodeImpl<V> implements MutableNode<V> {
         if (!Objects.equals(this.parent, other.parent)) {
             return false;
         }
-// To avoid stackoverflow, use either parent or children, but not both.
-//        if (!Objects.equals(this.children(), other.children())) {
+// To avoid stackoverflow, use either parent or getChildren, but not both.
+//        if (!Objects.equals(this.getChildren(), other.getChildren())) {
 //            return false;
 //        }
         return true;

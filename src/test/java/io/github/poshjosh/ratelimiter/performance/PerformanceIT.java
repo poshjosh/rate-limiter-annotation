@@ -45,7 +45,6 @@ abstract class PerformanceIT {
 
     @Test
     void resourceLimiting_withInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
-        garbageCollectAndWaitABit();
         resourceLimitingShouldConsumeLimitedTimeAndMemory(
                 RateLimitedClass0.METHOD_5_KEY, Usage.of(350, 30_000), 100, 100
         );
@@ -53,7 +52,6 @@ abstract class PerformanceIT {
 
     @Test
     void resourceLimiting_withoutInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
-        garbageCollectAndWaitABit();
         resourceLimitingShouldConsumeLimitedTimeAndMemory(
                 RateLimitedClass0.METHOD_5_KEY, Usage.of(300, 3_000_000), 10_000, 0
         );
@@ -83,12 +81,16 @@ abstract class PerformanceIT {
     }
 
     @Test
-    void get_shouldConsumeLimitedTimeAndMemory() throws InterruptedException {
-        garbageCollectAndWaitABit();
+    void get_shouldConsumeLimitedTimeAndMemory() {
+        // hashCode - name; equals - name,value -> 50
+        // hashCode - name,value; equals - name value -> 85
+        // hashCode - name,value,parent; equals - name,value,parent -> 125
         final RateLimiterRegistry<Object> rateLimiterRegistry = givenRateLimiterRegistry();
         final List<Method> methods = annotatedClassMethods();
-        final int count = methods.size();
+
         final Usage bookmark = Usage.bookmark();
+
+        final int count = methods.size();
         for(int i = 0; i < count; i++) {
             final Method method = methods.get(i);
             rateLimiterRegistry.getRateLimiterOptional(method);
@@ -96,7 +98,7 @@ abstract class PerformanceIT {
         final Usage recordedUsage = bookmark.current();
         assertUsageLessOrEqualToLimit(
                 "get_shouldConsumeLimitedTimeAndMemory()",
-                recordedUsage, Usage.of(count/10, 50_000 * count));
+                recordedUsage, Usage.of(count/2, 1_000 * count));
     }
 
     @Test
@@ -127,6 +129,8 @@ abstract class PerformanceIT {
         final String method = "resourceLimitingShouldConsumeLimitedTimeAndMemory(" + args + ")";
 
         final RateLimiterRegistry<String> rateLimiterRegistry = givenRateLimiterRegistry();
+
+        garbageCollectAndWaitABit();
 
         final Usage usageBookmark = Usage.bookmark();
 
