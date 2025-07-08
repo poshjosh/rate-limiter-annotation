@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Predicate;
 
 public final class MatchContexts {
 
@@ -16,6 +17,8 @@ public final class MatchContexts {
 
     // Bottom-up traversal consumes about 7x less memory, as of the last tests.
     private static final boolean IS_BOTTOM_UP_TRAVERSAL = true;
+    private static final Predicate<Node<RateConfig>> HAS_LIMIT =
+            IS_BOTTOM_UP_TRAVERSAL ? new HasParentLimit() : new HasChildLimit();
 
     public static <K> MatchContext<K> of(
             MatcherProvider<K> matcherProvider,
@@ -27,7 +30,7 @@ public final class MatchContexts {
         }
         Matcher<K> mainMatcher;
         List<Matcher<K>> limitMatchers;
-        if(!hasLimitsInTree(node) && !rateConfig.shouldDelegateToParent()) {
+        if(!HAS_LIMIT.test(node) && !rateConfig.shouldDelegateToParent()) {
             LOG.debug("No limits specified for group, so no matcher will be created for: {}",
                     node.getName());
             mainMatcher = Matchers.matchNone();
@@ -57,23 +60,6 @@ public final class MatchContexts {
         } else {
             visitNodesTopDown(rootNode, toMatch, matchVisitor);
         }
-    }
-
-    private static boolean hasLimitsInTree(Node<RateConfig> node) {
-        return hasLimits(node) || (IS_BOTTOM_UP_TRAVERSAL ?
-                anyParentHasLimits(node) : anyChildHasLimits(node));
-    }
-    private static boolean anyParentHasLimits(Node<RateConfig> node) {
-        return node.getParentOptional()
-                .filter(parent -> parent.hasValue() && hasLimitsInTree(parent))
-                .isPresent();
-    }
-    private static boolean anyChildHasLimits(Node<RateConfig> node) {
-        return node.getChildren().stream()
-                .anyMatch(child -> child.hasValue() && hasLimitsInTree(child));
-    }
-    private static boolean hasLimits(Node<RateConfig> node) {
-        return node.requireValue().getRates().isSet();
     }
 
     private static <K> void visitNodesTopDown(
