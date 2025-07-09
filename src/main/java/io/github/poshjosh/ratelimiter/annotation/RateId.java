@@ -108,6 +108,7 @@ public final class RateId {
         if (StringUtils.hasText(specifiedId)) {
             return specifiedId;
         }
+        // TODO: memory - method.toString() consumes much memory.
         final String methodString = method.toString();
         final int indexOfClassName = methodString.indexOf(getName(method.getDeclaringClass()));
         if(indexOfClassName == -1) {

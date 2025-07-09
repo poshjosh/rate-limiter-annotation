@@ -4,7 +4,6 @@ import io.github.poshjosh.ratelimiter.annotation.exceptions.AnnotationProcessing
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.AnnotatedElement;
-import java.util.Optional;
 
 final class Util {
     private Util() { }
@@ -14,6 +13,7 @@ final class Util {
         A[] rates = null;
         Class<? extends Annotation> metaAnnotationType = null;
         for(Annotation annotation : annotations) {
+            // TODO: memory - annotationType().getAnnotationsByType consumes much memory.
             A[] found = annotation.annotationType().getAnnotationsByType(type);
             if (found.length == 0) {
                 continue;
