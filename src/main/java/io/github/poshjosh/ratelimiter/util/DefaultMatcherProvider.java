@@ -13,8 +13,8 @@ final class DefaultMatcherProvider<INPUT> extends AbstractMatcherProvider<INPUT>
 
     @Override
     public Matcher<INPUT> createMainMatcher(RateConfig rateConfig) {
-        final Matcher<INPUT> expressionMatcher = createExpressionMatcher(
-                rateConfig.getRates().getCondition()).orElse(null);
+        final Matcher<INPUT> expressionMatcher = expressionMatcherOrFallback(
+                rateConfig.getRates().getCondition(), null);
         if (isMatchNone(rateConfig, expressionMatcher != null)) {
             return Matchers.matchNone();
         }
