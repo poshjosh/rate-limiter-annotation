@@ -11,13 +11,19 @@ public final class Usage {
         return of(System.currentTimeMillis(), availableMemory());
     }
     public static Usage of(long duration, long memory) {
-        return new Usage(duration, memory);
+        return new Usage(Math.max(duration, 0), Math.max(memory, 0));
     }
 
     private final long duration;
     private final long memory;
 
     private Usage(long duration, long memory) {
+        if (duration < 0) {
+            throw new IllegalArgumentException("Duration cannot be negative: " + duration);
+        }
+        if (memory < 0) {
+            throw new IllegalArgumentException("Memory cannot be negative: " + memory);
+        }
         this.duration = duration;
         this.memory = memory;
     }
@@ -35,6 +41,8 @@ public final class Usage {
     }
 
     public boolean isAnyUsageGreaterThan(Usage other) {
+        System.out.println("Memory used:  " + memory);
+        System.out.println("Memory limit: " + other.getMemory());
         return duration > other.getDuration() || memory > other.getMemory();
     }
 
