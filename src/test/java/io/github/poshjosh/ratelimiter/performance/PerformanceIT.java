@@ -2,14 +2,11 @@ package io.github.poshjosh.ratelimiter.performance;
 
 import io.github.poshjosh.ratelimiter.RateLimiter;
 import io.github.poshjosh.ratelimiter.RateLimiterRegistry;
-import io.github.poshjosh.ratelimiter.annotation.JavaRateSources;
 import io.github.poshjosh.ratelimiter.performance.dummyclasses.dummyclasses0.RateLimitedClass0;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Method;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import static io.github.poshjosh.ratelimiter.performance.Helpers.*;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -46,14 +43,14 @@ abstract class PerformanceIT {
     @Test
     void resourceLimiting_withInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
         resourceLimitingShouldConsumeLimitedTimeAndMemory(
-                RateLimitedClass0.METHOD_5_KEY, Usage.of(350, 30_000), 100, 100
+                "With interval", RateLimitedClass0.METHOD_5_KEY, Usage.of(350, 30_000), 100, 100
         );
     }
 
     @Test
     void resourceLimiting_withoutInterval_ShouldConsumeLimitedTimeAndMemory() throws InterruptedException{
         resourceLimitingShouldConsumeLimitedTimeAndMemory(
-                RateLimitedClass0.METHOD_5_KEY, Usage.of(300, 3_000_000), 10_000, 0
+                "Without interval", RateLimitedClass0.METHOD_5_KEY, Usage.of(300, 3_000_000), 10_000, 0
         );
     }
 
@@ -119,18 +116,16 @@ abstract class PerformanceIT {
     }
 
     private void resourceLimitingShouldConsumeLimitedTimeAndMemory(
-            String rateId, Usage usageLimit, int iterations, int intervalMillis)
+            String prefix, String rateId, Usage usageLimit, int iterations, int intervalMillis)
             throws InterruptedException{
-        final Map<String, Object> args = new LinkedHashMap<>();
-        args.put("rateId", rateId);
-        args.put("usageLimit", usageLimit);
-        args.put("iterations", iterations);
-        args.put("intervalMillis", intervalMillis);
-        final String method = "resourceLimitingShouldConsumeLimitedTimeAndMemory(" + args + ")";
+        final String key = (prefix == null ? "" : prefix) +
+                " | resourceLimitingShouldConsumeLimitedTimeAndMemory";
 
         final RateLimiterRegistry<String> rateLimiterRegistry = givenRateLimiterRegistry();
 
-        garbageCollectAndWaitABit();
+        final long timeoutMillis = 3_000;
+
+        garbageCollectAndWaitABit(timeoutMillis);
 
         final Usage usageBookmark = Usage.bookmark();
 
@@ -146,11 +141,16 @@ abstract class PerformanceIT {
         }
 
         final int totalIntervalMillis = iterations * intervalMillis;
-        Usage _curr = usageBookmark.current();
-        final Usage recordedUsage = Usage.of(_curr.getDuration() - totalIntervalMillis, _curr.getMemory());
+
+        garbageCollectAndWaitABit(timeoutMillis);
+
+        final Usage _curr = usageBookmark.current();
+        final Usage recordedUsage = Usage.of(
+                _curr.getDuration() - totalIntervalMillis - timeoutMillis,
+                _curr.getMemory());
 
         System.out.println("Rate limited: " + successCount + " of " + iterations);
-        assertUsageLessOrEqualToLimit(method, recordedUsage, usageLimit);
+        assertUsageLessOrEqualToLimit(key, recordedUsage, usageLimit);
     }
 
     private void assertUsageLessOrEqualToLimit(String key, Usage recordedUsage, Usage usageLimit) {
@@ -162,9 +162,9 @@ abstract class PerformanceIT {
                         recordedUsage + "\nLimit: " + usageLimit);
     }
 
-    private void garbageCollectAndWaitABit() throws InterruptedException {
+    private void garbageCollectAndWaitABit(long timeoutMillis) throws InterruptedException {
         Runtime.getRuntime().gc();
-        waitFor(3000);
+        waitFor(timeoutMillis);
     }
 
     private void waitFor(long timeoutMillis) throws InterruptedException{
