@@ -3,6 +3,7 @@ package io.github.poshjosh.ratelimiter;
 import io.github.poshjosh.ratelimiter.bandwidths.RateToBandwidthConverter;
 import io.github.poshjosh.ratelimiter.model.Rates;
 import io.github.poshjosh.ratelimiter.store.BandwidthsStore;
+import io.github.poshjosh.ratelimiter.store.Stores;
 import io.github.poshjosh.ratelimiter.util.*;
 
 import java.util.*;
@@ -57,7 +58,7 @@ public class RateLimiterContextImpl<K> implements RateLimiterContext<K> {
         }
 
         if (store == null) {
-            setStore(BandwidthsStore.ofDefaults());
+            setStore(Stores.ofBandwidths());
         }
 
         if (ticker == null) {
