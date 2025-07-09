@@ -14,7 +14,7 @@ class DepthFirstVisitorTest {
 
     @Test
     void shouldVisitEachNodeOnce() {
-        Node<Integer> node = TestNode.breadthFirst();
+        MutableNode<Integer> node = (MutableNode<Integer>)TestNode.breadthFirst();
         int expected = node.size();
         AtomicInteger sum = new AtomicInteger();
         Consumer<Node<Integer>> consumer = e -> sum.incrementAndGet();
@@ -25,7 +25,7 @@ class DepthFirstVisitorTest {
     @Test
     void shouldVisitDepthFirst() {
         final Integer [] values = TestNode.values();
-        Node<Integer> node = TestNode.depthFirst();
+        MutableNode<Integer> node = (MutableNode<Integer>)TestNode.depthFirst();
         List<Integer> collected = new ArrayList<>(values.length);
         Consumer<Node<Integer>> consumer = e -> collected.add(e.getValueOrDefault(0));
         DepthFirstVisitor.visitAll(node, consumer);

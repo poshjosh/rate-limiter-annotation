@@ -37,20 +37,18 @@ public abstract class AbstractMatcherProvider<INPUT> implements MatcherProvider<
             return Collections.emptyList();
         }
         if (subRates.size() == 1) {
-            Matcher<INPUT> matcher =
+            // Tag:Rule:number-of-matchers-must-equal-number-of-rates
+            return Collections.singletonList(
                     expressionMatcherOrFallback(
-                            subRates.get(0).getCondition(), Matchers.matchNone());
-            // Tag:Rule:number-of-matchersStore-must-equal-number-of-rates
-            return Collections.singletonList(matcher);
+                            subRates.get(0).getCondition(), Matchers.matchNone()));
         }
         return subRates.stream()
                 .map(rate -> expressionMatcherOrFallback(rate.getCondition(), Matchers.matchNone()))
                 .collect(Collectors.toList());
     }
 
-    //@Nullable
-    protected Matcher<INPUT> expressionMatcherOrFallback(
-            String expression, Matcher<INPUT> fallback) {
+    protected /* Nullable */ Matcher<INPUT> expressionMatcherOrFallback(
+            String expression, /* Nullable */ Matcher<INPUT> fallback) {
         if (expression == null || expression.isEmpty()) {
             return fallback;
         }

@@ -19,68 +19,46 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
  * @author Chinomso Bassey Ikwuagwu on Oct 16, 2017 9:21:53 PM
  */
-final class DepthFirstVisitor<T> implements Consumer<Node<T>>{
+final class DepthFirstVisitor {
 
     private static final Logger LOG = LoggerFactory.getLogger(DepthFirstVisitor.class.getName());
 
-    private final Predicate<Node<T>> filter;
-    
-    private final Consumer<Node<T>> consumer;
-    
-    private final int depth;
-
-
-    DepthFirstVisitor(Predicate<Node<T>> filter, Consumer<Node<T>> consumer, int depth) {
-        this.filter = Objects.requireNonNull(filter);
-        this.consumer = Objects.requireNonNull(consumer);
-        this.depth = depth;
-    }
-
-    @Override
-    public void accept(Node<T> node) {
-        DepthFirstVisitor.visitAll(node, filter, consumer, this.depth);
-    }
-
-    public static <T> void visitAll(Node<T> node, Consumer<Node<T>> consumer) {
+    static <V> void visitAll(MutableNode<V> node, Consumer<Node<V>> consumer) {
         visitAll(node, currentNode -> true, consumer, Integer.MAX_VALUE);
     }
 
-    public static <T> void visitAll(Node<T> node, Predicate<Node<T>> filter,
-            Consumer<Node<T>> consumer, int remainingDepth) {
+    static <V> void visitAll(MutableNode<V> node, Predicate<Node<V>> filter,
+            Consumer<Node<V>> consumer, int depth) {
 
         if(LOG.isTraceEnabled()) {
-            LOG.trace("Visiting: {}", node);
+            LOG.trace("Depth: {}, visiting: {}", depth, node);
         }
 
-        visit(filter, consumer, node);
-        
-        if(remainingDepth > 0) {
-
-            final List<Node<T>> childNodeSet = node.getChildren();
-
-            for(Node<T> childNode : childNodeSet) {
-
-                visitAll(childNode, filter, consumer, remainingDepth-1);
+        if(filter.test(node)) {
+            consumer.accept(node);
+            if(LOG.isTraceEnabled()) {
+                LOG.trace("Depth, {}, processed: {}", depth, node);
             }
+        }
+
+        if (depth <= 0) {
+            return;
+        }
+
+        final List<MutableNode<V>> childNodeSet = node.getChildren();
+
+        for(MutableNode<V> childNode : childNodeSet) {
+
+            visitAll(childNode, filter, consumer, depth-1);
         }
     }
-    
-    private static <T> void visit(Predicate<Node<T>> test, Consumer<Node<T>> action, Node<T> node) {
 
-        if(test.test(node)) {
-
-            action.accept(node);
-
-            if(LOG.isTraceEnabled()) {
-                LOG.trace("Processed node: {}", node);
-            }
-        }
+    private DepthFirstVisitor() {
     }
 }

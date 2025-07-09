@@ -15,6 +15,7 @@
  */
 package io.github.poshjosh.ratelimiter.node;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -42,7 +43,7 @@ abstract class NodeFormatter {
         private <V> StringBuilder appendTo(Node<V> node, StringBuilder appendTo, int levelsRemaining) {
             this.doAppendTo(node, appendTo);
             if(levelsRemaining > 0) {
-                final List<Node<V>> children = node.getChildren();
+                final List<MutableNode<V>> children = node instanceof MutableNode ? ((MutableNode<V>) node).getChildren() : Collections.emptyList();
                 for(Node<V> child : children) {
                     this.appendTo(child, appendTo, levelsRemaining - 1);
                 }

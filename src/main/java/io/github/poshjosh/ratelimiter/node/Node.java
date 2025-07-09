@@ -26,18 +26,29 @@ import java.util.function.*;
  * @author Chinomso Bassey Ikwuagwu on Oct 13, 2017 2:58:54 PM
  * @param <V> The type of the value returned by this node
  */
-public interface Node<V> {
+public interface Node<V> extends Iterable<Node<V>> {
+
+    Predicate<Object> ACCEPT_ALL = node -> true;
+
+    @SuppressWarnings("unchecked")
+    static <T> Predicate<T> acceptAll() {
+        return (Predicate<T>)ACCEPT_ALL;
+    }
+
     static <T> Node<T> empty() {
         return Nodes.empty();
+    }
+
+    @Override
+    default Iterator<Node<V>> iterator() {
+        return new DepthFirstNodeIterator<>(this);
     }
 
     default boolean anyMatch(Predicate<Node<V>> test) {
         return test.test(this) || anyChildMatch(test);
     }
 
-    default boolean anyChildMatch(Predicate<Node<V>> test) {
-        return getChildren().stream().anyMatch(child -> child.anyMatch(test));
-    }
+    boolean anyChildMatch(Predicate<Node<V>> test);
 
     default int size() {
         if (isLeaf()) {
@@ -50,7 +61,7 @@ public interface Node<V> {
     }
 
     default void visitAll(Consumer<Node<V>> consumer) {
-        visitAll(node -> true, consumer);
+        visitAll(Node.acceptAll(), consumer);
     }
 
     default void visitAll(Predicate<Node<V>> filter, Consumer<Node<V>> consumer) {
@@ -87,7 +98,7 @@ public interface Node<V> {
      * @see #transform(Predicate, Node, Function, Function)
      */
     default <T> Node<T> transform(Function<Node<V>, T> valueConverter) {
-        return transform((Predicate<Node<V>>)(node -> true), valueConverter)
+        return transform(Node.acceptAll(), valueConverter)
                 .orElseThrow(() -> new AssertionError("Should not happen"));
     }
 
@@ -104,7 +115,7 @@ public interface Node<V> {
      * @see #transform(Predicate, Node, Function, Function)
      */
     default <T> Node<T> transform(Node<T> newParent, Function<Node<V>, T> valueConverter) {
-        return transform(node -> true, newParent, valueConverter)
+        return transform(Node.acceptAll(), newParent, valueConverter)
                 .orElseThrow(() -> new AssertionError("Should not happen"));
     }
 
@@ -129,7 +140,7 @@ public interface Node<V> {
      * @see #transform(Predicate, Node, Function, Function)
      */
     default <T> Node<T> transform(Node<T> newParent, Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
-        return transform(node -> true, newParent, nameConverter, valueConverter)
+        return transform(Node.acceptAll(), newParent, nameConverter, valueConverter)
                 .orElseThrow(() -> new AssertionError("Should not happen"));
     }
 
@@ -145,17 +156,8 @@ public interface Node<V> {
      * @throws StackOverflowError If the Node calling this method is passed in as the newParent argument
      * @see #transform(Node, Function)
      */
-    default <T> Optional<Node<T>> transform(Predicate<Node<V>> test, Node<T> newParent,
-            Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter) {
-        if (!test.test(this)) {
-            return Optional.empty();
-        }
-        final String newName = nameConverter.apply(this);
-        final T newValue = valueConverter.apply(this);
-        final Node<T> newNode = Nodes.of(newName, newValue, newParent);
-        getChildren().forEach(child -> child.transform(test, newNode, nameConverter, valueConverter));
-        return Optional.of(newNode);
-    }
+    <T> Optional<Node<T>> transform(Predicate<Node<V>> test, Node<T> newParent,
+            Function<Node<V>, String> nameConverter, Function<Node<V>, T> valueConverter);
 
     default boolean isEmptyNode() {
         return this == Nodes.EMPTY;
@@ -200,27 +202,32 @@ public interface Node<V> {
     }
 
     default Optional<Node<V>> findFirst(Predicate<Node<V>> nodeTest) {
-        
         return this.findFirst(this, nodeTest);
+    }
+
+    default Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest) {
+        return Optional.ofNullable(findFirstOrDefault(offset, nodeTest, Integer.MAX_VALUE, null));
     }
 
     default Node<V> findFirstOrDefault(
             Predicate<Node<V>> nodeTest, Node<V> resultIfNone) {
-        return this.findFirstOrDefault(this, nodeTest, resultIfNone);
+        return this.findFirstOrDefault(nodeTest, Integer.MAX_VALUE, resultIfNone);
     }
 
-    default Optional<Node<V>> findFirst(Node<V> offset, Predicate<Node<V>> nodeTest) {
-        return Optional.ofNullable(findFirstOrDefault(offset, nodeTest, null));
+    default Node<V> findFirstOrDefault(
+            Predicate<Node<V>> nodeTest, int depth, Node<V> resultIfNone) {
+        return this.findFirstOrDefault(this, nodeTest, depth, resultIfNone);
     }
 
-    Node<V> findFirstOrDefault(Node<V> offset, Predicate<Node<V>> nodeTest, Node<V> resultIfNone);
+    Node<V> findFirstOrDefault(Node<V> offset, Predicate<Node<V>> nodeTest, int depth, Node<V> resultIfNone);
 
+    int getChildCount();
 
-    boolean hasChildren();
+    default boolean hasChildren() {
+        return getChildCount() > 0;
+    }
 
     Node<V> getChild(int index);
-
-    List<Node<V>> getChildren();
 
     String getName();
 

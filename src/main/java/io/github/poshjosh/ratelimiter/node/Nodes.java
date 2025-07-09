@@ -24,9 +24,13 @@ public interface Nodes {
         return of(name, null, parent);
     }
 
+    /**
+     * @deprecated Rather use {@link #of(String, Object, Node)} with {@link #ofDefaultRoot()} as the parent.
+     */
+    @Deprecated
     static <T> Node<T> ofDefaultParent(String name, T value) { return of(name, value, ofDefaultRoot()); }
 
     static <T> Node<T> of(String name, T value, Node<T> parent) {
-        return new NodeImpl(name, value, parent);
+        return new NodeImpl<>(name, value, parent);
     }
 }

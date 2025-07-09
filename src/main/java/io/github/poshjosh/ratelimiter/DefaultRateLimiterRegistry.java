@@ -96,10 +96,19 @@ final class DefaultRateLimiterRegistry<K> implements RateLimiterRegistry<K> {
 
     @Override
     public void visitRates(Consumer<MatchContext<K>> visitor) {
-        rootNodes.getPropertiesRootNode().getChildren()
-                .forEach(child -> child.visitAll(node -> visitor.accept(node.getValueOrDefault(null))));
-        rootNodes.getAnnotationsRootNode().getChildren()
-                .forEach(child -> child.visitAll(node -> visitor.accept(node.getValueOrDefault(null))));
+        visitRates(rootNodes.getPropertiesRootNode(), visitor);
+        visitRates(rootNodes.getAnnotationsRootNode(), visitor);
+    }
+
+    private void visitRates(Node<MatchContext<K>> root, Consumer<MatchContext<K>> visitor) {
+        final int childCount = root.getChildCount();
+        if (childCount == 0) {
+            return;
+        }
+        for (int i = 0; i < childCount; i++) {
+            root.getChild(i).visitAll(
+                    node -> visitor.accept(node.getValueOrDefault(null)));
+        }
     }
 
     @Override

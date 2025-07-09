@@ -142,11 +142,11 @@ abstract class PerformanceIT {
 
         final int totalIntervalMillis = iterations * intervalMillis;
 
-        garbageCollectAndWaitABit(timeoutMillis);
+        //garbageCollectAndWaitABit(timeoutMillis);
 
         final Usage _curr = usageBookmark.current();
         final Usage recordedUsage = Usage.of(
-                _curr.getDuration() - totalIntervalMillis - timeoutMillis,
+                _curr.getDuration() - totalIntervalMillis/* - timeoutMillis */,
                 _curr.getMemory());
 
         System.out.println("Rate limited: " + successCount + " of " + iterations);

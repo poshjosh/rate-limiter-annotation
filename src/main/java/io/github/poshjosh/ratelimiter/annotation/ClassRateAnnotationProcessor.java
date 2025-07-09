@@ -84,10 +84,12 @@ class ClassRateAnnotationProcessor extends AbstractRateAnnotationProcessor<Class
 
             for(Node<RateConfig> superClassNode : superClassNodes) {
 
-                List<Node<RateConfig>> superClassMethodNodes = superClassNode.getChildren();
+                final int childCount = superClassNode.getChildCount();
 
-                // Transfer method nodes from the super class
-                superClassMethodNodes.forEach(node -> node.copyTo(classNode));
+                for (int i = 0; i < childCount; i++) {
+                    // Transfer method nodes from the super class
+                    superClassNode.getChild(i).copyTo(classNode);
+                }
             }
         }
     }
