@@ -41,8 +41,6 @@ public final class Usage {
     }
 
     public boolean isAnyUsageGreaterThan(Usage other) {
-        System.out.println("Memory used:  " + memory);
-        System.out.println("Memory limit: " + other.getMemory());
         return duration > other.getDuration() || memory > other.getMemory();
     }
 
