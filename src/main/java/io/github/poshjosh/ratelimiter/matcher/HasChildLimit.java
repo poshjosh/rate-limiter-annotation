@@ -13,9 +13,7 @@ final class HasChildLimit implements Predicate<Node<RateConfig>> {
     }
 
     private boolean anyChildHasLimit(Node<RateConfig> node) {
-        final int childCount = node.getChildCount();
-        for (int i = 0; i < childCount; i++) {
-            Node<RateConfig> child = node.getChild(i);
+        for (Node<RateConfig> child : node.getChildren()) {
             if (child.hasValue() && test(child)) {
                 return true;
             }
