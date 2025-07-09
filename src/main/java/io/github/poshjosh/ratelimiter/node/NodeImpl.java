@@ -17,6 +17,7 @@
 package io.github.poshjosh.ratelimiter.node;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.*;
 
 /**
@@ -124,24 +125,27 @@ final class NodeImpl<V> implements MutableNode<V> {
     @Override
     public Node<V> findFirstOrDefault(
             Node<V> offset, Predicate<Node<V>> nodeTest, int depth, Node<V> resultIfNone) {
+        if (depth <= 0) {
+            return resultIfNone;
+        }
         if(nodeTest.test(offset)) {
             return offset;
         }
-        for(MutableNode<V> child : ((MutableNode<V>)offset).getChildren()) {
-            Node<V> found = findFirstOrDefault(child, nodeTest, depth, null);
-            if(found != null) {
-                return found;
-            }
-        }
-        return resultIfNone;
-//        AtomicReference<Node<V>> found = new AtomicReference<>();
-//        offset.visitAll(n -> found.get() == null,
-//                n -> {
-//                    if (nodeTest.test(n)) {
-//                        found.set(n);
-//                    }
-//                }, depth);
-//        return found.get() == null ? resultIfNone : found.get();
+//        for(Node<V> child : ((MutableNode<V>)offset).getChildren()) {
+//            Node<V> found = findFirstOrDefault(child, nodeTest, depth - 1, null);
+//            if(found != null) {
+//                return found;
+//            }
+//        }
+//        return resultIfNone;
+        AtomicReference<Node<V>> found = new AtomicReference<>();
+        offset.visitAll(n -> found.get() == null,
+                n -> {
+                    if (nodeTest.test(n)) {
+                        found.set(n);
+                    }
+                }, depth);
+        return found.get() == null ? resultIfNone : found.get();
     }
 
     private Node<V>[] leafs;
