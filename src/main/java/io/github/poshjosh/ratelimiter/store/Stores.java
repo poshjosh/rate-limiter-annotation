@@ -9,5 +9,14 @@ public final class Stores {
     public static <K, V> Store<K, V> ofLRU(int capacity, float loadFactor) {
         return new LruStore<>(capacity, loadFactor);
     }
+    public static <K, V> Store<K, V> noop() {
+        return new Store<K, V>() {
+            @Override public V get(K key) { return null; }
+            @Override public void put(K key, V value) {
+                // Noop store
+            }
+            @Override public String toString() { return "Store.Noop{}"; }
+        };
+    }
     private Stores() { }
 }
