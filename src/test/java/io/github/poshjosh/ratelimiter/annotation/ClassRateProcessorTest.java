@@ -7,10 +7,12 @@ import io.github.poshjosh.ratelimiter.model.Operator;
 import io.github.poshjosh.ratelimiter.model.RateConfig;
 import org.junit.jupiter.api.Test;
 import java.lang.annotation.*;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.assertj.core.api.Fail.fail;
 
 class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
 
@@ -68,13 +70,20 @@ class ClassRateProcessorTest extends AbstractAnnotationProcessorTest<Class<?>> {
         Node<RateConfig> root = rateProcessor.processAll(classes);
         System.out.println(root);
         assertThat(root.findFirst(node -> node.getName().equals(root.getName())).isPresent()).isTrue();
-        assertHasChildrenHavingNames(root, "ClassGroupOnlyAnon", "PrivateClass", "InternalClass");
-        assertHasChildrenHavingNames(root, "GroupAnnotationWithoutName");
-        Node<RateConfig> fire = root.findFirst(node -> getId(GroupAnnotationWithoutName.class).equals(node.getName()))
-                .orElseThrow(NullPointerException::new);
-        assertHasChildrenHavingNames(fire,
-                ClassWithClassAnnotations.ClassGroupOnly_GroupAnnotationWithoutName.class,
-                ClassWithClassAnnotations.SecondClassGroupOnly_GroupAnnotationWithoutName.class);
+        assertHasChildHavingNames(root,
+                getId(ClassWithClassAnnotations.ClassGroupOnlyAnon.class),
+                getId((ClassWithClassAnnotations.PrivateClass.class)),
+                getId(ClassWithClassAnnotations.ClassWithInternalClass.InternalClass.class));
+        assertHasChildHavingNames(root, getId(GroupAnnotationWithoutName.class));
+        final String targetId = getId(GroupAnnotationWithoutName.class);
+        Optional<Node<RateConfig>> optionalFound = root.findFirst(node -> targetId.equals(node.getName()));
+        if (optionalFound.isPresent()) {
+            assertHasChildHavingNames(optionalFound.get(),
+                    ClassWithClassAnnotations.ClassGroupOnly_GroupAnnotationWithoutName.class,
+                    ClassWithClassAnnotations.SecondClassGroupOnly_GroupAnnotationWithoutName.class);
+        } else {
+            fail("Node with name " + targetId + " not found");
+        }
     }
 
     @Override String getId(Class<?> element) {

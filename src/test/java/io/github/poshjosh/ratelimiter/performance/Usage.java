@@ -11,13 +11,19 @@ public final class Usage {
         return of(System.currentTimeMillis(), availableMemory());
     }
     public static Usage of(long duration, long memory) {
-        return new Usage(duration, memory);
+        return new Usage(Math.max(duration, 0), Math.max(memory, 0));
     }
 
     private final long duration;
     private final long memory;
 
     private Usage(long duration, long memory) {
+        if (duration < 0) {
+            throw new IllegalArgumentException("Duration must be non-negative, but was: " + duration);
+        }
+        if (memory < 0) {
+            throw new IllegalArgumentException("Memory must be non-negative, but was: " + memory);
+        }
         this.duration = duration;
         this.memory = memory;
     }

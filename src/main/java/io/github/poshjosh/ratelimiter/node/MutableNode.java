@@ -1,8 +1,11 @@
 package io.github.poshjosh.ratelimiter.node;
 
+import java.util.List;
+
 public interface MutableNode<V> extends Node<V> {
-    boolean addChild(Node<V> child);
-    Node<V> removeChild(String name);
+    boolean addChild(MutableNode<V> child);
+    MutableNode<V> removeChild(String name);
+    List<MutableNode<V>> getChildren();
 
     /**
      * Get leaf child nodes (excluding root node, or {@link Nodes#EMPTY}).

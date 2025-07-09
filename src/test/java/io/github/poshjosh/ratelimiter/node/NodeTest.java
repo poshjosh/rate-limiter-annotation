@@ -18,8 +18,8 @@ class NodeTest {
 
     @Test
     void getChildren() {
-        Node<Integer> node = TestNode.breadthFirst();
-        List<Node<Integer>> expected = node.getChildren();
+        MutableNode<Integer> node = (MutableNode<Integer>)TestNode.breadthFirst();
+        List<MutableNode<Integer>> expected = node.getChildren();
         assertEquals(2, expected.size());
         List<Node<Integer>> found = new ArrayList<>();
         node.visitAll(e -> Objects.equals(node, e.getParentOrDefault(null)), found::add);
@@ -27,8 +27,33 @@ class NodeTest {
     }
 
     @Test
-    void findFirstChild_givenValidTest_shouldHitOneResult() {
+    void findFirst_givenOneNodePassesTest_shouldHitOneResult() {
         assertTrue(TestNode.breadthFirst().findFirst(node -> "son".equals(node.getName())).isPresent());
+    }
+
+    @Test
+    void findFirst_givenAZeroNodesPassTest_shouldHitZeroResult() {
+        assertFalse(TestNode.breadthFirst().findFirst(node -> false).isPresent());
+    }
+
+    @Test
+    void findFirst_givenEmptyNodePassesTest_shouldHitOneResult() {
+        assertTrue(Node.empty().findFirst(node -> true).isPresent());
+    }
+
+    @Test
+    void findFirst_givenEmptyNodeFailsTest_shouldHitZeroResult() {
+        assertFalse(Node.empty().findFirst(node -> false).isPresent());
+    }
+
+    @Test
+    void findFirstOrDefault_givenOneNodePassesTestButLowDepth_shouldReturnDefault() {
+        assertNull(TestNode.breadthFirst().findFirstOrDefault(node -> "grand-son".equals(node.getName()), 1, null));
+    }
+
+    @Test
+    void findFirstOrDefault_givenEmptyNodePassesTestButZeroDepth_shouldReturnDefault() {
+        assertNull(Node.empty().findFirstOrDefault(node -> true, 0, null));
     }
 
     @Test
