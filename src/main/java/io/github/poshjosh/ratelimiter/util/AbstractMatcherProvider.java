@@ -27,21 +27,21 @@ public abstract class AbstractMatcherProvider<INPUT> implements MatcherProvider<
             return Collections.emptyList();
         }
         if (subRates.size() == 1) {
-            return createExpressionMatcher(subRates.get(0).getCondition())
-                    .map(Collections::singletonList)
-                    // Tag:Rule:number-of-matchers-must-equal-number-of-rates
-                    .orElse(Collections.singletonList(Matchers.matchNone()));
+            // Tag:Rule:number-of-matchers-must-equal-number-of-rates
+            return Collections.singletonList(
+                    expressionMatcherOrFallback(subRates.get(0).getCondition(), Matchers.matchNone()));
         }
         return subRates.stream()
-                .map(rate -> createExpressionMatcher(rate.getCondition()).orElse(Matchers.matchNone()))
+                .map(rate -> expressionMatcherOrFallback(rate.getCondition(), Matchers.matchNone()))
                 .collect(Collectors.toList());
     }
 
-    protected Optional<Matcher<INPUT>> createExpressionMatcher(String expression) {
+    protected /* Nullable */ Matcher<INPUT> expressionMatcherOrFallback(
+            String expression, /* Nullable */ Matcher<INPUT> fallback) {
         if (expression == null || expression.isEmpty()) {
-            return Optional.empty();
+            return fallback;
         }
-        return expressionMatcher.matcher(expression);
+        return expressionMatcher.matcherOrFallback(expression, fallback);
     }
 
     protected boolean isMatchNone(RateConfig rateConfig, boolean isExpressionPresent) {
