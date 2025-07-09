@@ -119,18 +119,16 @@ final class NodeImpl<V> implements MutableNode<V> {
 
     public Node<V> findFirstOrDefault(
             Node<V> offset, Predicate<Node<V>> nodeTest, Node<V> resultIfNone) {
-        Node<V> found = null;
         if(nodeTest.test(offset)) {
-            found = offset;
-        } else {
-            for(Node<V> child : offset.getChildren()) {
-                found = findFirstOrDefault(child, nodeTest, null);
-                if(found != null) {
-                    break;
-                }
+            return offset;
+        }
+        for(Node<V> child : offset.getChildren()) {
+            Node<V> found = findFirstOrDefault(child, nodeTest, null);
+            if(found != null) {
+                return found;
             }
         }
-        return found == null ? resultIfNone : found;
+        return resultIfNone;
     }
 
     private Node<V>[] leafs;
